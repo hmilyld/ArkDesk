@@ -24,7 +24,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const BUNDLE_DIR = join(ROOT, 'src-tauri', 'target', 'release', 'bundle');
+const TARGET_DIR = join(ROOT, 'src-tauri', 'target');
 const OUT_DIR = join(ROOT, 'release');
 
 const argv = process.argv.slice(2);
@@ -114,6 +114,25 @@ async function scanBundleDir(dir) {
   return found;
 }
 
+/** 候选 bundle 目录：`target/release/bundle` 与 `target/<triple>/release/bundle`（--target 构建） */
+async function bundleDirs() {
+  const dirs = [];
+  const direct = join(TARGET_DIR, 'release', 'bundle');
+  if (await stat(direct).catch(() => null)) dirs.push(direct);
+  let entries = [];
+  try {
+    entries = await readdir(TARGET_DIR, { withFileTypes: true });
+  } catch {
+    entries = [];
+  }
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const nested = join(TARGET_DIR, entry.name, 'release', 'bundle');
+    if (await stat(nested).catch(() => null)) dirs.push(nested);
+  }
+  return dirs;
+}
+
 /** 从 Keep a Changelog 文档中提取指定版本段落（标题形如 `## [x.y.z]` / `## x.y.z`） */
 async function extractChangelog(file, version) {
   const path = resolve(file);
@@ -157,7 +176,13 @@ async function main() {
     notes = await extractChangelog(changelogArg, version);
   }
 
-  const artifacts = (await collectFromArgs()) ?? (await scanBundleDir(BUNDLE_DIR));
+  let artifacts = await collectFromArgs();
+  if (!artifacts) {
+    artifacts = [];
+    for (const dir of await bundleDirs()) {
+      artifacts.push(...(await scanBundleDir(dir)));
+    }
+  }
   if (artifacts.length === 0) {
     fail(`未找到更新产物（.sig）。请先执行带签名的 tauri build，或用 --platform key=path 指定`);
   }

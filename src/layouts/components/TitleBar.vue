@@ -35,28 +35,26 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- 内容区顶栏：整栏可拖拽移动窗口；面包屑 = 应用名（仅 macOS，Windows 下应用名在侧栏顶部）+ 当前工具名 -->
+  <!-- 内容区顶栏：整栏 deep 拖拽区（任意非可点击子元素均可拖动窗口 / 双击缩放）；
+       面包屑 = 应用名（仅 macOS，Windows 下应用名在侧栏顶部）+ 当前工具名 -->
   <header
-    data-tauri-drag-region
+    data-tauri-drag-region="deep"
     class="flex h-10 shrink-0 items-center justify-between gap-3 border-b bg-background pl-4 pr-0"
   >
-    <nav data-tauri-drag-region class="flex min-w-0 items-center gap-1.5" aria-label="面包屑">
+    <nav class="flex min-w-0 items-center gap-1.5" aria-label="面包屑">
       <span
         v-if="isMac"
-        data-tauri-drag-region
         class="shrink-0 text-xs font-medium tracking-wide text-muted-foreground/70"
       >
         {{ appName }}
       </span>
       <template v-if="pageTitle">
-        <!-- 精确目标命中才可拖拽：装饰性图标也要挂 drag-region，消除点击盲区 -->
         <ChevronRight
           v-if="isMac"
-          data-tauri-drag-region
           class="size-3.5 shrink-0 text-muted-foreground/40"
           aria-hidden="true"
         />
-        <span data-tauri-drag-region class="truncate text-sm font-medium text-foreground">
+        <span class="truncate text-sm font-medium text-foreground">
           {{ pageTitle }}
         </span>
       </template>

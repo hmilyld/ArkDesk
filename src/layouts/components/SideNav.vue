@@ -56,15 +56,14 @@ const activeClasses =
       class="flex shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground transition-[width]"
       :class="settings.sidebarCollapsed ? railWidthClass : 'w-52'"
     >
-      <!-- 拖拽区：macOS 红绿灯旁不放文字；Windows/Linux 顶部显示应用名（收起态放不下） -->
+      <!-- 拖拽区（deep）：macOS 红绿灯旁不放文字；Windows/Linux 顶部显示应用名（收起态放不下） -->
       <div
-        data-tauri-drag-region
+        data-tauri-drag-region="deep"
         class="flex h-10 shrink-0 items-center border-b border-sidebar-border"
         :class="isMac || settings.sidebarCollapsed ? '' : 'px-4'"
       >
         <span
           v-if="!isMac && !settings.sidebarCollapsed"
-          data-tauri-drag-region
           class="text-sm font-semibold tracking-wide"
         >
           {{ appName }}

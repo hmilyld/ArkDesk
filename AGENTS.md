@@ -109,7 +109,7 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 
 ## 关键约定
 
-- **IPC**：前端一律 `await ipc<T>(cmd, args)`（`@/core/ipc`），禁止裸 `invoke`。命令名由 `src-tauri/build.rs` 构建期生成到 `src/core/ipc/commands.gen.ts`（框架+插件命令联合类型），非注册命令会在类型检查期报错；该文件为生成物（随构建更新，勿手改）。
+- **IPC**：前端一律 `await ipc<T>(cmd, args)`（`@/core/ipc`），禁止裸 `invoke`。命令名由 `scripts/gen-commands.mjs` 生成到 `src/core/ipc/commands.gen.ts`（读取 `src-tauri/framework-commands.json` 并扫描插件 `#[tauri::command]`，框架+插件命令联合类型），非注册命令会在类型检查期报错；该文件为生成物（随 `prepare`/构建更新，勿手改）。
 - **错误**：Rust `AppError{code, message}`，code 与前端 `core/errors` 的 `ErrorCode` 对齐。
 - **数据库**：对象化查询用 `kdb`（Drizzle sqlite-proxy）；快速 CRUD 用 `@/core/db` 的 `db.insert/findAll` 等；手写 SQL 一律 `$1` 参数化。拿自增 id 用 `.returning()`。BLOB 列经通道以 base64 返回（前端自行解码）。表名/列名做标识符白名单校验。
 - **HTTP**：走 `@/core/http`（Rust reqwest，无 CORS），禁止 webview 内 `fetch` 采集。

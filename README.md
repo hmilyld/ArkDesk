@@ -1,10 +1,18 @@
 # ArkDesk
 
-个人常用小工具集合（桌面工具箱），基于 Tauri 2 + Vue 3 构建。
-核心设计目标：**新增一个工具的成本尽可能低**——复制模板、改一处注册，即可获得完整的
-导航、路由、启停管理、设置面板与数据库接入能力。
+自用桌面工具箱（Mac / Windows），基于 **PocketArk 基础框架**（Tauri 2 + Vue 3 + TypeScript + Tailwind 4）。
 
-> 想把它变成你自己的软件？clone 后执行 `pnpm scaffold`，按 [START.md](START.md) 走完即可。
+## 内置工具
+
+| 分组     | 插件               | 工具                                              |
+| -------- | ------------------ | ------------------------------------------------- |
+| 常用工具 | `daily-tools`      | 文件转换（→ Markdown）、图片 OCR（PaddleOCR MNN） |
+| 投标     | `tender-optimizer` | 招标二轮报价蒙特卡洛测算、测算历史                |
+| 内容创作 | `text2video`       | 文章 → 竖屏滚动短视频（含草稿箱、处理记录）       |
+| 系统工具 | `system`           | 数据维护（浏览表结构、编辑数据）                  |
+
+> 本仓库派生自上游 [PocketArk](https://github.com/hmilyld/PocketArk)：框架代码通过 `git remote` 的
+> `upstream` 同步更新，个人内容（插件、依赖、资源、密钥）集中在「本地层」——见 [LOCAL.md](LOCAL.md)。
 
 ## 技术栈
 
@@ -31,8 +39,9 @@ pnpm test           # vitest 单测
 依赖：Rust、Node 20+、pnpm。macOS 需 Xcode Command Line Tools；Linux 需
 webkit2gtk 等系统库（见 [Tauri prerequisites](https://tauri.app/start/prerequisites)）。
 
-> base 本身不包含任何内置资源；若你的 fork 叠加了需要字体/OCR 等资源的工具，
-> 参见仓库根的 `LOCAL.md`（本地层说明）。
+> 首次运行会按需下载资源（中文字体 ~32MB、OCR 模型 ~15MB，放入 `src-tauri/local-resources/`、
+> 不入库）；`pnpm assets` 可单独预取。国内网络与镜像设置见 [LOCAL.md](LOCAL.md)。
+> 编译 OCR 依赖（ocr-rs）所需的 macOS `CXXFLAGS` / Windows libclang 见 [LOCAL.md](LOCAL.md)。
 
 ## 应用在线更新
 
@@ -128,10 +137,16 @@ plugins/               # ★ 你的工具都在这里（每个目录一个插件
 │   ├── plugin.json    #     清单：唯一事实源（元数据/工具项/入口声明）
 │   ├── frontend/      #     前端：views/ settings/ components/ composables/ schema.ts setup.ts shared.ts
 │   └── backend/       #     后端：mod.rs（#[tauri::command] 命令）+ migrations.rs（可选）
-└── hello-world/       #   示例插件（多功能插件样板）
+├── hello-world/       #   示例插件（多功能插件样板）
+├── system/            #   系统工具（数据维护，前端-only）
+├── daily-tools/       #   常用工具（文件转换 + 图片 OCR）
+├── tender-optimizer/  #   投标报价测算
+└── text2video/        #   图文视频工具
 
 src-tauri/
-├── build.rs           # 扫描 plugins/ 生成命令注册、迁移聚合与 commands.gen.ts
+├── build.rs           # 扫描 plugins/ 生成命令注册与迁移聚合
+├── framework-commands.json  # 框架命令清单（单一事实源，供 build.rs 与前端命令名生成）
+├── local-resources/   # ★ 本地层资源（字体 / OCR 模型；不入库）
 └── src/
     ├── lib.rs         # 组装入口：插件注册 / 托盘 / 菜单 / 单实例 / 关窗行为
     ├── error.rs       # AppError（所有命令返回 Result<T, AppError>）
@@ -146,6 +161,10 @@ src-tauri/
     ├── files.rs       # 通用文件读写命令
     ├── tray.rs        # 系统托盘
     └── plugins/mod.rs # include 构建期生成的插件注册（勿手改）
+
+scripts/               # scaffold / create-plugin / gen-icons / gen-commands / prepare / bump-version / release
+  local/               # ★ 本地层脚本（资源下载；CI 跳过）
+LOCAL.md               # ★ 本地层说明（个人插件/依赖/资源/发布）
 ```
 
 ## 扩展开发指南

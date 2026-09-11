@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -56,16 +56,16 @@ jobs:
         with:
           name: dist
           path: dist
-      # ocr-rs 依赖 bindgen（需 libclang）与 MNN（macOS 需显式 C++ 头文件路径）。
-      # 仅当存在 OCR 插件（daily-tools）时才需要；base 无此插件时跳过。
-      - name: 安装 LLVM（Windows，仅含 OCR 插件时）
-        if: runner.os == 'Windows' && hashFiles('plugins/daily-tools/**') != ''
+      # ocr-rs（daily-tools 图片 OCR）依赖 bindgen（需 libclang）与 MNN
+      # （macOS 需显式 C++ 头文件路径），见 LOCAL.md。
+      - name: 安装 LLVM（Windows）
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
           choco install llvm -y
           echo "LIBCLANG_PATH=C:\Program Files\LLVM\bin" >> $env:GITHUB_ENV
-      - name: 设置 C++ 头文件路径（macOS，仅含 OCR 插件时）
-        if: runner.os == 'macOS' && hashFiles('plugins/daily-tools/**') != ''
+      - name: 设置 C++ 头文件路径（macOS）
+        if: runner.os == 'macOS'
         run: echo "CXXFLAGS=-std=c++14 -I$(xcrun --sdk macosx --show-sdk-path)/usr/include/c++/v1" >> "$GITHUB_ENV"
       - name: cargo fmt
         run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check

@@ -1,5 +1,8 @@
 name: CI
 
+# 轻量 CI：仅在 push/PR 验证前端（lint / 类型 / 构建）。
+# Rust 检查与 macOS/Windows 构建只在发版时执行（见 release-reusable.yml）。
+
 on:
   push:
     branches: [main]
@@ -21,47 +24,3 @@ jobs:
       - run: npm run lint
       - run: npm run test
       - run: npm run build
-      - name: 上传构建产物（供 rust job 编译 tauri 使用）
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist
-
-  rust:
-    name: Rust（${{ matrix.os }}）
-    needs: frontend
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri
-      - name: 下载前端构建产物
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
-      # ocr-rs（daily-tools 图片 OCR）依赖 bindgen（需 libclang）与 MNN
-      # （macOS 需显式 C++ 头文件路径），见 LOCAL.md。
-      - name: 安装 LLVM（Windows）
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          choco install llvm -y
-          echo "LIBCLANG_PATH=C:\Program Files\LLVM\bin" >> $env:GITHUB_ENV
-      - name: 设置 C++ 头文件路径（macOS）
-        if: runner.os == 'macOS'
-        run: echo "CXXFLAGS=-std=c++14 -I$(xcrun --sdk macosx --show-sdk-path)/usr/include/c++/v1" >> "$GITHUB_ENV"
-      - name: cargo fmt
-        run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
-      - name: cargo clippy
-        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
-      - name: cargo test
-        run: cargo test --manifest-path src-tauri/Cargo.toml

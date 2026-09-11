@@ -1,0 +1,45 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- PocketArk 应用图标：A 拱形方舟
+       macOS 专用源：HIG 图标网格（主图形 824/1024 ≈ 80.5%，四边留白 100px，
+       等效圆角 ≈185）——Dock / 访达观感与系统应用一致。
+       Windows 全出血源见 icon-windows.svg，由 scripts/gen-icons.mjs 按平台组装 -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1C1C24" />
+      <stop offset="1" stop-color="#121217" />
+    </linearGradient>
+    <linearGradient id="rib" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#818CF8" />
+      <stop offset="1" stop-color="#4F46E5" />
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.38" r="0.55">
+      <stop offset="0" stop-color="#6366F1" stop-opacity="0.14" />
+      <stop offset="1" stop-color="#6366F1" stop-opacity="0" />
+    </radialGradient>
+    <clipPath id="frame">
+      <rect width="1024" height="1024" rx="230" />
+    </clipPath>
+  </defs>
+
+  <!-- 主图形组：缩放到 824/1024 ≈ 80.5% 居中（HIG 边距网格） -->
+  <g transform="translate(100 100) scale(0.8046875)">
+    <g clip-path="url(#frame)">
+      <!-- 底：深空渐变 + 中央辉光 + 顶部 hairline 高光 -->
+      <rect width="1024" height="1024" fill="url(#bg)" />
+      <rect width="1024" height="1024" fill="url(#glow)" />
+      <rect x="1" y="1" width="1022" height="1022" rx="229" fill="none" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="2" />
+
+      <!-- 水线：方舟浮于水面 -->
+      <path d="M 300 816 H 724" stroke="#818CF8" stroke-opacity="0.32" stroke-width="44" stroke-linecap="round" />
+
+      <!-- A 拱形船肋（Ark 首字母） -->
+      <path d="M 262 724 L 512 302 L 762 724" fill="none" stroke="url(#rib)" stroke-width="92" stroke-linecap="round" stroke-linejoin="round" />
+      <!-- 甲板横梁（A 的横笔） -->
+      <path d="M 372 590 H 652" stroke="url(#rib)" stroke-width="68" stroke-linecap="round" />
+
+      <!-- 航行灯：大尺寸下的细节点缀 -->
+      <circle cx="512" cy="202" r="32" fill="#818CF8" opacity="0.22" />
+      <circle cx="512" cy="202" r="16" fill="#A5B4FC" />
+    </g>
+  </g>
+</svg>

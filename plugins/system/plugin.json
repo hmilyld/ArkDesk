@@ -1,0 +1,16 @@
+{
+  "id": "system",
+  "name": "系统工具",
+  "description": "内置系统维护工具（固定分组，始终排在导航最后）",
+  "group": "系统工具",
+  "order": 9999,
+  "tools": [
+    {
+      "id": "data-maintenance",
+      "name": "数据维护",
+      "description": "连接应用数据库：浏览表结构、分页查看并编辑数据",
+      "icon": "Database",
+      "entry": "frontend/views/DataMaintenance.vue"
+    }
+  ]
+}

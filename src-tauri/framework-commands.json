@@ -1,0 +1,27 @@
+{
+  "commands": [
+    "crate::set_log_level",
+    "crate::set_window_appearance",
+    "crate::set_window_background",
+    "crate::app_restart",
+    "crate::db::db_query_values",
+    "crate::db::db_execute",
+    "crate::db::db_transaction",
+    "crate::db::db_backup",
+    "crate::db::db_restore",
+    "crate::db::db_reset",
+    "crate::http::http_request",
+    "crate::http::http_download",
+    "crate::http::http_set_proxy",
+    "crate::updater::updater_check",
+    "crate::updater::updater_install",
+    "crate::updater::updater_restart",
+    "crate::diagnostics::diagnostics_export",
+    "crate::files::file_write_text",
+    "crate::files::file_read_text",
+    "crate::files::file_write_bytes",
+    "crate::files::file_read_bytes",
+    "crate::open::take_pending_open",
+    "crate::tasks::task_cancel"
+  ]
+}

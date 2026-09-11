@@ -1,0 +1,299 @@
+//! 构建脚本。
+//!
+//! 除 Tauri 常规构建外，扫描仓库根 `plugins/` 生成插件后端注册表：
+//! - 每个插件目录 `plugins/<id>/` 可含 `backend/mod.rs`（`#[tauri::command]` 命令）与
+//!   可选的 `backend/migrations.rs`（`pub fn all() -> Vec<Migration>`）。
+//! - 解析 `backend/mod.rs` 中的 `#[tauri::command]` 自动收集命令名。
+//! - 读取 `plugin.json` 的 `legacyMigrations`（旧全局版本 → 新作用域版本）生成桥接。
+//! - 框架命令清单读自 `framework-commands.json`（单一事实源，与前端命令名生成共用）。
+//! - 写出 `$OUT_DIR/plugin_registry.rs`，由 `src-tauri/src/plugins/mod.rs` include。
+//!
+//! 前端命令名联合类型 `src/core/ipc/commands.gen.ts` 由 `scripts/gen-commands.mjs`
+//! 生成（读同一份 framework-commands.json + 扫描插件），本脚本不再生成它。
+
+use std::collections::BTreeMap;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+struct Plugin {
+    /// plugin.json 的 id（目录名，kebab-case）
+    id: String,
+    /// Rust 模块名（id 的 `-` → `_`）
+    module: String,
+    /// backend/mod.rs 绝对路径
+    backend: PathBuf,
+    has_migrations: bool,
+    commands: Vec<String>,
+    legacy: Vec<(i64, i64)>,
+}
+
+/// 框架命令路径清单（`crate::...`），来自 `framework-commands.json`
+fn read_framework_commands(manifest_dir: &Path) -> Vec<String> {
+    let path = manifest_dir.join("framework-commands.json");
+    let Ok(text) = fs::read_to_string(&path) else {
+        println!(
+            "cargo:warning=缺少 framework-commands.json（{}），框架命令将不会注册",
+            path.display()
+        );
+        return Vec::new();
+    };
+    let json: serde_json::Value =
+        serde_json::from_str(&text).expect("framework-commands.json 解析失败");
+    json.get("commands")
+        .and_then(|value| value.as_array())
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|item| item.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn main() {
+    let manifest_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
+    let plugins_dir = manifest_dir.join("..").join("plugins");
+    println!("cargo:rerun-if-changed={}", plugins_dir.display());
+    println!(
+        "cargo:rerun-if-changed={}",
+        manifest_dir.join("framework-commands.json").display()
+    );
+
+    let framework = read_framework_commands(&manifest_dir);
+    let plugins = collect_plugins(&plugins_dir);
+    assert_unique_commands(&framework, &plugins);
+
+    let generated = render_registry(&framework, &plugins);
+    let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    fs::write(out_dir.join("plugin_registry.rs"), generated).expect("写入插件注册表失败");
+
+    tauri_build::build();
+}
+
+/// 扫描 `plugins/*/backend/mod.rs`（跳过 `_` / `.` 开头目录）
+fn collect_plugins(plugins_dir: &Path) -> Vec<Plugin> {
+    let mut plugins = Vec::new();
+
+    let Ok(entries) = fs::read_dir(plugins_dir) else {
+        return plugins;
+    };
+    let mut dirs: Vec<PathBuf> = entries
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.path())
+        .filter(|path| path.is_dir())
+        .collect();
+    dirs.sort();
+
+    for dir in dirs {
+        let id = match dir.file_name().and_then(|name| name.to_str()) {
+            Some(name) => name.to_string(),
+            None => continue,
+        };
+        if id.starts_with('_') || id.starts_with('.') {
+            continue;
+        }
+
+        let backend = dir.join("backend").join("mod.rs");
+        if !backend.exists() {
+            continue;
+        }
+
+        let has_migrations = dir.join("backend").join("migrations.rs").exists();
+        let commands = parse_commands(&backend);
+        let manifest = dir.join("plugin.json");
+        if !manifest.exists() {
+            println!(
+                "cargo:warning=插件 `{id}` 有 backend/mod.rs 但缺少 plugin.json（前端不会注册该插件）"
+            );
+        }
+        let legacy = read_legacy(&manifest);
+
+        plugins.push(Plugin {
+            module: id.replace('-', "_"),
+            id,
+            backend: fs::canonicalize(&backend).unwrap_or(backend),
+            has_migrations,
+            commands,
+            legacy,
+        });
+    }
+
+    plugins
+}
+
+/// 从 `backend/mod.rs` 解析 `#[tauri::command]` 后的函数名（命令须定义在 mod.rs）
+fn parse_commands(path: &Path) -> Vec<String> {
+    let text = fs::read_to_string(path).unwrap_or_default();
+    let mut commands = Vec::new();
+    let mut pending = false;
+
+    for line in text.lines() {
+        let trimmed = line.trim();
+
+        if trimmed.starts_with("#[") && trimmed.contains("tauri::command") {
+            // 属性可能单独一行，也可能与函数同行（`#[tauri::command] pub fn x`）
+            if let Some(name) = extract_fn_name(trimmed) {
+                commands.push(name);
+            } else {
+                pending = true;
+            }
+            continue;
+        }
+
+        if pending {
+            if let Some(name) = extract_fn_name(trimmed) {
+                commands.push(name);
+                pending = false;
+            } else if !trimmed.is_empty()
+                && !trimmed.starts_with("//")
+                && !trimmed.starts_with("#[")
+            {
+                pending = false;
+            }
+        }
+    }
+
+    commands
+}
+
+/// 从形如 `pub async fn foo(` 的行提取 `foo`
+fn extract_fn_name(line: &str) -> Option<String> {
+    let idx = line.find("fn ")?;
+    let name: String = line[idx + 3..]
+        .chars()
+        .take_while(|c| c.is_alphanumeric() || *c == '_')
+        .collect();
+    if name.is_empty() {
+        None
+    } else {
+        Some(name)
+    }
+}
+
+/// 读取 `plugin.json > legacyMigrations`（旧全局版本 → 新作用域版本）
+fn read_legacy(path: &Path) -> Vec<(i64, i64)> {
+    let Ok(text) = fs::read_to_string(path) else {
+        return Vec::new();
+    };
+    let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) else {
+        println!(
+            "cargo:warning=无法解析插件清单 {}，已忽略 legacyMigrations",
+            path.display()
+        );
+        return Vec::new();
+    };
+    let Some(map) = json
+        .get("legacyMigrations")
+        .and_then(|value| value.as_object())
+    else {
+        return Vec::new();
+    };
+
+    let mut pairs: Vec<(i64, i64)> = map
+        .iter()
+        .filter_map(|(key, value)| {
+            let old = key.parse::<i64>().ok()?;
+            let new = value.as_i64()?;
+            Some((old, new))
+        })
+        .collect();
+    pairs.sort_unstable();
+    pairs
+}
+
+/// 命令路径最后一段即命令名（`crate::db::db_execute` -> `db_execute`）
+fn command_name(path: &str) -> &str {
+    path.rsplit("::").next().unwrap_or(path)
+}
+
+/// 校验命令名全局唯一（框架 + 插件；重名会让 generate_handler! 出现重复 match 分支）
+fn assert_unique_commands(framework: &[String], plugins: &[Plugin]) {
+    let mut seen: BTreeMap<String, String> = BTreeMap::new();
+    for path in framework {
+        let name = command_name(path).to_string();
+        if let Some(previous) = seen.insert(name.clone(), "framework".to_string()) {
+            panic!("框架命令重名：`{name}`（{previous} 与 {path}）");
+        }
+    }
+    for plugin in plugins {
+        for command in &plugin.commands {
+            if let Some(previous) = seen.insert(command.clone(), plugin.id.clone()) {
+                panic!(
+                    "命令重名：`{command}` 同时定义于 `{previous}` 与 `{}`，请用 `<plugin_id>_` 前缀区分",
+                    plugin.id
+                );
+            }
+        }
+    }
+}
+
+fn render_registry(framework: &[String], plugins: &[Plugin]) -> String {
+    let mut out = String::from("// @generated by build.rs —— 请勿手改。\n\n");
+
+    // 模块声明（#[path] 指向仓库根 plugins/）
+    for plugin in plugins {
+        out.push_str(&format!(
+            "#[path = \"{}\"]\npub mod {};\n",
+            rust_path(&plugin.backend),
+            plugin.module
+        ));
+    }
+    out.push('\n');
+
+    // 命令注册：框架命令 + 扫描到的插件命令
+    out.push_str(
+        "pub fn handler() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static {\n    tauri::generate_handler![\n",
+    );
+    for command in framework {
+        out.push_str(&format!("        {command},\n"));
+    }
+    for plugin in plugins {
+        for command in &plugin.commands {
+            out.push_str(&format!(
+                "        crate::plugins::{}::{command},\n",
+                plugin.module
+            ));
+        }
+    }
+    out.push_str("    ]\n}\n\n");
+
+    // 迁移聚合
+    out.push_str("pub fn collect_migrations() -> Vec<crate::db::Migration> {\n    let mut migrations = Vec::new();\n");
+    for plugin in plugins {
+        if plugin.has_migrations {
+            out.push_str(&format!(
+                "    migrations.extend(crate::plugins::{}::migrations::all());\n",
+                plugin.module
+            ));
+        }
+    }
+    out.push_str("    migrations\n}\n\n");
+
+    // 旧库桥接
+    out.push_str("pub fn legacy_adoptions() -> Vec<crate::db::LegacyAdoption> {\n    vec![\n");
+    for plugin in plugins {
+        if plugin.legacy.is_empty() {
+            continue;
+        }
+        let pairs: Vec<String> = plugin
+            .legacy
+            .iter()
+            .map(|(old, new)| format!("({old}, {new})"))
+            .collect();
+        out.push_str(&format!(
+            "        crate::db::LegacyAdoption {{ scope: \"{}\", versions: &[{}] }},\n",
+            plugin.id,
+            pairs.join(", ")
+        ));
+    }
+    out.push_str("    ]\n}\n");
+
+    out
+}
+
+/// 生成可写入 Rust 字符串字面量的路径（正斜杠，转义反斜杠/引号）
+fn rust_path(path: &Path) -> String {
+    path.to_string_lossy()
+        .replace('\\', "/")
+        .replace('"', "\\\"")
+}

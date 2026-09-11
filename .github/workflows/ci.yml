@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  frontend:
+    name: 前端（lint + 类型检查 + 构建）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+      - name: 上传构建产物（供 rust job 编译 tauri 使用）
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+  rust:
+    name: Rust（${{ matrix.os }}）
+    needs: frontend
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: 下载前端构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      # ocr-rs 依赖 bindgen（需 libclang）与 MNN（macOS 需显式 C++ 头文件路径）。
+      # 仅当存在 OCR 插件（daily-tools）时才需要；base 无此插件时跳过。
+      - name: 安装 LLVM（Windows，仅含 OCR 插件时）
+        if: runner.os == 'Windows' && hashFiles('plugins/daily-tools/**') != ''
+        shell: pwsh
+        run: |
+          choco install llvm -y
+          echo "LIBCLANG_PATH=C:\Program Files\LLVM\bin" >> $env:GITHUB_ENV
+      - name: 设置 C++ 头文件路径（macOS，仅含 OCR 插件时）
+        if: runner.os == 'macOS' && hashFiles('plugins/daily-tools/**') != ''
+        run: echo "CXXFLAGS=-std=c++14 -I$(xcrun --sdk macosx --show-sdk-path)/usr/include/c++/v1" >> "$GITHUB_ENV"
+      - name: cargo fmt
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+      - name: cargo clippy
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
+      - name: cargo test
+        run: cargo test --manifest-path src-tauri/Cargo.toml

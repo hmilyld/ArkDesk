@@ -1,0 +1,5 @@
+# 本地层资源按二进制处理：禁止行尾转换，确保工作区文件与校验用的 SHA-256 一致
+# （Windows core.autocrlf=true 会把 .txt 换成 CRLF，导致 scripts/local/fetch-*.mjs 反复重下）
+src-tauri/local-resources/fonts/*.otf binary
+src-tauri/local-resources/ocr-models/*.mnn binary
+src-tauri/local-resources/ocr-models/*.txt -text

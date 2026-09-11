@@ -1,0 +1,55 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Tauri
+src-tauri/target
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# AI
+.opencode/
+
+# Husky 生成的辅助目录
+.husky/_
+
+# 发布脚本输出（latest.json / checksums.txt）
+release/
+
+# 移动端图标产物（桌面项目不使用；tauri icon 命令顺带生成）
+src-tauri/icons/android
+src-tauri/icons/ios
+
+# Office 临时锁文件
+~$*
+
+# 生成物：前端命令名联合类型（由 scripts/gen-commands.mjs 生成）
+src/core/ipc/commands.gen.ts
+
+# 本地层下载的字体（见 scripts/local/fetch-fonts.mjs；许可协议 OFL.txt 仍入库）
+src-tauri/local-resources/fonts/*.otf
+
+# 本地层下载的 OCR 模型（见 scripts/local/fetch-ocr-models.mjs；charset 文本仍入库）
+src-tauri/local-resources/ocr-models/*.mnn
+
+# 资源下载中断残留的临时文件（scripts/local/lib/fetch.mjs 原子写入用）
+src-tauri/local-resources/**/*.download

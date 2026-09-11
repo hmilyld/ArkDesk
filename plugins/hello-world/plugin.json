@@ -1,0 +1,50 @@
+{
+  "id": "hello-world",
+  "name": "示例插件",
+  "description": "演示插件开发全链路：Rust 命令、SQLite、日志、HTTP、布局体系",
+  "group": "示例",
+  "keywords": ["demo", "示例"],
+  "order": 1,
+  "legacyMigrations": { "1": 1, "2": 2 },
+  "tools": [
+    {
+      "id": "hello-world",
+      "name": "示例工具",
+      "description": "Rust 命令调用、日志管道与 SQLite notes 读写",
+      "icon": "Rocket",
+      "entry": "frontend/views/Tool.vue",
+      "keepAlive": true
+    },
+    {
+      "id": "hello-table",
+      "name": "数据表格",
+      "description": "hello_tasks 表的完整 CRUD：分页、弹窗、导入导出",
+      "icon": "Table",
+      "entry": "frontend/views/TableTool.vue"
+    },
+    {
+      "id": "hello-form",
+      "name": "数据表单",
+      "description": "全部表单控件演示与校验、参数化写入 hello_tasks",
+      "icon": "ClipboardList",
+      "entry": "frontend/views/FormTool.vue"
+    },
+    {
+      "id": "hello-http",
+      "name": "HTTP 请求",
+      "description": "core/http 原始请求演示：状态、耗时、响应头与响应体",
+      "icon": "Globe",
+      "entry": "frontend/views/HttpTool.vue"
+    },
+    {
+      "id": "hello-template",
+      "name": "页面模板",
+      "description": "12 span 布局档位与空态 / 加载态 / 错误态标准写法",
+      "icon": "LayoutTemplate",
+      "entry": "frontend/views/TemplateTool.vue"
+    }
+  ],
+  "settings": {
+    "entry": "frontend/settings/Settings.vue"
+  }
+}

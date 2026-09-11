@@ -1,0 +1,14 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- PocketArk 托盘模板图（macOS template image）：
+       仅 A 拱形船肋 + 甲板横梁 + 水线，纯黑 + 透明底。
+       macOS 会按菜单栏明暗自动反色（深色菜单栏显示为白）。
+       生成：pnpm tauri icon src-tauri/icons/tray-icon.svg -o <tmp>，取 64x64.png → tray-icon.png -->
+  <g fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round">
+    <!-- A 拱形船肋（Ark 首字母） -->
+    <path d="M 238 748 L 512 276 L 786 748" stroke-width="116" />
+    <!-- 甲板横梁（A 的横笔） -->
+    <path d="M 356 596 H 668" stroke-width="92" />
+    <!-- 水线：方舟浮于水面 -->
+    <path d="M 272 846 H 752" stroke-width="64" />
+  </g>
+</svg>

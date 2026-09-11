@@ -1,0 +1,62 @@
+[package]
+name = "pocketark"
+version = "0.1.0"
+description = "PocketArk 桌面工具集合（Tauri 2 + Vue 3）"
+authors = ["hmilyld <hmilyld@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "pocketark_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+serde_json = "1"
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "macos-private-api"] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-log = "2"
+tauri-plugin-store = "2"
+tauri-plugin-window-state = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-single-instance = "2.4.4"
+tauri-plugin-notification = "2.4.0"
+tauri-plugin-autostart = "2.5.1"
+tauri-plugin-global-shortcut = "2.3.2"
+tauri-plugin-deep-link = "2.4.10"
+tauri-plugin-clipboard-manager = "2.3.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+log = "0.4"
+base64 = "0.22"
+image = "0.25"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+reqwest = { version = "0.12", default-features = false, features = [
+  "rustls-tls",
+  "charset",
+  "http2",
+  "gzip",
+  "brotli",
+  "cookies",
+] }
+sqlx = { version = "0.8", default-features = false, features = [
+  "sqlite",
+  "runtime-tokio",
+] }
+tokio = { version = "1", features = ["fs", "io-util"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# macOS 窗口外观（NSWindow/NSAppearance）
+objc2 = "0.6"
+objc2-app-kit = "0.3"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt"] }

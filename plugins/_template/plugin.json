@@ -1,0 +1,18 @@
+{
+  "id": "template",
+  "name": "模板插件",
+  "description": "新工具模板（复制本目录后按此清单改写）",
+  "group": "其他",
+  "tools": [
+    {
+      "id": "template",
+      "name": "模板工具",
+      "description": "一句话描述这个工具做什么",
+      "icon": "Hammer",
+      "entry": "frontend/views/Tool.vue"
+    }
+  ],
+  "settings": {
+    "entry": "frontend/settings/Settings.vue"
+  }
+}

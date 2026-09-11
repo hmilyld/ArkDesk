@@ -153,11 +153,12 @@ jobs:
         shell: bash
         run: |
           mkdir -p release-out
-          find src-tauri/target -type f \
-            \( -name '*.tar.gz' -o -name '*.tar.gz.sig' \
+          find src-tauri/target -type f -path '*/release/bundle/*' \
+            \( -name '*.app.tar.gz' -o -name '*.app.tar.gz.sig' \
+               -o -name '*-setup.exe' -o -name '*-setup.exe.sig' \
                -o -name '*.nsis.zip' -o -name '*.nsis.zip.sig' \
-               -o -name '*.exe' -o -name '*.exe.sig' \
-               -o -name '*.msi' -o -name '*.msi.sig' -o -name '*.dmg' \) \
+               -o -name '*.msi' -o -name '*.msi.sig' \
+               -o -name '*.dmg' -o -name '*.AppImage.tar.gz' \) \
             -exec cp -f {} release-out/ \;
           echo "收集到："
           ls -la release-out

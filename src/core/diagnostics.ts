@@ -11,7 +11,7 @@ import { logger } from '@/core/logger';
 export async function exportDiagnostics(): Promise<string | null> {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
   const path = await save({
-    defaultPath: `pocketark-diagnostics-${stamp}.txt`,
+    defaultPath: `arkdesk-diagnostics-${stamp}.txt`,
     filters: [{ name: 'Text', extensions: ['txt'] }],
   });
   if (!path) return null;

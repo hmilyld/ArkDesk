@@ -1,0 +1,26 @@
+{
+  "id": "tender-optimizer",
+  "name": "投标报价",
+  "description": "招标二轮报价测算：基于市场降价假设，蒙特卡洛模拟竞争环境，计算最优报价方案",
+  "group": "投标",
+  "keywords": ["投标", "招标", "报价", "测算", "蒙特卡洛"],
+  "legacyMigrations": { "3": 1, "4": 2, "5": 3, "6": 4, "7": 5 },
+  "tools": [
+    {
+      "id": "tender-optimizer",
+      "name": "报价测算",
+      "description": "导入模板、编辑公司与场景，运行蒙特卡洛测算得到最优报价",
+      "icon": "Gavel",
+      "entry": "frontend/views/Calculator.vue",
+      "keepAlive": true
+    },
+    {
+      "id": "tender-history",
+      "name": "测算历史",
+      "description": "历史测算记录查看、详情对比、结果导出与删除",
+      "icon": "ClockArrowUp",
+      "entry": "frontend/views/History.vue",
+      "keepAlive": true
+    }
+  ]
+}

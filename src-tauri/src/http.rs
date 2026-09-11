@@ -27,7 +27,7 @@ static PROXY: OnceLock<RwLock<Option<String>>> = OnceLock::new();
 
 fn build_client(proxy: Option<&str>) -> reqwest::Client {
     let mut builder = reqwest::Client::builder()
-        .user_agent(concat!("PocketArk/", env!("CARGO_PKG_VERSION")))
+        .user_agent(concat!("ArkDesk/", env!("CARGO_PKG_VERSION")))
         .timeout(Duration::from_millis(DEFAULT_TIMEOUT_MS))
         .redirect(reqwest::redirect::Policy::limited(MAX_REDIRECTS))
         .cookie_store(true);

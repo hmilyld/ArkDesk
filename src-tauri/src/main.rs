@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    pocketark_lib::run()
+    arkdesk_lib::run()
 }

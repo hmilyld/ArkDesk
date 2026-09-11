@@ -20,10 +20,10 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 /** 默认主题（暗色指挥台基调）：脚手架脚本精确替换此行以切换默认档 */
 const DEFAULT_THEME: ThemeMode = 'dark';
 
-const THEME_KEY = 'pocketark.theme';
-const ACCENT_KEY = 'pocketark.accent';
-const ACCENT_CUSTOM_KEY = 'pocketark.accentCustom';
-const FONT_SIZE_KEY = 'pocketark.fontSize';
+const THEME_KEY = 'arkdesk.theme';
+const ACCENT_KEY = 'arkdesk.accent';
+const ACCENT_CUSTOM_KEY = 'arkdesk.accentCustom';
+const FONT_SIZE_KEY = 'arkdesk.fontSize';
 
 /** 自定义主色的 accent id（hex 另存于 ACCENT_CUSTOM_KEY） */
 export const CUSTOM_ACCENT_ID = 'custom';

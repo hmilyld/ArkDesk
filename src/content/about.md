@@ -1,6 +1,6 @@
-# 关于 PocketArk
+# 关于 ArkDesk
 
-PocketArk 是一个桌面工具集合（Mac / Windows），基于 Tauri 2 + Vue 3 + TypeScript + Tailwind 4 构建。
+ArkDesk 是一个桌面工具集合（Mac / Windows），基于 Tauri 2 + Vue 3 + TypeScript + Tailwind 4 构建。
 
 定位为**基础项目**：新增一个工具的成本尽量低，扩展走插件约定，框架代码（`src/core`、Rust 侧 db/http/tray）只引用、不修改。
 

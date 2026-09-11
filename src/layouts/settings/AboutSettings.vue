@@ -44,7 +44,7 @@ async function onCheckUpdate(): Promise<void> {
       class="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5"
     >
       <div>
-        <p class="text-sm">PocketArk{{ version ? ` v${version}` : '' }}</p>
+        <p class="text-sm">ArkDesk{{ version ? ` v${version}` : '' }}</p>
         <p class="text-xs text-muted-foreground">
           在线更新{{ settings.updateEnabled ? '已启用' : '未启用（可在系统设置中开启）' }}
         </p>

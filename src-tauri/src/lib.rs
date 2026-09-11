@@ -1,4 +1,4 @@
-//! PocketArk 应用入口：框架级组装。
+//! ArkDesk 应用入口：框架级组装。
 //!
 //! 插件注册顺序：log（最早，保证后续日志可见）→ store → sql（含迁移）→ opener → dialog
 //! 日志级别：插件以 Trace 全量注册，实际级别由 settings store 读取后经
@@ -335,7 +335,7 @@ pub fn run() {
             tray::create_tray(app.handle())?;
             menu::create_menu(app.handle())?;
 
-            // 深链接：打开 pocketark://… 时转发给前端（经 app://open 统一入口）
+            // 深链接：打开 arkdesk://… 时转发给前端（经 app://open 统一入口）
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 let handle = app.handle().clone();
@@ -352,7 +352,7 @@ pub fn run() {
                 let _ = window.set_focus();
             }
 
-            log::info!("PocketArk 启动完成");
+            log::info!("ArkDesk 启动完成");
             Ok(())
         })
         // 关窗行为：默认隐藏到托盘（可在设置中关闭，改为直接退出）。

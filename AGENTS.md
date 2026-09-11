@@ -1,4 +1,4 @@
-# PocketArk — AGENTS.md
+# ArkDesk — AGENTS.md
 
 Tauri 2 + Vue 3 + TypeScript + Tailwind 4 的桌面工具集合（Mac / Windows）。
 定位为**基础项目**：新增一个工具的成本尽量低，扩展走插件约定，框架代码（`src/core`、`src-tauri/src` 的 db/http/tray/updater/menu/tasks/open/…）只引用、不修改。
@@ -70,7 +70,7 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 - 设置 key：`updateEnabled` / `updateServerUrl` / `updateAutoCheck` / `updateLastCheckAt`。
 - 版本唯一事实源 = `tauri.conf.json > version`；发版前 `pnpm version:bump x.y.z` 同步三处。
 - 更新选择为严格 semver（远端 > 本地），**版本号必须单调递增**；清单 `version` 须与构建版本一致。
-- 私钥（`~/.tauri/pocketark.key`）不入库；构建需 `createUpdaterArtifacts` + `TAURI_SIGNING_PRIVATE_KEY_PATH`。
+- 私钥（`~/.tauri/arkdesk.key`）不入库；构建需 `createUpdaterArtifacts` + `TAURI_SIGNING_PRIVATE_KEY_PATH`。
 - 服务端清单 `latest.json` 格式与完整发布流程见 README「应用在线更新」。
 
 ## 框架能力索引

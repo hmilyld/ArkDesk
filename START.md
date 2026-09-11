@@ -1,6 +1,6 @@
 # START —— 用这个仓库搭你自己的桌面软件
 
-> 这份文档写给：clone 了 PocketArk、想把它变成**自己的桌面工具软件**的人。
+> 这份文档写给：clone 了 ArkDesk、想把它变成**自己的桌面工具软件**的人。
 > 跟着走完，你会得到一个以你的软件命名、带你的图标与主题、装着你自己的工具的桌面应用。
 >
 > 文档分工：**START.md**（本文件）= 从零起步手册；**README.md** = 架构与扩展开发参考；
@@ -38,7 +38,7 @@ pnpm install
 pnpm tauri dev      # 首次会编译 Rust，需几分钟；之后增量秒级
 ```
 
-窗口弹出即成功。此时它是「暗色指挥台」样式的 PocketArk，带着示例工具——
+窗口弹出即成功。此时它是「暗色指挥台」样式的 ArkDesk，带着示例工具——
 接下来两步把它变成你的软件：**改名**（第 3 节）→ **删示例、写工具**（第 5、6 节）。
 
 ## 3. 改名：变成你自己的软件（一键脚本）
@@ -53,7 +53,7 @@ pnpm scaffold
 | ---------- | ---------------------------------------------------------------------------- |
 | 软件显示名 | 出现在窗口、Dock/任务栏、托盘提示、设置页（中文/英文均可）                   |
 | 英文标识   | kebab-case（如 `my-kit`），用于包名与二进制名                                |
-| 应用标识   | `com.pocketark.<英文标识>`，**发布后不可再改**（改了会被系统视为另一个应用） |
+| 应用标识   | `com.arkdesk.<英文标识>`，**发布后不可再改**（改了会被系统视为另一个应用） |
 | 默认主题色 | 靛蓝 / 青碧 / 琥珀 / 玫红 / 湛蓝 / 国家电网绿                                |
 | 默认主题   | dark / light                                                                 |
 
@@ -72,7 +72,7 @@ pnpm tauri dev      # 以新名字运行
 | ------------------------------------------------------------ | -------------------------------------------------------------- |
 | `src-tauri/tauri.conf.json`                                  | `productName`、`identifier`（发布后不可改）、`title`           |
 | `src-tauri/Cargo.toml`                                       | `[package] name`（kebab）、`[lib] name`（snake + `_lib` 后缀） |
-| `src-tauri/src/main.rs`                                      | `pocketark_lib::run()` → 新 lib 名                             |
+| `src-tauri/src/main.rs`                                      | `arkdesk_lib::run()` → 新 lib 名                             |
 | `package.json`                                               | `name`                                                         |
 | `src/core/theme/index.ts`                                    | `DEFAULT_THEME` / `DEFAULT_ACCENT` 常量（可选）                |
 | `src/content/about.md`、`README.md`、`START.md`、`AGENTS.md` | 自我介绍与标题                                                 |

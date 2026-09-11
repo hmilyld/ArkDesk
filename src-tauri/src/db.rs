@@ -1,6 +1,6 @@
 //! SQLite 数据层（自建 sqlx 通道）。
 //!
-//! - 连接池直连 `app_data_dir/pocketark.db`（WAL、外键约束、lazy 连接）
+//! - 连接池直连 `app_data_dir/arkdesk.db`（WAL、外键约束、lazy 连接）
 //! - 自建迁移器：与 tauri-plugin-sql 的 `_sqlx_migrations` 表结构完全兼容
 //!   （历史库无损沿用；plugin-sql 已退役，本模块为唯一数据通道）
 //! - 对前端暴露两个通用命令：`db_query_values`（按列序返回值数组，供 Drizzle
@@ -19,7 +19,7 @@ use tauri::Manager;
 
 use crate::error::{code, AppError};
 
-const DB_FILENAME: &str = "pocketark.db";
+const DB_FILENAME: &str = "arkdesk.db";
 
 /// 作用域迁移记录表 DDL：以 (scope, version) 为主键，框架与各插件各自从 1 编号，
 /// 独立演进、互不撞号。
@@ -479,7 +479,7 @@ mod tests {
     #[tokio::test]
     async fn migrate_is_idempotent() {
         // 使用临时库验证：新库建表 + 应用全部迁移；重复执行不再产生记录
-        let temp_dir = std::env::temp_dir().join(format!("pocketark-test-{}", std::process::id()));
+        let temp_dir = std::env::temp_dir().join(format!("arkdesk-test-{}", std::process::id()));
         std::fs::create_dir_all(&temp_dir).unwrap();
         DB_PATH
             .set(temp_dir.join(DB_FILENAME).to_string_lossy().to_string())
@@ -512,7 +512,7 @@ mod tests {
     #[tokio::test]
     async fn legacy_migrations_are_adopted_without_rerun() {
         let temp_dir =
-            std::env::temp_dir().join(format!("pocketark-legacy-{}", std::process::id()));
+            std::env::temp_dir().join(format!("arkdesk-legacy-{}", std::process::id()));
         std::fs::create_dir_all(&temp_dir).unwrap();
         let pool = SqlitePool::connect_with(
             SqliteConnectOptions::new()
@@ -570,7 +570,7 @@ mod tests {
     /// 动态类型按存储值提取（INTEGER 列存文本、TEXT 列存数字、TIMESTAMP/BOOLEAN 声明类型）。
     #[tokio::test]
     async fn row_to_value_extracts_values() {
-        let temp_dir = std::env::temp_dir().join(format!("pocketark-r2v-{}", std::process::id()));
+        let temp_dir = std::env::temp_dir().join(format!("arkdesk-r2v-{}", std::process::id()));
         std::fs::create_dir_all(&temp_dir).unwrap();
         let pool = SqlitePool::connect_with(
             SqliteConnectOptions::new()

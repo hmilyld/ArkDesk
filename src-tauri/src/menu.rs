@@ -20,7 +20,7 @@ pub fn create_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         .config()
         .product_name
         .clone()
-        .unwrap_or_else(|| "PocketArk".into());
+        .unwrap_or_else(|| "ArkDesk".into());
 
     let home = MenuItemBuilder::with_id("home", "首页")
         .accelerator("CmdOrCtrl+1")

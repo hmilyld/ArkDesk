@@ -1,0 +1,38 @@
+{
+  "id": "text2video",
+  "name": "图文视频工具",
+  "description": "手动输入或 AI 创作文章，生成为竖屏滚动短视频",
+  "group": "内容创作",
+  "icon": "Clapperboard",
+  "keywords": ["视频", "图文", "短视频", "AI 写作", "滚动"],
+  "legacyMigrations": { "8": 1, "9": 2 },
+  "tools": [
+    {
+      "id": "text2video",
+      "name": "视频生成",
+      "description": "手动输入或 AI 创作文章，生成滚动视频与封面",
+      "icon": "Clapperboard",
+      "entry": "frontend/views/Generator.vue",
+      "keepAlive": true
+    },
+    {
+      "id": "text2video-drafts",
+      "name": "草稿箱",
+      "description": "保存手动/AI 文章，多选后批量生成视频",
+      "icon": "NotebookPen",
+      "entry": "frontend/views/Drafts.vue",
+      "keepAlive": true
+    },
+    {
+      "id": "text2video-history",
+      "name": "处理记录",
+      "description": "查看历史生成记录、打开产物与删除记录",
+      "icon": "History",
+      "entry": "frontend/views/History.vue",
+      "keepAlive": true
+    }
+  ],
+  "settings": {
+    "entry": "frontend/settings/Settings.vue"
+  }
+}

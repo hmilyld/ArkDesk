@@ -1,5 +1,5 @@
 {
-  "name": "pocketark",
+  "name": "arkdesk",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -20,6 +20,9 @@
     "tauri": "tauri",
     "scaffold": "node scripts/scaffold.mjs",
     "icons": "node scripts/gen-icons.mjs",
+    "fonts": "node scripts/local/fetch-fonts.mjs",
+    "ocr-models": "node scripts/local/fetch-ocr-models.mjs",
+    "assets": "node scripts/local/prepare.mjs",
     "version:bump": "node scripts/bump-version.mjs",
     "create-plugin": "node scripts/create-plugin.mjs",
     "release": "node scripts/release.mjs",

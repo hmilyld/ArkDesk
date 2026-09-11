@@ -10,7 +10,7 @@ import { useSettingsStore } from '@/stores/settings';
 
 const settings = useSettingsStore();
 
-const appName = ref('PocketArk');
+const appName = ref('ArkDesk');
 const query = ref('');
 const filterInput = ref<InstanceType<typeof Input> | null>(null);
 const now = ref(new Date());

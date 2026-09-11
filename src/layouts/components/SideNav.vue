@@ -11,7 +11,7 @@ import { useSettingsStore } from '@/stores/settings';
 const settings = useSettingsStore();
 
 /** 应用显示名：动态读取 tauri.conf 的 productName，改名无需改前端代码 */
-const appName = ref('PocketArk');
+const appName = ref('ArkDesk');
 onMounted(async () => {
   try {
     appName.value = await getName();

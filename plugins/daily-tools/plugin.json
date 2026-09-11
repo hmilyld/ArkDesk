@@ -1,0 +1,22 @@
+{
+  "id": "daily-tools",
+  "name": "常用工具",
+  "description": "日常文件转换与图片文字识别",
+  "group": "常用工具",
+  "tools": [
+    {
+      "id": "file-converter",
+      "name": "文件转换",
+      "description": "将常见文档格式转换为 Markdown",
+      "icon": "FileDown",
+      "entry": "frontend/views/FileConverter.vue"
+    },
+    {
+      "id": "image-ocr",
+      "name": "图片 OCR",
+      "description": "识别图片中的文字",
+      "icon": "ScanText",
+      "entry": "frontend/views/ImageOcr.vue"
+    }
+  ]
+}

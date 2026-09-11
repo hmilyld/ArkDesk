@@ -13,10 +13,10 @@ const FILE_FILTERS = [{ name: 'JSON', extensions: ['json'] }];
 
 /** 外观偏好（存于 localStorage，需随设置一同迁移） */
 const APPEARANCE_KEYS = [
-  'pocketark.theme',
-  'pocketark.accent',
-  'pocketark.accentCustom',
-  'pocketark.fontSize',
+  'arkdesk.theme',
+  'arkdesk.accent',
+  'arkdesk.accentCustom',
+  'arkdesk.fontSize',
 ] as const;
 
 function readAppearance(): Record<string, string> {
@@ -48,7 +48,7 @@ function writeAppearance(appearance: Record<string, string> | undefined): void {
 
 /** 导出设置到文件，返回路径（用户取消返回 null） */
 export async function exportSettings(): Promise<string | null> {
-  const path = await save({ defaultPath: 'pocketark-settings.json', filters: FILE_FILTERS });
+  const path = await save({ defaultPath: 'arkdesk-settings.json', filters: FILE_FILTERS });
   if (!path) return null;
   const payload = {
     _version: 1,

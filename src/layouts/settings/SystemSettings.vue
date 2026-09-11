@@ -91,7 +91,7 @@ function reportFailure(prefix: string, err: unknown): void {
 async function onBackupDb(): Promise<void> {
   try {
     const path = await save({
-      defaultPath: 'pocketark-backup.db',
+      defaultPath: 'arkdesk-backup.db',
       filters: [{ name: 'SQLite', extensions: ['db'] }],
     });
     if (!path) return;

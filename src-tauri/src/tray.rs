@@ -52,7 +52,7 @@ pub fn create_tray<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<()> {
         .config()
         .product_name
         .clone()
-        .unwrap_or_else(|| "PocketArk".into());
+        .unwrap_or_else(|| "ArkDesk".into());
 
     #[allow(unused_mut)]
     let mut builder = TrayIconBuilder::with_id("main")

@@ -1,7 +1,7 @@
 [package]
-name = "pocketark"
+name = "arkdesk"
 version = "0.1.0"
-description = "PocketArk 桌面工具集合（Tauri 2 + Vue 3）"
+description = "ArkDesk 桌面工具集合（Tauri 2 + Vue 3）"
 authors = ["hmilyld <hmilyld@gmail.com>"]
 edition = "2021"
 
@@ -11,7 +11,7 @@ edition = "2021"
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "pocketark_lib"
+name = "arkdesk_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -53,10 +53,29 @@ sqlx = { version = "0.8", default-features = false, features = [
 ] }
 tokio = { version = "1", features = ["fs", "io-util"] }
 
+# ───────────────────── local plugin deps（fork-owned；base 删除本段） ─────────────────────
+calamine = "0.36.1"
+rust_xlsxwriter = "0.99.0"
+rand = "0.10.2"
+rand_distr = "0.6.0"
+anytomd = "1"
+lopdf = "0.44"
+ab_glyph = "0.2"
+scraper = "0.27"
+regex = "1"
+opener = { version = "0.8", features = ["reveal"] }
+
 [target.'cfg(target_os = "macos")'.dependencies]
 # macOS 窗口外观（NSWindow/NSAppearance）
 objc2 = "0.6"
 objc2-app-kit = "0.3"
+
+# ───────────── local plugin target deps（fork-owned；base 删除以下两张表） ─────────────
+[target.'cfg(all(target_os = "macos"))'.dependencies]
+ocr-rs = "2.4"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+ocr-rs = { version = "2.4", features = ["static-cpp-runtime"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt"] }

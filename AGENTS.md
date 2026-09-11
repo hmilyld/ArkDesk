@@ -70,8 +70,8 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 - 设置 key：`updateEnabled` / `updateServerUrl` / `updateAutoCheck` / `updateLastCheckAt`。
 - 版本唯一事实源 = `tauri.conf.json > version`；发版前 `pnpm version:bump x.y.z` 同步三处。
 - 更新选择为严格 semver（远端 > 本地），**版本号必须单调递增**；清单 `version` 须与构建版本一致。
-- 私钥（`~/.tauri/arkdesk.key`）不入库；构建需 `createUpdaterArtifacts` + `TAURI_SIGNING_PRIVATE_KEY_PATH`。
-- 服务端清单 `latest.json` 格式与完整发布流程见 README「应用在线更新」。
+- 私钥（`~/.tauri/arkdesk.key`）不入库；本地构建用 `TAURI_SIGNING_PRIVATE_KEY_PATH`，CI 用 Secrets `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。
+- 自动发布：base 提供 `.github/workflows/release-reusable.yml`（可复用），fork 加一个 caller；完整流程见 [RELEASE.md](RELEASE.md)。
 
 ## 框架能力索引
 

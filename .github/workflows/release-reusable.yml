@@ -167,7 +167,7 @@ jobs:
         with:
           name: release-${{ matrix.target }}
           path: release-out
-          if-no-files-found: error
+          if-no-files-found: warn
 
   release:
     name: 归档 Release

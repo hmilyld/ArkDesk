@@ -4,7 +4,8 @@
 > 跟着走完，你会得到一个以你的软件命名、带你的图标与主题、装着你自己的工具的桌面应用。
 >
 > 文档分工：**START.md**（本文件）= 从零起步手册；**README.md** = 架构与扩展开发参考；
-> **AGENTS.md** = 日常开发约定与陷阱清单；`plugins/_template/README.md` = 单插件脚手架说明。
+> **AGENTS.md** = 日常开发约定与陷阱清单；**RELEASE.md** = 打包 / 发布 / 在线更新；
+> **LOCAL.md** = fork 本地层；`plugins/_template/README.md` = 单插件脚手架说明。
 
 ---
 
@@ -49,13 +50,13 @@ pnpm scaffold
 
 按提示回答 5 个问题（回车保持默认）：
 
-| 提问       | 说明                                                                         |
-| ---------- | ---------------------------------------------------------------------------- |
-| 软件显示名 | 出现在窗口、Dock/任务栏、托盘提示、设置页（中文/英文均可）                   |
-| 英文标识   | kebab-case（如 `my-kit`），用于包名与二进制名                                |
+| 提问       | 说明                                                                       |
+| ---------- | -------------------------------------------------------------------------- |
+| 软件显示名 | 出现在窗口、Dock/任务栏、托盘提示、设置页（中文/英文均可）                 |
+| 英文标识   | kebab-case（如 `my-kit`），用于包名与二进制名                              |
 | 应用标识   | `com.arkdesk.<英文标识>`，**发布后不可再改**（改了会被系统视为另一个应用） |
-| 默认主题色 | 靛蓝 / 青碧 / 琥珀 / 玫红 / 湛蓝 / 国家电网绿                                |
-| 默认主题   | dark / light                                                                 |
+| 默认主题色 | 靛蓝 / 青碧 / 琥珀 / 玫红 / 湛蓝 / 国家电网绿                              |
+| 默认主题   | dark / light                                                               |
 
 脚本会自动改写 `tauri.conf.json`、`Cargo.toml`、`main.rs`、`package.json`、
 文档与说明中的所有名称。完成后按提示执行：
@@ -72,7 +73,7 @@ pnpm tauri dev      # 以新名字运行
 | ------------------------------------------------------------ | -------------------------------------------------------------- |
 | `src-tauri/tauri.conf.json`                                  | `productName`、`identifier`（发布后不可改）、`title`           |
 | `src-tauri/Cargo.toml`                                       | `[package] name`（kebab）、`[lib] name`（snake + `_lib` 后缀） |
-| `src-tauri/src/main.rs`                                      | `arkdesk_lib::run()` → 新 lib 名                             |
+| `src-tauri/src/main.rs`                                      | `arkdesk_lib::run()` → 新 lib 名                               |
 | `package.json`                                               | `name`                                                         |
 | `src/core/theme/index.ts`                                    | `DEFAULT_THEME` / `DEFAULT_ACCENT` 常量（可选）                |
 | `src/content/about.md`、`README.md`、`START.md`、`AGENTS.md` | 自我介绍与标题                                                 |
@@ -216,10 +217,13 @@ Tailwind 栅格在页面内自组织（不引入任何自定义栅格概念）�
 pnpm tauri build
 ```
 
-产物位置：
+产物位置（显式 `--target <triple>` 时会多一层 triple 目录）：
 
-- macOS：`src-tauri/target/release/bundle/macos/*.app` 与 `dmg/*.dmg`
-- Windows：`src-tauri/target/release/bundle/`（nsis 安装包 / msi）
+- macOS：`src-tauri/target/**/release/bundle/macos/*.app`（开启更新后另有
+  `<Product>.app.tar.gz` + `.sig`）
+- Windows：`src-tauri/target/**/release/bundle/nsis/*-setup.exe`（msi 视 `--bundles` 而定）
+
+> 发布带**在线更新**的版本（签名、清单、上传、自动发布）见 [RELEASE.md](RELEASE.md)。
 
 安全说明（可向审查方出示）：安装版**不监听任何本地端口**（前端资源经
 进程内自定义协议加载，无 web 服务器）；唯一网络活动是应用主动发起的

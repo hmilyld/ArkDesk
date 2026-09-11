@@ -511,8 +511,7 @@ mod tests {
     /// 且不重复执行 DDL（全新临时库中业务表不应被创建）。
     #[tokio::test]
     async fn legacy_migrations_are_adopted_without_rerun() {
-        let temp_dir =
-            std::env::temp_dir().join(format!("arkdesk-legacy-{}", std::process::id()));
+        let temp_dir = std::env::temp_dir().join(format!("arkdesk-legacy-{}", std::process::id()));
         std::fs::create_dir_all(&temp_dir).unwrap();
         let pool = SqlitePool::connect_with(
             SqliteConnectOptions::new()

@@ -190,13 +190,13 @@ jobs:
           args=()
           while IFS= read -r -d '' f; do
             case "$f" in *x86_64*|*intel*) k=darwin-x86_64;; *) k=darwin-aarch64;; esac
-            args+=(--platform "$k=$PWD/$f")
+            args+=(--platform "$k=$f")
           done < <(find "$PWD/artifacts" -type f -name '*.app.tar.gz' -print0)
           while IFS= read -r -d '' f; do
-            args+=(--platform "windows-x86_64=$PWD/$f")
+            args+=(--platform "windows-x86_64=$f")
           done < <(find "$PWD/artifacts" -type f -name '*-setup.exe' -print0)
           while IFS= read -r -d '' f; do
-            args+=(--platform "linux-x86_64=$PWD/$f")
+            args+=(--platform "linux-x86_64=$f")
           done < <(find "$PWD/artifacts" -type f -name '*.AppImage.tar.gz' -print0)
           if [ ${#args[@]} -eq 0 ]; then echo "::error::未找到可发布安装包"; exit 1; fi
           node scripts/release.mjs \

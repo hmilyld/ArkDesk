@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ipc } from '@/core/ipc';
-import { notify } from '@/core/notify';
+import { notifyIfBackground } from '@/core/notify';
 import { Plus, RefreshCw, Trash2, Pencil, Play, Square, Film, FolderOpen } from '@lucide/vue';
 import ToolShell from '@/components/tool/ToolShell.vue';
 import ArticleForm from '../components/ArticleForm.vue';
@@ -201,7 +201,7 @@ async function batchGenerate(): Promise<void> {
       toast.info(`已取消，本次生成 ${result.rendered} 条`);
     } else {
       toast.success(`批量生成完成：成功 ${result.rendered} 条`);
-      void notify('批量生成完成', `成功生成 ${result.rendered} 条视频`);
+      void notifyIfBackground('批量生成完成', `成功生成 ${result.rendered} 条视频`);
     }
   } catch (err) {
     toast.error(`批量生成失败: ${err instanceof Error ? err.message : String(err)}`);

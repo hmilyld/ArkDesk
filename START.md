@@ -4,7 +4,8 @@
 > 跟着走完，你会得到一个以你的软件命名、带你的图标与主题、装着你自己的工具的桌面应用。
 >
 > 文档分工：**START.md**（本文件）= 从零起步手册；**README.md** = 架构与扩展开发参考；
-> **AGENTS.md** = 日常开发约定与陷阱清单；`plugins/_template/README.md` = 单插件脚手架说明。
+> **AGENTS.md** = 日常开发约定与陷阱清单；**RELEASE.md** = 打包 / 发布 / 在线更新；
+> **LOCAL.md** = fork 本地层；`plugins/_template/README.md` = 单插件脚手架说明。
 
 ---
 
@@ -216,10 +217,13 @@ Tailwind 栅格在页面内自组织（不引入任何自定义栅格概念）�
 pnpm tauri build
 ```
 
-产物位置：
+产物位置（显式 `--target <triple>` 时会多一层 triple 目录）：
 
-- macOS：`src-tauri/target/release/bundle/macos/*.app` 与 `dmg/*.dmg`
-- Windows：`src-tauri/target/release/bundle/`（nsis 安装包 / msi）
+- macOS：`src-tauri/target/**/release/bundle/macos/*.app`（开启更新后另有
+  `<Product>.app.tar.gz` + `.sig`）
+- Windows：`src-tauri/target/**/release/bundle/nsis/*-setup.exe`（msi 视 `--bundles` 而定）
+
+> 发布带**在线更新**的版本（签名、清单、上传、自动发布）见 [RELEASE.md](RELEASE.md)。
 
 安全说明（可向审查方出示）：安装版**不监听任何本地端口**（前端资源经
 进程内自定义协议加载，无 web 服务器）；唯一网络活动是应用主动发起的

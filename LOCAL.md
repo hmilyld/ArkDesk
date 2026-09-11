@@ -38,4 +38,4 @@ git merge upstream/main
 
 若启用在线更新：生成自己的密钥（`pnpm tauri signer generate`），将公钥填入
 `tauri.conf.json > plugins.updater.pubkey`，开启 `bundle.createUpdaterArtifacts: true`，
-带签名构建，并用 `pnpm release` 生成清单（详见 README「应用在线更新」）。
+带签名构建，并用 `pnpm release` 生成清单（详见 [RELEASE.md](RELEASE.md)）。

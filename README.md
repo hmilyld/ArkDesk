@@ -49,54 +49,24 @@ webkit2gtk 等系统库（见 [Tauri prerequisites](https://tauri.app/start/prer
 >
 > base 仓库默认 `bundle.createUpdaterArtifacts: false`，因此**无需签名密钥即可 `tauri build`**。
 > 在你自己的 app 中启用更新时：生成密钥 → 将公钥填入 `pubkey` → 开启
-> `createUpdaterArtifacts`，再按下方流程发布。
+> `createUpdaterArtifacts`，再按 [RELEASE.md](RELEASE.md) 发布。
 
-### 发布流程（维护者）
+### 发布
 
-1. **首次生成签名密钥**（私钥务必放仓库外并备份，丢失将无法再推送更新）：
-   ```bash
-   pnpm tauri signer generate -w ~/.tauri/pocketark.key
-   # 将 ~/.tauri/pocketark.key.pub 内容填入 tauri.conf.json 的 plugins.updater.pubkey
-   ```
-2. **升版本**（唯一事实源 `tauri.conf.json`，一键同步三处）：
-   ```bash
-   pnpm version:bump 0.2.0
-   ```
-3. **带签名构建**（`createUpdaterArtifacts` 已开启，缺签名环境变量会失败）：
-   ```bash
-   TAURI_SIGNING_PRIVATE_KEY_PATH=~/.tauri/pocketark.key pnpm tauri build
-   ```
-   产物目录会额外生成各平台更新包 + 对应 `.sig`。
-4. **生成清单与校验和**（脚本扫描构建产物，配对 `.sig`，输出 `release/latest.json`
-   与 `release/checksums.txt`）：
-   ```bash
-   pnpm release -- --base-url https://host/updates --notes src/content/changelog.md
-   # 可选：--version 0.2.0（缺省读 tauri.conf.json）
-   # 也可手动指定平台映射：
-   # pnpm release -- --base-url https://host/updates \
-   #   --platform darwin-aarch64=src-tauri/target/release/bundle/macos/PocketArk.app.tar.gz \
-   #   --platform windows-x86_64=src-tauri/target/release/bundle/nsis/PocketArk_x.y.z_x64-setup.nsis.zip
-   ```
-   > 自动扫描时 macOS 包默认按 `darwin-aarch64` 处理；**Intel Mac 请用 `--platform`
-   > 显式指定 `darwin-x86_64`**（脚本不解析架构）。
-   > 清单格式（`release/latest.json`）：
-   ```json
-   {
-     "version": "0.2.0",
-     "notes": "本次更新说明（Markdown）",
-     "pub_date": "2026-09-10T00:00:00Z",
-     "platforms": {
-       "darwin-aarch64": { "signature": "<.sig 内容>", "url": "https://host/PocketArk.app.tar.gz" },
-       "windows-x86_64": {
-         "signature": "<.sig 内容>",
-         "url": "https://host/PocketArk_0.2.0_x64-setup.nsis.zip"
-       }
-     }
-   }
-   ```
-   要点：`pub_date` 为 RFC 3339；平台 key 用 `darwin-aarch64` / `darwin-x86_64` /
-   `windows-x86_64` / `linux-x86_64`；`latest.json.version` 必须与构建版本一致，否则每次启动都会重复提示。
-   最后把更新包与 `latest.json`（放到设置的「更新服务器地址」目录）一起上传。
+版本唯一事实源是 `tauri.conf.json > version`，发版流程：
+
+```bash
+pnpm version:bump 0.2.0        # 同步 tauri.conf.json / Cargo.toml / package.json
+# 在 src/content/changelog.md 增加一段 ## [0.2.0]
+git tag v0.2.0 && git push --tags   # 触发发布 workflow（或 Actions 手动运行）
+```
+
+- base 提供**可复用发布流程** `.github/workflows/release-reusable.yml`
+  （mac arm64 + win x64 → 签名 → 生成 `latest.json` → 归档 GitHub Release）。
+- fork 只需新增一个 caller 并配置密钥/变量，即可获得同样的自动发布能力。
+
+> **完整流程、服务器要求、`latest.json` 规范、workflow 参考与故障排查见
+> [RELEASE.md](RELEASE.md)。**
 
 ## 目录结构
 

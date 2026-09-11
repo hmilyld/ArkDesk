@@ -1,7 +1,7 @@
 # 本地层（fork 专属）
 
 本仓库在 **ArkDesk base** 之上叠加了自用工具。框架文件不做改动；个人内容集中在
-「本地层」，以便从上游 base 同步更新（见文末）。base 仓库不含本文件。
+「本地层」，以便从上游 base 同步更新（见文末）。base 只保留通用模板，本文件为 ArkDesk 实际内容。
 
 ## 个人插件
 
@@ -19,10 +19,13 @@
 
 ## 资源（字体 / OCR 模型）
 
-个人工具使用的字体与 OCR 模型放在 `src-tauri/local-resources/`（二进制不入库）。
+个人工具使用的字体与 OCR 模型放在 `src-tauri/local-resources/`（`*.otf` / `*.mnn` 二进制不入库；
+许可 `fonts/OFL.txt` 与 charset `ocr-models/ppocr_keys_v6_small.txt` 文本入库）。
 
 - 下载：`pnpm assets`（= `scripts/local/prepare.mjs`）；也可 `pnpm fonts` / `pnpm ocr-models` 单独下载
-- `tauri dev` / `tauri build` 前由 `scripts/prepare.mjs` 自动调用（`CI` 环境跳过）
+- `tauri dev` / `tauri build` 前由 `scripts/prepare.mjs` 自动调用（`CI` 环境默认跳过）
+- **发布构建**须显式预取（见 `.github/workflows/release.yml` 的 `pre-build`）：
+  `npm run fonts && npm run ocr-models`
 - 国内网络：默认经 `https://gh.javaing.com/` 代理；可用 `GITHUB_PROXY`（置空=直连）、
   `FONT_SOURCE_BASE` / `OCR_MODEL_SOURCE_BASE`（镜像）覆盖
 - 来源固定：字体 `notofonts/noto-cjk@Sans2.004`；OCR `zibo-chen/rust-paddle-ocr@v2.4.1`
@@ -35,7 +38,7 @@
   （等价 `pnpm env:cpp`）
 - **Windows**：`bindgen` 需要 libclang → `winget install LLVM.LLVM` 后重启终端
   （`LIBCLANG_PATH` 自动设置；或 `set LIBCLANG_PATH=C:\Program Files\LLVM\bin`）
-- CI 的 LLVM/CXXFLAGS 步骤已按 `plugins/daily-tools` 是否存在条件化，无需改 CI
+- CI 与发布 workflow 已内置相应步骤（发布时经 `native-cpp: true` 触发），无需改 CI
 
 ## 从 base 同步更新
 
@@ -50,8 +53,15 @@ git merge upstream/main
 
 ## 发布（自用）
 
-1. 生成自己的更新密钥：`pnpm tauri signer generate -w ~/.tauri/<app>.key`，
+自动（推荐）：推送 `vX.Y.Z` tag 或手动运行 `.github/workflows/release.yml`（详见 README
+「自动发布」）。需配仓库 Variable `UPDATE_BASE_URL` 与 Secrets
+`TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。
+
+手动备用：
+
+1. 生成自己的更新密钥：`pnpm tauri signer generate -w ~/.tauri/arkdesk.key`，
    将公钥内容填入 `src-tauri/tauri.conf.json` 的 `plugins.updater.pubkey`。
-2. 开启 `bundle.createUpdaterArtifacts: true`。
-3. 带签名构建：`TAURI_SIGNING_PRIVATE_KEY_PATH=~/.tauri/<app>.key pnpm tauri build`。
-4. 生成清单：`pnpm release -- --base-url <更新服务器地址>`（见 README「应用在线更新」）。
+2. 开启 `bundle.createUpdaterArtifacts: true`（ArkDesk 已开启）。
+3. 预取资源并带签名构建：`pnpm assets && TAURI_SIGNING_PRIVATE_KEY_PATH=~/.tauri/arkdesk.key pnpm tauri build`。
+4. 生成清单：`pnpm release -- --base-url <更新服务器地址> --changelog src/content/changelog.md`
+   （见 README「应用在线更新」）。

@@ -36,8 +36,8 @@ export const useSettingsStore = defineStore('settings', () => {
   const aiModel = ref('gpt-4o-mini');
 
   // 在线更新（框架级能力，见 core/updater）
-  const updateEnabled = ref(false);
-  const updateServerUrl = ref('');
+  const updateEnabled = ref(true);
+  const updateServerUrl = ref('https://arkdesk.hmilyld.com');
   /** 启动后自动检查一次（总开关开启时生效） */
   const updateAutoCheck = ref(true);
   const updateLastCheckAt = ref<number | null>(null);

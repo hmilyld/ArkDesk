@@ -16,6 +16,7 @@ pnpm lint           # eslint（改前端后必须跑）
 pnpm lint:fix
 pnpm format         # prettier --write .（全量）
 pnpm format:check
+pnpm env:cpp        # 导出 macOS CXXFLAGS（本地层 ocr-rs 编译用，见 LOCAL.md）
 pnpm lint:rs        # cargo clippy -D warnings（改 Rust 后必须跑）
 pnpm fmt:rs         # cargo fmt
 pnpm test:rs        # cargo test（http 冒烟测试默认 ignore，需网络）

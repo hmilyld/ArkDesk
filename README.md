@@ -39,9 +39,10 @@ pnpm test           # vitest 单测
 依赖：Rust、Node 20+、pnpm。macOS 需 Xcode Command Line Tools；Linux 需
 webkit2gtk 等系统库（见 [Tauri prerequisites](https://tauri.app/start/prerequisites)）。
 
-> 首次运行会按需下载资源（中文字体 ~32MB、OCR 模型 ~15MB，放入 `src-tauri/local-resources/`、
-> 不入库）；`pnpm assets` 可单独预取。国内网络与镜像设置见 [LOCAL.md](LOCAL.md)。
-> 编译 OCR 依赖（ocr-rs）所需的 macOS `CXXFLAGS` / Windows libclang 见 [LOCAL.md](LOCAL.md)。
+> 首次运行会按需下载资源（中文字体 ~32MB、OCR 模型 ~15MB）到 `src-tauri/local-resources/`；
+> 大文件不入库，仅许可（`fonts/OFL.txt`）与 charset（`ocr-models/ppocr_keys_v6_small.txt`）文本入库。
+> `pnpm assets` 可单独预取；国内网络与镜像设置，以及 OCR 依赖（macOS `CXXFLAGS` / Windows libclang）
+> 见 [LOCAL.md](LOCAL.md)。
 
 ## 应用在线更新
 
@@ -53,7 +54,19 @@ webkit2gtk 等系统库（见 [Tauri prerequisites](https://tauri.app/start/prer
 > 界面只能填服务器地址，且仅接受 **HTTPS**。更新选择为严格 semver 比较（远端版本 >
 > 本地版本才提示），因此**版本号必须单调递增**。
 
-### 发布流程（维护者）
+### 自动发布（GitHub Actions）
+
+推 tag 或手动触发 `.github/workflows/release.yml`，即调用 base 的可复用流程：
+`macos-14`(arm64) + `windows-latest`(x64) 构建 → minisign 签名 → 生成 `latest.json` →
+上传 Actions artifact 并创建 GitHub Release 归档。
+
+- 触发：`git push --tags`（tag `vX.Y.Z`，须与 `tauri.conf.json.version` 一致）或 Actions 手动运行
+- 仓库变量：`UPDATE_BASE_URL`（如 `https://arkdesk.hmilyld.com`）
+- 仓库密钥：`TAURI_SIGNING_PRIVATE_KEY`、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+- 发布前会执行 `npm run fonts && npm run ocr-models` 预取资源（CI 默认跳过下载，必须显式预取）
+- 产物需自行上传到 `UPDATE_BASE_URL`；未签名的 macOS 包首次需 `xattr -dr com.apple.quarantine`
+
+### 手动发布（备用）
 
 1. **首次生成签名密钥**（私钥务必放仓库外并备份，丢失将无法再推送更新）：
    ```bash
@@ -72,7 +85,7 @@ webkit2gtk 等系统库（见 [Tauri prerequisites](https://tauri.app/start/prer
 4. **生成清单与校验和**（脚本扫描构建产物，配对 `.sig`，输出 `release/latest.json`
    与 `release/checksums.txt`）：
    ```bash
-   pnpm release -- --base-url https://host/updates --notes src/content/changelog.md
+   pnpm release -- --base-url https://host/updates --changelog src/content/changelog.md
    # 可选：--version 0.2.0（缺省读 tauri.conf.json）
    # 也可手动指定平台映射：
    # pnpm release -- --base-url https://host/updates \

@@ -25,6 +25,7 @@ import { exportDiagnostics } from '@/core/diagnostics';
 import { exportSettings, importSettings, restartApp } from '@/core/settings-transfer';
 import { useSettingsStore, type LogLevel } from '@/stores/settings';
 import { globalShortcutError } from '@/core/global-shortcut';
+import { notify } from '@/core/notify';
 import ShortcutRecorder from './ShortcutRecorder.vue';
 import {
   ACCENTS,
@@ -85,6 +86,14 @@ function reportFailure(prefix: string, err: unknown): void {
   const error = normalizeError(err);
   logger.error(`${prefix}失败: [${error.code}] ${error.message}`);
   toast.error(`${prefix}失败：${error.message}`, { description: error.code });
+}
+
+/** 发送一条系统通知用于验证权限与投递（首次会触发系统授权弹窗） */
+async function onTestNotification(): Promise<void> {
+  await notify('测试通知', '这是一条测试系统通知；能看到即表示通知功能正常。');
+  toast.info('已发出系统通知', {
+    description: '若未弹出，请检查系统「通知」权限与「专注/免打扰」模式',
+  });
 }
 
 // ── 数据：备份 / 恢复 / 重置 ──
@@ -323,10 +332,20 @@ function toggleExpanded(id: string): void {
             <p class="text-sm">系统通知</p>
             <p class="text-xs text-muted-foreground">允许应用发送系统级通知</p>
           </div>
-          <Switch
-            :model-value="settings.notificationEnabled"
-            @update:model-value="(value) => (settings.notificationEnabled = value === true)"
-          />
+          <div class="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              :disabled="!settings.notificationEnabled"
+              @click="onTestNotification"
+            >
+              测试
+            </Button>
+            <Switch
+              :model-value="settings.notificationEnabled"
+              @update:model-value="(value) => (settings.notificationEnabled = value === true)"
+            />
+          </div>
         </div>
       </div>
     </section>

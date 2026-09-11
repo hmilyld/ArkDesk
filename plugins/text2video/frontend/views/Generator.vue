@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ipc } from '@/core/ipc';
+import { notify } from '@/core/notify';
 import { useSettingsStore } from '@/stores/settings';
 import {
   RefreshCw,
@@ -147,6 +148,7 @@ async function start(): Promise<void> {
       toast.info(`已取消，本次生成 ${result.rendered} 条`);
     } else if (result.rendered > 0) {
       toast.success(`生成完成：成功 ${result.rendered} 条`);
+      void notify('视频生成完成', `成功生成 ${result.rendered} 条视频`);
     } else {
       toast.warning('未生成视频，请查看日志');
     }
@@ -219,6 +221,7 @@ async function generateArticle(): Promise<void> {
     manual.value = { title: article.title, author: '', content: article.body, source: 'ai' };
     sourceMode.value = 'manual';
     toast.success('AI 文章已生成，可编辑后存草稿或直接生成');
+    void notify('AI 文章已生成', article.title);
   } catch (err) {
     toast.error(`AI 生成失败: ${err instanceof Error ? err.message : String(err)}`);
   } finally {

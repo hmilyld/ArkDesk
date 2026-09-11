@@ -74,6 +74,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: rustfmt 检查
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
       - name: 解析并校验版本
         id: version
         shell: bash

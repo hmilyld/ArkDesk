@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -56,17 +56,8 @@ jobs:
         with:
           name: dist
           path: dist
-      # ocr-rs 依赖 bindgen（需 libclang）与 MNN（macOS 需显式 C++ 头文件路径）。
-      # 仅当存在 OCR 插件（daily-tools）时才需要；base 无此插件时跳过。
-      - name: 安装 LLVM（Windows，仅含 OCR 插件时）
-        if: runner.os == 'Windows' && hashFiles('plugins/daily-tools/**') != ''
-        shell: pwsh
-        run: |
-          choco install llvm -y
-          echo "LIBCLANG_PATH=C:\Program Files\LLVM\bin" >> $env:GITHUB_ENV
-      - name: 设置 C++ 头文件路径（macOS，仅含 OCR 插件时）
-        if: runner.os == 'macOS' && hashFiles('plugins/daily-tools/**') != ''
-        run: echo "CXXFLAGS=-std=c++14 -I$(xcrun --sdk macosx --show-sdk-path)/usr/include/c++/v1" >> "$GITHUB_ENV"
+      # base 无重编译依赖（无 ocr-rs 等 C++ 依赖），无需额外工具链。
+      # 若你的 fork 叠加了需要 libclang / CXXFLAGS 的依赖，请在本 job 增加安装步骤。
       - name: cargo fmt
         run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
       - name: cargo clippy

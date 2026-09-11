@@ -4,6 +4,7 @@
 //! 序列化形态与前端 `core/errors` 的 `AppError` 对齐：`{ code, message, details? }`。
 //!
 //! 新增错误码时，同步在 `code` 模块与前端 `core/errors` 的 `ErrorCode` 登记。
+//! 命令一律返回 `Result<T, AppError>`，前端经 `core/errors` 统一转换与提示。
 
 use serde::{ser::SerializeStruct, Serialize, Serializer};
 use thiserror::Error;

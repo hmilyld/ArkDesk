@@ -1,6 +1,6 @@
 [package]
 name = "arkdesk"
-version = "0.1.0"
+version = "0.2.0"
 description = "ArkDesk 桌面工具集合（Tauri 2 + Vue 3）"
 authors = ["hmilyld <hmilyld@gmail.com>"]
 edition = "2021"

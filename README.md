@@ -54,64 +54,26 @@ webkit2gtk 等系统库（见 [Tauri prerequisites](https://tauri.app/start/prer
 > 界面只能填服务器地址，且仅接受 **HTTPS**。更新选择为严格 semver 比较（远端版本 >
 > 本地版本才提示），因此**版本号必须单调递增**。
 
-### 自动发布（GitHub Actions）
+### 发布
 
-推 tag 或手动触发 `.github/workflows/release.yml`，即调用 base 的可复用流程：
-`macos-14`(arm64) + `windows-latest`(x64) 构建 → minisign 签名 → 生成 `latest.json` →
-上传 Actions artifact 并创建 GitHub Release 归档。
+推 tag 或手动触发 `.github/workflows/release.yml`（调用 base 的可复用流程
+`release-reusable.yml`）：`macos-14`(arm64) + `windows-latest`(x64) 构建 → minisign 签名 →
+生成统一 `latest.json` → 归档 GitHub Release。
 
-- 触发：`git push --tags`（tag `vX.Y.Z`，须与 `tauri.conf.json.version` 一致）或 Actions 手动运行
-- 仓库变量：`UPDATE_BASE_URL`（如 `https://arkdesk.hmilyld.com`）
-- 仓库密钥：`TAURI_SIGNING_PRIVATE_KEY`、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
-- 发布前会执行 `npm run fonts && npm run ocr-models` 预取资源（CI 默认跳过下载，必须显式预取）
-- 产物需自行上传到 `UPDATE_BASE_URL`；未签名的 macOS 包首次需 `xattr -dr com.apple.quarantine`
+```bash
+pnpm version:bump 0.2.0        # 同步 tauri.conf.json / Cargo.toml / package.json
+# 在 src/content/changelog.md 增加一段 ## [0.2.0]
+git tag v0.2.0 && git push --tags   # 触发发布（或 Actions 手动运行）
+```
 
-### 手动发布（备用）
+ArkDesk 已配置：
 
-1. **首次生成签名密钥**（私钥务必放仓库外并备份，丢失将无法再推送更新）：
-   ```bash
-   pnpm tauri signer generate -w ~/.tauri/arkdesk.key
-   # 将 ~/.tauri/arkdesk.key.pub 内容填入 tauri.conf.json 的 plugins.updater.pubkey
-   ```
-2. **升版本**（唯一事实源 `tauri.conf.json`，一键同步三处）：
-   ```bash
-   pnpm version:bump 0.2.0
-   ```
-3. **带签名构建**（`createUpdaterArtifacts` 已开启，缺签名环境变量会失败）：
-   ```bash
-   TAURI_SIGNING_PRIVATE_KEY_PATH=~/.tauri/arkdesk.key pnpm tauri build
-   ```
-   产物目录会额外生成各平台更新包 + 对应 `.sig`。
-4. **生成清单与校验和**（脚本扫描构建产物，配对 `.sig`，输出 `release/latest.json`
-   与 `release/checksums.txt`）：
-   ```bash
-   pnpm release -- --base-url https://host/updates --changelog src/content/changelog.md
-   # 可选：--version 0.2.0（缺省读 tauri.conf.json）
-   # 也可手动指定平台映射：
-   # pnpm release -- --base-url https://host/updates \
-   #   --platform darwin-aarch64=src-tauri/target/release/bundle/macos/ArkDesk.app.tar.gz \
-   #   --platform windows-x86_64=src-tauri/target/release/bundle/nsis/ArkDesk_x.y.z_x64-setup.nsis.zip
-   ```
-   > 自动扫描时 macOS 包默认按 `darwin-aarch64` 处理；**Intel Mac 请用 `--platform`
-   > 显式指定 `darwin-x86_64`**（脚本不解析架构）。
-   > 清单格式（`release/latest.json`）：
-   ```json
-   {
-     "version": "0.2.0",
-     "notes": "本次更新说明（Markdown）",
-     "pub_date": "2026-09-10T00:00:00Z",
-     "platforms": {
-       "darwin-aarch64": { "signature": "<.sig 内容>", "url": "https://host/ArkDesk.app.tar.gz" },
-       "windows-x86_64": {
-         "signature": "<.sig 内容>",
-         "url": "https://host/ArkDesk_0.2.0_x64-setup.nsis.zip"
-       }
-     }
-   }
-   ```
-   要点：`pub_date` 为 RFC 3339；平台 key 用 `darwin-aarch64` / `darwin-x86_64` /
-   `windows-x86_64` / `linux-x86_64`；`latest.json.version` 必须与构建版本一致，否则每次启动都会重复提示。
-   最后把更新包与 `latest.json`（放到设置的「更新服务器地址」目录）一起上传。
+- 仓库变量 `UPDATE_BASE_URL`（`https://arkdesk.hmilyld.com`）
+- 仓库密钥 `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+- 发布前自动预取资源：`npm run fonts && npm run ocr-models`（CI 默认跳过下载）
+
+> **完整流程（服务器要求、`latest.json` 规范、手动发布、workflow 参考、故障排查）见
+> [RELEASE.md](RELEASE.md)。**
 
 ## 目录结构
 

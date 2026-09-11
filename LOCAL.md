@@ -53,15 +53,10 @@ git merge upstream/main
 
 ## 发布（自用）
 
-自动（推荐）：推送 `vX.Y.Z` tag 或手动运行 `.github/workflows/release.yml`（详见 README
-「自动发布」）。需配仓库 Variable `UPDATE_BASE_URL` 与 Secrets
-`TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。
+完整流程见 [RELEASE.md](RELEASE.md)。要点：
 
-手动备用：
-
-1. 生成自己的更新密钥：`pnpm tauri signer generate -w ~/.tauri/arkdesk.key`，
-   将公钥内容填入 `src-tauri/tauri.conf.json` 的 `plugins.updater.pubkey`。
-2. 开启 `bundle.createUpdaterArtifacts: true`（ArkDesk 已开启）。
-3. 预取资源并带签名构建：`pnpm assets && TAURI_SIGNING_PRIVATE_KEY_PATH=~/.tauri/arkdesk.key pnpm tauri build`。
-4. 生成清单：`pnpm release -- --base-url <更新服务器地址> --changelog src/content/changelog.md`
-   （见 README「应用在线更新」）。
+- **自动（推荐）**：推送 `vX.Y.Z` tag 或手动运行 `.github/workflows/release.yml`；需配仓库
+  Variable `UPDATE_BASE_URL` 与 Secrets `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。
+- **手动**：生成密钥 → 填 `plugins.updater.pubkey`（ArkDesk 已开启 `createUpdaterArtifacts`）→
+  `pnpm assets && TAURI_SIGNING_PRIVATE_KEY_PATH=~/.tauri/arkdesk.key pnpm tauri build` →
+  `pnpm release -- --base-url <更新服务器地址> --changelog src/content/changelog.md`。

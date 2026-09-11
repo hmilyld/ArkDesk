@@ -3,7 +3,8 @@
  * 生成应用在线更新清单与校验和。
  *
  * 用法（自动扫描构建产物）：
- *   pnpm release -- --base-url https://host/updates [--version 0.2.0] [--notes notes.md]
+ *   pnpm release -- --base-url https://host/updates [--version 0.2.0] \
+ *     [--notes notes.md | --changelog src/content/changelog.md]
  *
  * 手动指定平台映射（可多次）：
  *   pnpm release -- --base-url https://host/updates \
@@ -89,7 +90,13 @@ async function collectFromArgs() {
 async function scanBundleDir(dir) {
   const found = [];
   const walk = async (current) => {
-    for (const entry of await readdir(current, { withFileTypes: true })) {
+    let entries;
+    try {
+      entries = await readdir(current, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
       const full = join(current, entry.name);
       if (entry.isDirectory()) {
         await walk(full);
@@ -107,6 +114,25 @@ async function scanBundleDir(dir) {
   return found;
 }
 
+/** 从 Keep a Changelog 文档中提取指定版本段落（标题形如 `## [x.y.z]` / `## x.y.z`） */
+async function extractChangelog(file, version) {
+  const path = resolve(file);
+  if (!(await stat(path).catch(() => null))) fail(`changelog 文件不存在：${path}`);
+  const lines = (await readFile(path, 'utf8')).split(/\r?\n/);
+  const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const heading = new RegExp(`^##\\s+\\[?v?${escaped}\\]?`);
+  const start = lines.findIndex((line) => heading.test(line));
+  if (start < 0) fail(`changelog 中未找到版本 ${version} 的段落（## [${version}]）`);
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i += 1) {
+    if (/^##\s+/.test(lines[i])) {
+      end = i;
+      break;
+    }
+  }
+  return lines.slice(start, end).join('\n').trim();
+}
+
 async function main() {
   const baseUrl = flag('base-url');
   if (!baseUrl) fail('缺少 --base-url（更新服务器基础地址）');
@@ -120,19 +146,20 @@ async function main() {
 
   let notes = '';
   const notesArg = flag('notes');
+  const changelogArg = flag('changelog');
   if (notesArg) {
     // 视为文件路径（存在则读取），否则按字面文本
     const maybeFile = resolve(notesArg);
     notes = (await stat(maybeFile).catch(() => null))
       ? await readFile(maybeFile, 'utf8')
       : notesArg;
+  } else if (changelogArg) {
+    notes = await extractChangelog(changelogArg, version);
   }
 
   const artifacts = (await collectFromArgs()) ?? (await scanBundleDir(BUNDLE_DIR));
   if (artifacts.length === 0) {
-    fail(
-      `未找到更新产物（.sig）。请先执行带签名的 pnpm tauri build，或用 --platform key=path 指定`
-    );
+    fail(`未找到更新产物（.sig）。请先执行带签名的 tauri build，或用 --platform key=path 指定`);
   }
 
   const platforms = {};

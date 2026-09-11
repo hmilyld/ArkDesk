@@ -16,7 +16,6 @@ pnpm lint           # eslint（改前端后必须跑）
 pnpm lint:fix
 pnpm format         # prettier --write .（全量）
 pnpm format:check
-pnpm env:cpp        # 导出 macOS CXXFLAGS（本地层 ocr-rs 编译用，见 LOCAL.md）
 pnpm lint:rs        # cargo clippy -D warnings（改 Rust 后必须跑）
 pnpm fmt:rs         # cargo fmt
 pnpm test:rs        # cargo test（http 冒烟测试默认 ignore，需网络）
@@ -146,7 +145,7 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 
   紧急兜底：`lsof -ti:1420 | xargs -r kill -9`。上游 tauri#15098，修复 PR #15108（open）合并并升级 CLI 后可移除此条。
 
-- **本地层编译依赖（ocr-rs 等）**：这类重依赖属 fork 本地层，相关编译问题（macOS `CXXFLAGS`、Windows libclang）见 `LOCAL.md`；base 不含这些依赖，无此问题。
+- **本地层编译依赖（ocr-rs 等）**：这类重依赖属 fork 本地层，相关编译问题（macOS `CXXFLAGS`、Windows libclang）由 fork 自行处理并记录在 `LOCAL.md`；base 不含这些依赖，无此问题。
 
 ## 目录速览
 

@@ -5,4 +5,5 @@ plugins/**/backend
 src-tauri/local-resources
 src/core/ipc/commands.gen.ts
 pnpm-lock.yaml
+package-lock.json
 components.json

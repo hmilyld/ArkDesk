@@ -16,7 +16,6 @@
     "lint:rs": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings",
     "fmt:rs": "cargo fmt --manifest-path src-tauri/Cargo.toml",
     "test:rs": "cargo test --manifest-path src-tauri/Cargo.toml",
-    "env:cpp": "export CXXFLAGS=\"-std=c++14 -I$(xcrun --sdk macosx --show-sdk-path)/usr/include/c++/v1\"",
     "tauri": "tauri",
     "scaffold": "node scripts/scaffold.mjs",
     "icons": "node scripts/gen-icons.mjs",

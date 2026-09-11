@@ -45,11 +45,11 @@ src-tauri/icons/ios
 # 生成物：前端命令名联合类型（由 scripts/gen-commands.mjs 生成）
 src/core/ipc/commands.gen.ts
 
-# 本地层下载的字体（见 scripts/local/fetch-fonts.mjs；许可协议 OFL.txt 仍入库）
+# 本地层下载的字体（fork 的 scripts/local/ 负责获取；许可协议等小文本仍入库）
 src-tauri/local-resources/fonts/*.otf
 
-# 本地层下载的 OCR 模型（见 scripts/local/fetch-ocr-models.mjs；charset 文本仍入库）
+# 本地层下载的 OCR 模型（fork 的 scripts/local/ 负责获取；charset 文本仍入库）
 src-tauri/local-resources/ocr-models/*.mnn
 
-# 资源下载中断残留的临时文件（scripts/local/lib/fetch.mjs 原子写入用）
+# 本地层资源下载中断残留的临时文件（原子写入用）
 src-tauri/local-resources/**/*.download

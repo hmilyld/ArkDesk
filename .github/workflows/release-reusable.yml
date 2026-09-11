@@ -1,0 +1,179 @@
+name: Release
+
+# 可复用发布流程：由 fork 通过 workflow_call 调用（见 fork 的 release.yml）。
+# 也支持在 base 本仓库 workflow_dispatch 手动触发（用于流程自测，不创建 Release）。
+#
+# 产物：各平台安装包与 .sig + release/latest.json + release/checksums.txt，
+# 上传为 Actions artifact；create-release 为 true 时另建 GitHub Release 归档。
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 版本号 x.y.z（留空则由触发 tag 推导）
+        required: false
+        type: string
+        default: ''
+      base-url:
+        description: 更新服务器基础地址（latest.json 所在目录）
+        required: true
+        type: string
+      pre-build:
+        description: tauri build 前执行的命令（如预取字体/模型）
+        required: false
+        type: string
+        default: ''
+      native-cpp:
+        description: 是否安装 C++/bindgen 依赖（Windows libclang / macOS CXXFLAGS）
+        required: false
+        type: boolean
+        default: false
+      create-release:
+        description: 是否创建 GitHub Release 归档
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      TAURI_SIGNING_PRIVATE_KEY:
+        required: false
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD:
+        required: false
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 版本号 x.y.z（留空则由当前 ref 推导）
+        required: false
+        type: string
+        default: ''
+      base-url:
+        description: 更新服务器基础地址
+        required: true
+        type: string
+      pre-build:
+        description: tauri build 前执行的命令
+        required: false
+        type: string
+        default: ''
+      native-cpp:
+        description: 安装 C++/bindgen 依赖
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    name: 解析版本
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 解析并校验版本
+        id: version
+        shell: bash
+        run: |
+          raw="${{ inputs.version }}"
+          if [ -z "$raw" ]; then raw="${GITHUB_REF_NAME}"; fi
+          ver="${raw#v}"
+          conf=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          if [ "$ver" != "$conf" ]; then
+            echo "::error::版本不一致：输入/tag=$ver，tauri.conf.json=$conf"
+            exit 1
+          fi
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "版本：$ver"
+
+  build:
+    name: 构建（${{ matrix.os }}）
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            target: aarch64-apple-darwin
+            bundles: app
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: nsis
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: 安装依赖
+        shell: bash
+        run: npm ci
+        env:
+          HUSKY: 0
+      - name: 安装 LLVM（Windows，native-cpp）
+        if: ${{ inputs.native-cpp && runner.os == 'Windows' }}
+        shell: pwsh
+        run: |
+          choco install llvm -y
+          echo "LIBCLANG_PATH=C:\Program Files\LLVM\bin" >> $env:GITHUB_ENV
+      - name: 设置 C++ 头文件路径（macOS，native-cpp）
+        if: ${{ inputs.native-cpp && runner.os == 'macOS' }}
+        shell: bash
+        run: echo "CXXFLAGS=-std=c++14 -I$(xcrun --sdk macosx --show-sdk-path)/usr/include/c++/v1" >> "$GITHUB_ENV"
+      - name: 预构建步骤
+        if: ${{ inputs.pre-build != '' }}
+        shell: bash
+        run: ${{ inputs.pre-build }}
+      - name: 构建并签名
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: npx tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+      - name: 检测是否产出更新清单
+        id: updater
+        shell: bash
+        run: |
+          enabled=$(node -p "String(require('./src-tauri/tauri.conf.json').bundle.createUpdaterArtifacts===true)")
+          echo "enabled=$enabled" >> "$GITHUB_OUTPUT"
+      - name: 生成 latest.json 与校验和
+        if: ${{ steps.updater.outputs.enabled == 'true' }}
+        shell: bash
+        run: >-
+          npm run release --
+          --base-url "${{ inputs.base-url }}"
+          --version "${{ needs.prepare.outputs.version }}"
+          --changelog src/content/changelog.md
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.target }}
+          path: |
+            src-tauri/target/**/release/bundle/**
+            release/*
+          if-no-files-found: warn
+
+  release:
+    name: 归档 Release
+    needs: [prepare, build]
+    if: ${{ inputs.create-release }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: 创建 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.prepare.outputs.version }}
+          name: v${{ needs.prepare.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          files: artifacts/**/release/*

@@ -52,7 +52,8 @@ function inferPlatform(file) {
     if (/x86_64|intel|x64/i.test(file)) return 'darwin-x86_64';
     return 'darwin-aarch64';
   }
-  if (/\.nsis\.zip$/.test(file)) return 'windows-x86_64';
+  if (/setup\.exe$/i.test(file)) return 'windows-x86_64'; // Tauri v2：NSIS 安装器即更新包
+  if (/\.nsis\.zip$/.test(file)) return 'windows-x86_64'; // 兼容旧格式
   if (/\.msi\.zip$/.test(file)) return 'windows-x86_64';
   if (/\.AppImage\.tar\.gz$/.test(file)) return 'linux-x86_64';
   return null;

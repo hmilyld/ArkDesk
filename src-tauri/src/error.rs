@@ -2,6 +2,8 @@
 //!
 //! 所有 `#[tauri::command]` 返回 `Result<T, AppError>`。
 //! 序列化形态与前端 `core/errors` 的 `AppError` 对齐：`{ code, message, details? }`。
+//!
+//! 新增错误码时，同步在 `code` 模块与前端 `core/errors` 的 `ErrorCode` 登记。
 
 use serde::{ser::SerializeStruct, Serialize, Serializer};
 use thiserror::Error;

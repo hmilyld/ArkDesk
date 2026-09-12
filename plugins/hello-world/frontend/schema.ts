@@ -27,5 +27,16 @@ export const helloTasks = sqliteTable('hello_tasks', {
     .default(sql`(datetime('now', 'localtime'))`),
 });
 
+/** 数据访问进阶演示（通用 CRUD / 事务）使用的表 */
+export const capItems = sqliteTable('cap_items', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  value: integer('value').notNull().default(0),
+  updatedAt: text('updated_at')
+    .notNull()
+    .default(sql`(datetime('now', 'localtime'))`),
+});
+
 export type HelloNote = typeof helloNotes.$inferSelect;
 export type HelloTask = typeof helloTasks.$inferSelect;
+export type CapItem = typeof capItems.$inferSelect;

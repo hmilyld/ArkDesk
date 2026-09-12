@@ -8,5 +8,5 @@
 import type { PluginContext } from '@/core/plugins';
 
 export default (ctx: PluginContext): void => {
-  ctx.logger.debug('插件已加载: hello-world（4 个工具项）');
+  ctx.logger.debug('插件已加载: hello-world（8 个工具项）');
 };

@@ -32,9 +32,30 @@
     {
       "id": "hello-http",
       "name": "HTTP 请求",
-      "description": "core/http 原始请求演示：状态、耗时、响应头与响应体",
+      "description": "core/http 原始请求演示：状态、耗时、响应头、响应体与流式下载",
       "icon": "Globe",
       "entry": "frontend/views/HttpTool.vue"
+    },
+    {
+      "id": "hello-task",
+      "name": "后台任务与通知",
+      "description": "core/tasks 进度与取消、任务栏/Dock 联动、事件总线订阅、系统通知",
+      "icon": "Activity",
+      "entry": "frontend/views/TaskTool.vue"
+    },
+    {
+      "id": "hello-system",
+      "name": "窗口与系统集成",
+      "description": "多窗口、打开内容分发、应用内快捷键与平台探测",
+      "icon": "AppWindow",
+      "entry": "frontend/views/SystemTool.vue"
+    },
+    {
+      "id": "hello-data",
+      "name": "数据访问进阶",
+      "description": "通用 CRUD、事务原子性与二进制文件读写",
+      "icon": "DatabaseZap",
+      "entry": "frontend/views/DataTool.vue"
     },
     {
       "id": "hello-template",

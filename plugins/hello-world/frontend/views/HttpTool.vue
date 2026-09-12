@@ -5,6 +5,9 @@
 -->
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { toast } from 'vue-sonner';
+import { save as saveFileDialog } from '@tauri-apps/plugin-dialog';
+import { Download } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -59,12 +62,59 @@ async function send(): Promise<void> {
     loading.value = false;
   }
 }
+
+// ── 流式下载（core/http download + http://download-progress 进度事件） ──
+const downloadUrl = ref('https://speed.cloudflare.com/__down?bytes=10485760');
+const downloading = ref(false);
+const downloadPercent = ref(0);
+const downloadedBytes = ref(0);
+const totalBytes = ref<number | null>(null);
+const downloadPath = ref('');
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+}
+
+async function downloadFile(): Promise<void> {
+  const url = downloadUrl.value.trim();
+  if (!url) return;
+  const target = await saveFileDialog({ defaultPath: 'pocketark-download.bin' });
+  if (!target) return;
+
+  downloading.value = true;
+  downloadPath.value = '';
+  downloadPercent.value = 0;
+  downloadedBytes.value = 0;
+  totalBytes.value = null;
+  try {
+    const saved = await http.download(url, target, {
+      onProgress: ({ downloaded, total }) => {
+        downloadedBytes.value = downloaded;
+        totalBytes.value = total;
+        if (total && total > 0) {
+          downloadPercent.value = Math.min(100, Math.round((downloaded / total) * 100));
+        }
+      },
+    });
+    downloadPath.value = saved;
+    toast.success('下载完成', { description: saved });
+    logger.info(`下载完成: ${saved}`);
+  } catch (err) {
+    const error = normalizeError(err);
+    toast.error(`下载失败：${error.message}`, { description: error.code });
+    logger.error(`下载失败: [${error.code}] ${error.message}`);
+  } finally {
+    downloading.value = false;
+  }
+}
 </script>
 
 <template>
   <ToolShell
     title="HTTP 请求"
-    description="core/http 通道演示：Rust reqwest 发起，无 CORS 限制，返回原始响应"
+    description="core/http 通道演示：Rust reqwest 发起，无 CORS 限制，支持请求与流式下载"
   >
     <div class="mx-auto grid w-full grid-cols-12">
       <div class="col-span-12 lg:col-start-2 lg:col-span-10 space-y-4">
@@ -151,6 +201,47 @@ async function send(): Promise<void> {
         >
           输入地址后发送，默认请求 baidu.com 体验 HTML 响应；换成 JSON API 可看自动美化
         </p>
+
+        <!-- 流式下载：http.download + 进度事件 -->
+        <section class="space-y-2.5 border-t border-border pt-4">
+          <div>
+            <h3 class="text-sm font-medium">流式下载</h3>
+            <p class="text-xs text-muted-foreground">
+              http.download 由 Rust 侧流式写入文件，进度经 http://download-progress 事件回传
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <Input
+              v-model="downloadUrl"
+              placeholder="文件 URL"
+              spellcheck="false"
+              class="flex-1"
+              :disabled="downloading"
+            />
+            <Button :disabled="downloading || !downloadUrl.trim()" @click="downloadFile">
+              <Download class="size-4" />
+              {{ downloading ? '下载中…' : '下载' }}
+            </Button>
+          </div>
+          <div v-if="downloading || downloadPath" class="space-y-1">
+            <div class="h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                class="h-full rounded-full bg-primary transition-[width] duration-150"
+                :style="{ width: `${downloading ? Math.max(downloadPercent, 2) : 100}%` }"
+              />
+            </div>
+            <div class="flex items-center justify-between font-mono text-xs text-muted-foreground">
+              <span>
+                {{ formatBytes(downloadedBytes) }}
+                <template v-if="totalBytes"> / {{ formatBytes(totalBytes) }}</template>
+              </span>
+              <span>{{ totalBytes ? `${downloadPercent}%` : '未知大小' }}</span>
+            </div>
+            <p v-if="downloadPath" class="break-all font-mono text-xs text-muted-foreground">
+              已保存：{{ downloadPath }}
+            </p>
+          </div>
+        </section>
       </div>
     </div>
   </ToolShell>

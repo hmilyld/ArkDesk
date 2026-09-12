@@ -388,12 +388,18 @@ pub fn run() {
         .expect("error while building tauri application");
 
     // 独立处理运行事件：退出流程开始时置位标记，放行后续的窗口关闭
-    app.run(|_app, event| match event {
+    app.run(|app, event| match event {
         tauri::RunEvent::ExitRequested { .. } => {
             EXITING.store(true, Ordering::Relaxed);
             log::info!("应用退出流程开始");
         }
         tauri::RunEvent::Exit => log::info!("应用退出完成"),
+        // macOS：点击 Dock 图标且无可见窗口时唤起主窗口（标准的 reopen 语义）
+        #[cfg(target_os = "macos")]
+        tauri::RunEvent::Reopen { .. } => {
+            log::info!("从 Dock 重新打开应用");
+            tray::show_main_window(app);
+        }
         _ => {}
     });
 }

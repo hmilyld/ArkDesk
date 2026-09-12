@@ -32,5 +32,19 @@ pub fn all() -> Vec<crate::db::Migration> {
             ('编写示例工具集', 'in_progress', 'medium'),
             ('缩放体验优化', 'pending', 'low');",
         ),
+        migration(
+            "hello-world",
+            3,
+            "hello_world_create_cap_items",
+            "CREATE TABLE IF NOT EXISTS cap_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            value INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+        );
+        INSERT INTO cap_items (name, value) VALUES
+            ('示例条目 A', 1),
+            ('示例条目 B', 2);",
+        ),
     ]
 }

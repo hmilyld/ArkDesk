@@ -203,3 +203,41 @@ pub async fn hello_world_import_csv(path: String) -> Result<u64, AppError> {
     log::info!("CSV 导入完成: {imported} 条");
     Ok(imported)
 }
+
+// ── 后台任务演示 ───────────────────────────────────────────────
+// 演示框架 tasks 能力的 Rust 侧用法：注册取消令牌 → 循环内查询取消标志 →
+// 经 task:// 事件回传进度与完成。前端经 core/tasks 消费并联动任务栏进度。
+
+/// 启动一个可取消的后台任务：按 total 步推进，每步 sleep 后上报进度。
+/// 前端以 `void ipc(...)` 触发（不等返回），用 `task_cancel` + `cancelTask` 取消。
+#[tauri::command]
+pub async fn hello_world_start_task(
+    app: tauri::AppHandle,
+    task_id: String,
+    total: u64,
+) -> Result<(), AppError> {
+    let total = total.clamp(1, 200);
+    let cancel = crate::tasks::begin(&task_id);
+    for done in 1..=total {
+        // 取消标志由 task_cancel 命令置位
+        if cancel.load(std::sync::atomic::Ordering::Relaxed) {
+            log::info!("后台任务已取消: {task_id}");
+            // 通知前端收尾（core/tasks 收到 done 后复位 running 并清除任务栏进度）
+            crate::tasks::emit_done(&app, &task_id);
+            crate::tasks::end(&task_id);
+            return Ok(());
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(80)).await;
+        crate::tasks::emit_progress(
+            &app,
+            &task_id,
+            done,
+            Some(total),
+            Some(format!("步骤 {done}/{total}")),
+        );
+    }
+    crate::tasks::emit_done(&app, &task_id);
+    crate::tasks::end(&task_id);
+    log::info!("后台任务完成: {task_id}");
+    Ok(())
+}

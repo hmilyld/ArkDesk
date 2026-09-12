@@ -12,12 +12,49 @@ use tauri::{
 const MENU_SHOW: &str = "show";
 const MENU_QUIT: &str = "quit";
 
-/// 唤起主窗口（取消最小化 → 显示 → 聚焦）
-pub fn show_main_window<R: Runtime>(app: &tauri::AppHandle<R>) {
+/// macOS：显式激活应用，确保窗口真正来到最前。
+///
+/// 点击菜单栏（托盘）图标本身**不会**激活所属应用（AppKit 现状），而
+/// `show()` / `set_focus()` 只做 `makeKeyAndOrderFront`，窗口会被排到次层：
+/// 看起来「点了没反应」，切换应用后才看到窗口其实已显示。这是上游已知问题
+/// （tauri-apps/tauri#14795，tray-icon 0.25.0 仍未修复），故此处自行激活应用。
+#[cfg(target_os = "macos")]
+fn activate_app() {
+    if let Some(mtm) = objc2::MainThreadMarker::new() {
+        #[allow(deprecated)] // activate() 需 macOS 14+，用旧 API 兼容更早系统
+        {
+            use objc2_app_kit::NSApplication;
+            NSApplication::sharedApplication(mtm).activateIgnoringOtherApps(true);
+        }
+    }
+}
+
+/// 立即唤起主窗口（取消最小化 → 显示 → 聚焦 → 激活应用）
+fn show_main_window_now<R: Runtime>(app: &tauri::AppHandle<R>) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
+    }
+    #[cfg(target_os = "macos")]
+    activate_app();
+}
+
+/// 唤起主窗口。
+///
+/// macOS 上托盘鼠标事件的跟踪会覆盖同一次事件内的激活/排序，故立即尝试一次后，
+/// 再延迟一拍（下个 runloop）重试，保证窗口稳定回到最前。
+pub fn show_main_window<R: Runtime>(app: &tauri::AppHandle<R>) {
+    show_main_window_now(app);
+
+    #[cfg(target_os = "macos")]
+    {
+        let handle = app.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(80));
+            let inner = handle.clone();
+            let _ = handle.run_on_main_thread(move || show_main_window_now(&inner));
+        });
     }
 }
 

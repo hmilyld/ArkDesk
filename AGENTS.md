@@ -145,6 +145,8 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 
   紧急兜底：`lsof -ti:1420 | xargs -r kill -9`。上游 tauri#15098，修复 PR #15108（open）合并并升级 CLI 后可移除此条。
 
+- **macOS 托盘点击不激活窗口**：`show_menu_on_left_click(false)` 时点击菜单栏图标，AppKit 不会激活所属应用；`show()`/`set_focus()` 只做 `makeKeyAndOrderFront`，窗口被排到次层——看似「点了没反应」，切到别的应用才见窗口已显示（Dock 图标能用是因为 macOS 会激活应用）。上游 tauri#14795（tray-icon 0.25.0 仍未修）。`tray::show_main_window` 已改为立即 + 延迟一拍（下个 runloop）重试，并在 macOS 上调 `NSApp.activateIgnoringOtherApps(true)`；同时 `RunEvent::Reopen` 显式唤起主窗口。勿删这两处，否则回归。
+
 - **本地层编译依赖（ocr-rs 等）**：这类重依赖属 fork 本地层，相关编译问题（macOS `CXXFLAGS`、Windows libclang）由 fork 自行处理并记录在 `LOCAL.md`；base 不含这些依赖，无此问题。
 
 ## 目录速览

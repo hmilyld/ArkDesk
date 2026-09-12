@@ -124,3 +124,12 @@ async function onRestart(): Promise<void> {
     </DialogContent>
   </Dialog>
 </template>
+
+<style scoped>
+.markdown-body :deep(> :first-child) {
+  margin-top: 0;
+}
+.markdown-body :deep(> :last-child) {
+  margin-bottom: 0;
+}
+</style>

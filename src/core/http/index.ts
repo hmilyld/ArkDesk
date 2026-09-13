@@ -61,6 +61,84 @@ function parseJson<T>(response: HttpResponse): T {
   }
 }
 
+/** 名称-值对（保序，允许重复键） */
+export interface HttpNameValue {
+  name: string;
+  value: string;
+}
+
+/** multipart 单个 part（文本字段或文件） */
+export interface HttpMultipartPart {
+  name: string;
+  value?: string;
+  filePath?: string;
+  fileName?: string;
+  contentType?: string;
+}
+
+/** 高级请求体（对应 Rust `HttpSendBody`，按 type 打标签） */
+export type HttpSendBody =
+  | { type: 'raw'; text: string; contentType?: string }
+  | { type: 'form'; fields: HttpNameValue[] }
+  | { type: 'multipart'; parts: HttpMultipartPart[] }
+  | { type: 'binary'; path: string; contentType?: string };
+
+/** `http.send` 请求参数（对应 Rust `HttpSendArgs`） */
+export interface HttpSendOptions {
+  method?: string;
+  url: string;
+  headers?: HttpNameValue[];
+  query?: HttpNameValue[];
+  /** 原始 Cookie 头（可选便捷项） */
+  cookies?: string;
+  body?: HttpSendBody;
+  /** `follow`（默认） | `manual` */
+  redirect?: 'follow' | 'manual';
+  verifySsl?: boolean;
+  timeoutMs?: number;
+  userAgent?: string;
+  /** 代理覆盖：不传 = 沿用框架全局；空串 = 直连；其他 = 覆盖 */
+  proxy?: string;
+  /** `none`（默认，不自动管理） | `jar`（共享 cookie jar） */
+  cookieMode?: 'none' | 'jar';
+  maxBodyBytes?: number;
+  /** 取消任务 id（配合 `http.cancel`） */
+  taskId?: string;
+}
+
+export interface HttpHeaderEntry {
+  name: string;
+  value: string;
+}
+
+/** `http.send` 响应（对应 Rust `HttpSendResult`） */
+export interface HttpSendResponse {
+  status: number;
+  statusText: string;
+  ok: boolean;
+  finalUrl: string;
+  headers: HttpHeaderEntry[];
+  contentType?: string;
+  bodyText?: string;
+  bodyBase64?: string;
+  isBinary: boolean;
+  sizeBytes: number;
+  contentLength?: number;
+  elapsedMs: number;
+  truncated: boolean;
+  redirectLocation?: string;
+}
+
+/** 高级通用请求：参数化重定向 / SSL / 超时 / 代理 / cookie，支持 multipart 与二进制响应 */
+export async function send(options: HttpSendOptions): Promise<HttpSendResponse> {
+  return ipc<HttpSendResponse>('http_send', { args: options });
+}
+
+/** 取消进行中的 `http.send`（依据 `taskId`） */
+export async function cancel(taskId: string): Promise<void> {
+  await ipc('task_cancel', { taskId });
+}
+
 export interface DownloadOptions {
   headers?: Record<string, string>;
   onProgress?: (progress: { downloaded: number; total: number | null }) => void;
@@ -91,6 +169,8 @@ export async function download(
 
 export const http = {
   request,
+  send,
+  cancel,
   download,
 
   get: (url: string, options?: HttpRequestOptions): Promise<HttpResponse> =>

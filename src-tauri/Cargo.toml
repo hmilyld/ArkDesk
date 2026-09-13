@@ -46,12 +46,13 @@ reqwest = { version = "0.12", default-features = false, features = [
   "gzip",
   "brotli",
   "cookies",
+  "multipart",
 ] }
 sqlx = { version = "0.8", default-features = false, features = [
   "sqlite",
   "runtime-tokio",
 ] }
-tokio = { version = "1", features = ["fs", "io-util"] }
+tokio = { version = "1", features = ["fs", "io-util", "macros", "time"] }
 
 # ───────────────────── local plugin deps（fork-owned；base 删除本段） ─────────────────────
 calamine = "0.36.1"

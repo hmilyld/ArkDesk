@@ -90,7 +90,7 @@ src/
 │   ├── ipc/           #   invoke 封装（命令名受 commands.gen.ts 约束）
 │   ├── events/        #   类型化事件总线（emitEvent / onEvent，统一前缀）
 │   ├── db/            #   SQLite：Drizzle(kdb) + 通用 CRUD + 事务 + 手写 SQL 兜底
-│   ├── http/          #   通用 HTTP 客户端（reqwest，无 CORS；流式下载 + 代理）
+│   ├── http/          #   通用 HTTP 客户端（reqwest，无 CORS；send 高级 + 流式下载 + 代理）
 │   ├── theme/         #   亮/暗/跟系统 + 主题色（含自定义主色）+ 字号
 │   ├── notify/        #   系统通知（权限 + 设置开关）
 │   ├── autostart.ts   #   开机自启（系统为真相源）
@@ -129,7 +129,7 @@ src-tauri/
     ├── error.rs       # AppError（所有命令返回 Result<T, AppError>）
     ├── events.rs      # 事件名常量（与前端 core/events 同步）
     ├── db.rs          # SQLite：sqlx 池 + 作用域迁移 + 事务 + 备份/恢复/重置
-    ├── http.rs        # HTTP 客户端（reqwest；流式下载 + 代理）
+    ├── http.rs        # HTTP 客户端（reqwest；send 高级 + 流式下载 + 代理）
     ├── updater.rs     # 在线更新
     ├── tasks.rs       # 后台任务（取消令牌 + 进度事件）
     ├── open.rs        # 打开内容（CLI/深链接/二次启动 → app://open）
@@ -274,7 +274,7 @@ BLOB 列以 base64 返回；多语句原子写入用 `runInTransaction([{ sql, p
 | 迁移版本  | `migration(scope, version, ...)` 按插件作用域隔离（scope=插件 id，version 各自从 1 递增），已发布迁移**不可修改**（只能追加）；旧库用 `legacyMigrations` 桥接 |
 | BLOB 列   | 经 sqlx 通道以 **base64 字符串**返回（无损），前端需自行 `atob` 解码                                                                                          |
 | 工具配置  | `useToolSettings(toolId, defaults)`，勿自行另建存储                                                                                                           |
-| HTTP 请求 | 一律走 `core/http`（`http.getJson/postJson`…），禁止 webview 内 fetch 跨域采集                                                                                |
+| HTTP 请求 | 一律走 `core/http`（`http.getJson/postJson`…，高级用 `http.send`），禁止 webview 内 fetch 跨域采集                                                            |
 | 日志      | `ctx.logger` / `logger`，禁止裸 `println!`                                                                                                                    |
 | 样式      | shadcn-vue 语义色（`bg-primary` 等）跟随主题色，勿硬编码色值                                                                                                  |
 | 生成组件  | `src/components/ui/**` 为 CLI 生成物，可改样式但勿改结构/逻辑                                                                                                 |
@@ -291,7 +291,8 @@ BLOB 列以 base64 返回；多语句原子写入用 `runInTransaction([{ sql, p
 - **主题**：亮/暗/跟系统（默认暗色）+ 6 档主题色（`core/theme` + `assets/index.css` 的 accent class）；
   根字号三档缩放（小 13 / 正常 14 / 大 15），控件与文字等比联动
 - **HTTP**：Rust reqwest 全局单例（rustls、cookie 会话、10 次重定向、30s 超时、10MB 响应上限），
-  前端 `http.getJson<T>(url)` 即可采集 JSON 接口
+  前端 `http.getJson<T>(url)` 即可采集 JSON 接口；`http.send()` 为高级原语（可参数化重定向 / SSL / 超时 / 代理 /
+  cookie 模式，支持 multipart 上传、二进制响应、保序重复响应头与取消），使用与采集隔离的 Client
 - **安全信任边界**：`db_*` / `http_request` / `hello_world_greet` 等 App 自有命令
   **不经过 capability 权限系统**（Tauri v2 仅门控核心与插件命令），webview 内任意代码均可执行
   任意 SQL / 发起任意请求。因此必须保持 CSP 严格、**不加载任何远程内容**，插件（本地代码）

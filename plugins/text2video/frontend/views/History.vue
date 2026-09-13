@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { ipc } from '@/core/ipc';
 import { RefreshCw, FolderOpen, Trash2, Film } from '@lucide/vue';
 import ToolShell from '@/components/tool/ToolShell.vue';
-import { openArtifact as openPath, statusLabel, type HistoryRow } from '../shared';
+import { errorMessage, openArtifact as openPath, statusLabel, type HistoryRow } from '../shared';
 
 const rows = ref<HistoryRow[]>([]);
 const loading = ref(false);
@@ -19,7 +19,7 @@ async function load(): Promise<void> {
   try {
     rows.value = await ipc<HistoryRow[]>('text2video_history', { limit: 200 });
   } catch (err) {
-    toast.error(`加载记录失败: ${err instanceof Error ? err.message : String(err)}`);
+    toast.error(`加载记录失败: ${errorMessage(err)}`);
   } finally {
     loading.value = false;
   }
@@ -31,7 +31,7 @@ async function remove(refId: string): Promise<void> {
     rows.value = rows.value.filter((row) => row.refId !== refId);
     toast.success('记录已删除');
   } catch (err) {
-    toast.error(`删除失败: ${err instanceof Error ? err.message : String(err)}`);
+    toast.error(`删除失败: ${errorMessage(err)}`);
   }
 }
 

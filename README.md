@@ -4,12 +4,14 @@
 
 ## 内置工具
 
-| 分组     | 插件               | 工具                                              |
-| -------- | ------------------ | ------------------------------------------------- |
-| 常用工具 | `daily-tools`      | 文件转换（→ Markdown）、图片 OCR（PaddleOCR MNN） |
-| 投标     | `tender-optimizer` | 招标二轮报价蒙特卡洛测算、测算历史                |
-| 内容创作 | `text2video`       | 文章 → 竖屏滚动短视频（含草稿箱、处理记录）       |
-| 系统工具 | `system`           | 数据维护（浏览表结构、编辑数据）                  |
+| 分组     | 插件               | 工具                                                          |
+| -------- | ------------------ | ------------------------------------------------------------- |
+| 常用工具 | `daily-tools`      | 文件转换（→ Markdown）、图片 OCR（PaddleOCR MNN）、**加解密** |
+| 投标     | `tender-optimizer` | 招标二轮报价蒙特卡洛测算、测算历史                            |
+| 内容创作 | `text2video`       | 文章 → 竖屏滚动短视频（含草稿箱、处理记录）                   |
+| 系统工具 | `system`           | 数据维护（浏览表结构、编辑数据）                              |
+
+> 各插件的功能说明见 `plugins/<id>/README.md`，开发约定见 `plugins/<id>/AGENTS.md`（项目级文档只做索引）。
 
 > 本仓库派生自上游 [PocketArk](https://github.com/hmilyld/PocketArk)：框架代码通过 `git remote` 的
 > `upstream` 同步更新，个人内容（插件、依赖、资源、密钥）集中在「本地层」——见 [LOCAL.md](LOCAL.md)。
@@ -108,15 +110,15 @@ src/
 └── stores/            # Pinia（全局设置）
 
 plugins/               # ★ 你的工具都在这里（每个目录一个插件，前后端同处）
-├── _template/         #   新插件模板（复制后按目录内 README.md 改写；_ 开头不注册）
+├── _template/         #   新插件模板（复制后按目录内 README.md / AGENTS.md 改写；_ 开头不注册）
 │   ├── plugin.json    #     清单：唯一事实源（元数据/工具项/入口声明）
 │   ├── frontend/      #     前端：views/ settings/ components/ composables/ schema.ts setup.ts shared.ts
 │   └── backend/       #     后端：mod.rs（#[tauri::command] 命令）+ migrations.rs（可选）
-├── hello-world/       #   示例插件（多功能插件样板）
+├── hello-world/       #   示例插件（多功能插件样板；README.md + AGENTS.md）
 ├── system/            #   系统工具（数据维护，前端-only）
-├── daily-tools/       #   常用工具（文件转换 + 图片 OCR）
-├── tender-optimizer/  #   投标报价测算
-└── text2video/        #   图文视频工具
+├── daily-tools/       #   常用工具（文件转换 + 图片 OCR + 加解密；README.md + AGENTS.md）
+├── tender-optimizer/  #   投标报价测算（README.md + AGENTS.md）
+└── text2video/        #   图文视频工具（README.md + AGENTS.md）
 
 src-tauri/
 ├── build.rs           # 扫描 plugins/ 生成命令注册与迁移聚合

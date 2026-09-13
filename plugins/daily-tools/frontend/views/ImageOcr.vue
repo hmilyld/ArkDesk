@@ -10,7 +10,7 @@ import { ipc } from '@/core/ipc';
 import { open as openFileDialog } from '@tauri-apps/plugin-dialog';
 import { ScanText, RotateCcw, Upload } from '@lucide/vue';
 import ToolShell from '@/components/tool/ToolShell.vue';
-import { OCR_EXTENSIONS } from '../shared';
+import { OCR_EXTENSIONS, errorMessage } from '../shared';
 
 interface OcrResult {
   text: string;
@@ -72,8 +72,7 @@ async function runOcr(path: string, preview: string, name: string): Promise<void
     confidence.value = result.confidence;
     toast.success('识别完成');
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    toast.error(`识别失败: ${message}`);
+    toast.error(`识别失败：${errorMessage(err)}`);
   } finally {
     loading.value = false;
   }

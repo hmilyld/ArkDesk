@@ -40,6 +40,7 @@ import ToolShell from '@/components/tool/ToolShell.vue';
 import ArticleForm from '../components/ArticleForm.vue';
 import { useGeneration } from '../composables/useGeneration';
 import {
+  errorMessage,
   normalizeSettings,
   settings,
   statusLabel,
@@ -110,7 +111,7 @@ async function checkEnv(): Promise<void> {
       toast.error(`环境不完整：${missing}${result.message ? `（${result.message}）` : ''}`);
     }
   } catch (err) {
-    toast.error(`环境检查失败: ${err instanceof Error ? err.message : String(err)}`);
+    toast.error(`环境检查失败: ${errorMessage(err)}`);
   } finally {
     envLoading.value = false;
   }
@@ -153,7 +154,7 @@ async function start(): Promise<void> {
       toast.warning('未生成视频，请查看日志');
     }
   } catch (err) {
-    toast.error(`生成失败: ${err instanceof Error ? err.message : String(err)}`);
+    toast.error(`生成失败: ${errorMessage(err)}`);
   } finally {
     finish();
   }
@@ -175,7 +176,7 @@ async function saveDraft(): Promise<void> {
     });
     toast.success('已保存到草稿箱');
   } catch (err) {
-    toast.error(`保存草稿失败: ${err instanceof Error ? err.message : String(err)}`);
+    toast.error(`保存草稿失败: ${errorMessage(err)}`);
   }
 }
 
@@ -223,7 +224,7 @@ async function generateArticle(): Promise<void> {
     toast.success('AI 文章已生成，可编辑后存草稿或直接生成');
     void notifyIfBackground('AI 文章已生成', article.title);
   } catch (err) {
-    toast.error(`AI 生成失败: ${err instanceof Error ? err.message : String(err)}`);
+    toast.error(`AI 生成失败: ${errorMessage(err)}`);
   } finally {
     aiLoading.value = false;
   }

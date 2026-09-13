@@ -21,6 +21,7 @@ import ToolShell from '@/components/tool/ToolShell.vue';
 import ArticleForm from '../components/ArticleForm.vue';
 import { useGeneration } from '../composables/useGeneration';
 import {
+  errorMessage,
   normalizeSettings,
   settings,
   statusLabel,
@@ -72,7 +73,7 @@ async function load(): Promise<void> {
     drafts.value = await ipc<Draft[]>('text2video_draft_list');
     selected.value = selected.value.filter((id) => drafts.value.some((d) => d.id === id));
   } catch (err) {
-    toast.error(`加载草稿失败: ${err instanceof Error ? err.message : String(err)}`);
+    toast.error(`加载草稿失败: ${errorMessage(err)}`);
   } finally {
     loading.value = false;
   }
@@ -130,7 +131,7 @@ async function saveEditor(): Promise<void> {
     await load();
     toast.success('草稿已保存');
   } catch (err) {
-    toast.error(`保存草稿失败: ${err instanceof Error ? err.message : String(err)}`);
+    toast.error(`保存草稿失败: ${errorMessage(err)}`);
   } finally {
     saving.value = false;
   }
@@ -143,7 +144,7 @@ async function remove(id: number): Promise<void> {
     await load();
     toast.success('草稿已删除');
   } catch (err) {
-    toast.error(`删除草稿失败: ${err instanceof Error ? err.message : String(err)}`);
+    toast.error(`删除草稿失败: ${errorMessage(err)}`);
   }
 }
 
@@ -157,7 +158,7 @@ async function removeSelected(): Promise<void> {
     await load();
     toast.success('所选草稿已删除');
   } catch (err) {
-    toast.error(`删除草稿失败: ${err instanceof Error ? err.message : String(err)}`);
+    toast.error(`删除草稿失败: ${errorMessage(err)}`);
   }
 }
 
@@ -204,7 +205,7 @@ async function batchGenerate(): Promise<void> {
       void notifyIfBackground('批量生成完成', `成功生成 ${result.rendered} 条视频`);
     }
   } catch (err) {
-    toast.error(`批量生成失败: ${err instanceof Error ? err.message : String(err)}`);
+    toast.error(`批量生成失败: ${errorMessage(err)}`);
   } finally {
     finish();
   }

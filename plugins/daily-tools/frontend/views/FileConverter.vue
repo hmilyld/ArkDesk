@@ -11,7 +11,7 @@ import { open as openFileDialog, save as saveFileDialog } from '@tauri-apps/plug
 import { FileDown, FileText, RotateCcw, Upload } from '@lucide/vue';
 import ToolShell from '@/components/tool/ToolShell.vue';
 import MarkdownPreview from '../components/MarkdownPreview.vue';
-import { CONVERT_EXTENSIONS } from '../shared';
+import { CONVERT_EXTENSIONS, errorMessage } from '../shared';
 
 interface ConvertResult {
   markdown: string;
@@ -40,8 +40,7 @@ async function handleOpenFile(): Promise<void> {
     markdown.value = result.markdown;
     toast.success('转换完成');
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    toast.error(`转换失败: ${message}`);
+    toast.error(`转换失败：${errorMessage(err)}`);
   } finally {
     loading.value = false;
   }
@@ -62,8 +61,7 @@ async function handleSave(): Promise<void> {
     });
     toast.success('文件已保存');
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    toast.error(`保存失败: ${message}`);
+    toast.error(`保存失败：${errorMessage(err)}`);
   }
 }
 

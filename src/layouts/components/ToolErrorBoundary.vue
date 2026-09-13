@@ -5,14 +5,15 @@
  */
 import { ref, onErrorCaptured } from 'vue';
 import { Button } from '@/components/ui/button';
-import { formatValue, logger } from '@/core/logger';
+import { logger } from '@/core/logger';
+import { normalizeError } from '@/core/errors';
 
 const crashed = ref(false);
 const message = ref('');
 
 onErrorCaptured((err) => {
   crashed.value = true;
-  message.value = err instanceof Error ? err.message : formatValue(err);
+  message.value = normalizeError(err).message;
   logger.error(`工具渲染异常: ${message.value}`);
   return false;
 });

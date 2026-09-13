@@ -8,6 +8,17 @@
 import { toast } from 'vue-sonner';
 import { useToolSettings } from '@/core/plugins';
 import { ipc } from '@/core/ipc';
+import { normalizeError } from '@/core/errors';
+
+/**
+ * 提取用户可读的错误信息。
+ *
+ * `ipc` 抛出的是规范化后的 `AppError` 对象（非 Error 实例），直接 `String(err)`
+ * 会得到 `[object Object]`；此函数统一兼容 AppError / Error / 字符串 / 未知值。
+ */
+export function errorMessage(value: unknown): string {
+  return normalizeError(value).message;
+}
 
 export interface Text2VideoSettings {
   // 输出
@@ -261,7 +272,7 @@ export async function openArtifact(path: string, reveal = false): Promise<void> 
   try {
     await ipc('text2video_open', { path, reveal });
   } catch (err) {
-    toast.error(`打开失败: ${err instanceof Error ? err.message : String(err)}`);
+    toast.error(`打开失败：${errorMessage(err)}`);
   }
 }
 

@@ -39,6 +39,9 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 
 ## 插件扩展（最常见任务）
 
+> 每个插件的**本地约定**放在 `plugins/<id>/AGENTS.md`，**功能说明**放在 `plugins/<id>/README.md`；
+> 本文档只保留框架级约定与索引，插件细节请查阅对应插件目录，避免项目级文档膨胀。
+
 新增工具 = `pnpm create-plugin`（交互式生成骨架，推荐），或复制 `plugins/_template/` → `plugins/<plugin-id>/`，改写 `plugin.json`（唯一事实源），实现 `frontend/views/*.vue`。**前端与后端均构建期自动注册**，无需任何手动登记。
 
 - 前端：Vite 扫描 `plugins/*/frontend/**`（views / settings / setup.ts / schema.ts）。
@@ -159,7 +162,7 @@ src/components/ui/   # shadcn-vue 生成组件（CLI 管理）
 src/content/         # 关于/更新日志 Markdown（设置页读取）
 scripts/             # scaffold / create-plugin / gen-icons / gen-commands / prepare / bump-version / release
   local/             # ★本地层脚本（fork-owned；base 无）：资源下载、CI 跳过
-plugins/<id>/        # ★工具插件（前后端同处）：plugin.json + README.md
+plugins/<id>/        # ★工具插件（前后端同处）：plugin.json + README.md + AGENTS.md
   frontend/          #   views/ settings/ components/ composables/ schema.ts setup.ts shared.ts
   backend/           #   mod.rs（#[tauri::command] 命令）+ migrations.rs + 其余 .rs / 资源
 src/layouts/         # 布局壳（标题栏/侧栏/错误边界/设置页）

@@ -5,7 +5,7 @@
 
 ## 个人插件
 
-- `plugins/daily-tools`：文件转换 + 图片 OCR
+- `plugins/daily-tools`：文件转换 + 图片 OCR + 加解密工具
 - `plugins/tender-optimizer`：投标报价测算（蒙特卡洛）
 - `plugins/text2video`：图文生成竖屏滚动短视频
 
@@ -16,6 +16,9 @@
 `src-tauri/Cargo.toml` 末尾的 `local plugin deps` 段与两张 `local plugin target deps`
 表：`calamine` / `rust_xlsxwriter` / `rand` / `rand_distr` / `anytomd` / `lopdf` /
 `ab_glyph` / `scraper` / `regex` / `opener` / `ocr-rs`。
+
+加解密工具另引入的 RustCrypto / `gmcrypto-core` 依赖同属该段，清单与取舍见
+[`plugins/daily-tools/AGENTS.md`](plugins/daily-tools/AGENTS.md#依赖fork-本地层)。
 
 ## 资源（字体 / OCR 模型）
 

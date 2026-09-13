@@ -8,6 +8,7 @@
 - `plugins/daily-tools`：文件转换 + 图片 OCR + 加解密工具
 - `plugins/tender-optimizer`：投标报价测算（蒙特卡洛）
 - `plugins/text2video`：图文生成竖屏滚动短视频
+- `plugins/network-tools`：接口测试 + 本地 MITM 请求拦截（hudsucker）
 
 （这些目录即全部个人内容，删除目录即彻底移除；后端命令/迁移为构建期自动注册。）
 
@@ -16,6 +17,12 @@
 `src-tauri/Cargo.toml` 末尾的 `local plugin deps` 段与两张 `local plugin target deps`
 表：`calamine` / `rust_xlsxwriter` / `rand` / `rand_distr` / `anytomd` / `lopdf` /
 `ab_glyph` / `scraper` / `regex` / `opener` / `ocr-rs`。
+
+请求拦截（`plugins/network-tools`）另引入：`hudsucker`（MITM 代理）、`http-body-util`、
+`flate2` / `brotli` / `zstd`（捕获体解压）。注意：hudsucker 的 `tokio-rustls` 默认特性会
+**间接引入 `aws-lc-rs`/`aws-lc-sys`**（即使我们运行时显式使用 `ring` provider），其编译在
+macOS 会自动走可移植构建；Windows 构建可能需要 CMake/NASM（与 `ocr-rs` 一样属本地层
+工具链范畴，见下）。
 
 加解密工具另引入的 RustCrypto / `gmcrypto-core` 依赖同属该段，清单与取舍见
 [`plugins/daily-tools/AGENTS.md`](plugins/daily-tools/AGENTS.md#依赖fork-本地层)。

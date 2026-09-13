@@ -3,6 +3,7 @@
   "name": "常用工具",
   "description": "日常文件转换、图片文字识别与加解密",
   "group": "常用工具",
+  "order": 10,
   "tools": [
     {
       "id": "file-converter",

@@ -101,6 +101,13 @@ scrypt = "0.11"
 argon2 = "0.5"
 uuid = { version = "1", features = ["v4", "v7"] }
 
+# 网络工具（network-tools / interceptor）：本地 MITM 代理
+hudsucker = "0.25"
+http-body-util = "0.1"
+flate2 = "1"
+brotli = "8"
+zstd = "0.13"
+
 [target.'cfg(target_os = "macos")'.dependencies]
 # macOS 窗口外观（NSWindow/NSAppearance）
 objc2 = "0.6"

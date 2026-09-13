@@ -1,8 +1,9 @@
 {
   "id": "tender-optimizer",
-  "name": "投标报价",
+  "name": "投标工具",
   "description": "招标二轮报价测算：基于市场降价假设，蒙特卡洛模拟竞争环境，计算最优报价方案",
-  "group": "投标",
+  "group": "投标工具",
+  "order": 40,
   "keywords": ["投标", "招标", "报价", "测算", "蒙特卡洛"],
   "legacyMigrations": { "3": 1, "4": 2, "5": 3, "6": 4, "7": 5 },
   "tools": [

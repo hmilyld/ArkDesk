@@ -1,0 +1,30 @@
+{
+  "id": "network-tools",
+  "name": "网络工具",
+  "description": "网络请求调试：接口测试与请求拦截",
+  "group": "网络工具",
+  "order": 20,
+  "icon": "Network",
+  "keywords": ["网络", "HTTP", "接口", "API", "调试", "Postman"],
+  "tools": [
+    {
+      "id": "http-client",
+      "name": "接口测试",
+      "description": "模拟 GET/POST 等请求，调试 API 接口",
+      "icon": "Send",
+      "entry": "frontend/views/HttpClient.vue",
+      "keepAlive": true
+    },
+    {
+      "id": "http-interceptor",
+      "name": "请求拦截",
+      "description": "本地 MITM 代理：捕获、查看、编辑并重放 HTTP(S) 请求",
+      "icon": "EthernetPort",
+      "entry": "frontend/views/Interceptor.vue",
+      "keepAlive": true
+    }
+  ],
+  "settings": {
+    "entry": "frontend/settings/Settings.vue"
+  }
+}

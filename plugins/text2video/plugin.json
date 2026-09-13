@@ -1,8 +1,9 @@
 {
   "id": "text2video",
-  "name": "图文视频工具",
+  "name": "视频工具",
   "description": "手动输入或 AI 创作文章，生成为竖屏滚动短视频",
   "group": "内容创作",
+  "order": 30,
   "icon": "Clapperboard",
   "keywords": ["视频", "图文", "短视频", "AI 写作", "滚动"],
   "legacyMigrations": { "8": 1, "9": 2 },

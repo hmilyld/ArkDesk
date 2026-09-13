@@ -46,12 +46,13 @@ reqwest = { version = "0.12", default-features = false, features = [
   "gzip",
   "brotli",
   "cookies",
+  "multipart",
 ] }
 sqlx = { version = "0.8", default-features = false, features = [
   "sqlite",
   "runtime-tokio",
 ] }
-tokio = { version = "1", features = ["fs", "io-util"] }
+tokio = { version = "1", features = ["fs", "io-util", "macros", "time"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # macOS 窗口外观（NSWindow/NSAppearance）

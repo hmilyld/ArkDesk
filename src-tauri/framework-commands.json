@@ -11,6 +11,7 @@
     "crate::db::db_restore",
     "crate::db::db_reset",
     "crate::http::http_request",
+    "crate::http::http_send",
     "crate::http::http_download",
     "crate::http::http_set_proxy",
     "crate::updater::updater_check",

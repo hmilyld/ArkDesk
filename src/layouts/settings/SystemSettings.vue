@@ -26,6 +26,7 @@ import { exportSettings, importSettings, restartApp } from '@/core/settings-tran
 import { useSettingsStore, type LogLevel } from '@/stores/settings';
 import { globalShortcutError } from '@/core/global-shortcut';
 import { notify } from '@/core/notify';
+import { SettingsRow, SettingsSection } from '@/components/settings';
 import ShortcutRecorder from './ShortcutRecorder.vue';
 import {
   ACCENTS,
@@ -230,402 +231,292 @@ function toggleExpanded(id: string): void {
 <template>
   <div class="space-y-6">
     <!-- 外观 -->
-    <section>
-      <h2 class="px-1 pb-1.5 text-xs font-medium text-muted-foreground">外观</h2>
-      <div class="divide-y divide-border rounded-lg border border-border bg-card">
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <span class="text-sm">主题</span>
-          <div class="flex gap-0.5 rounded-[7px] border border-border p-0.5">
-            <Button
-              v-for="option in themeOptions"
-              :key="option.value"
-              variant="ghost"
-              size="sm"
-              class="h-7 px-2.5 text-xs"
-              :class="
-                settings.themeMode === option.value
-                  ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              "
-              @click="settings.themeMode = option.value"
-            >
-              {{ option.label }}
-            </Button>
-          </div>
-        </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <span class="text-sm">主题色</span>
-          <div class="flex items-center gap-2">
-            <button
-              v-for="accent in ACCENTS"
-              :key="accent.id"
-              type="button"
-              class="size-5 rounded-full border border-black/10 transition-transform hover:scale-110 dark:border-white/20"
-              :class="
-                currentAccent === accent.id
-                  ? 'ring-2 ring-foreground/60 ring-offset-2 ring-offset-background'
-                  : ''
-              "
-              :style="{ backgroundColor: accent.preview }"
-              :title="accent.label"
-              :aria-label="`主题色：${accent.label}`"
-              @click="selectAccent(accent.id)"
-            />
-            <input
-              type="color"
-              :value="customAccent"
-              class="size-5 cursor-pointer rounded-full border border-black/10 bg-transparent p-0 dark:border-white/20"
-              title="自定义主题色"
-              aria-label="自定义主题色"
-              @input="onCustomAccent"
-            />
-          </div>
-        </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div>
-            <p class="text-sm">字号</p>
-            <p class="text-xs text-muted-foreground">界面整体缩放，立即生效</p>
-          </div>
-          <Select
-            :model-value="currentFontSize"
-            @update:model-value="(value) => selectFontSize(Number(value) as FontSize)"
+    <SettingsSection title="外观">
+      <SettingsRow title="主题">
+        <div class="flex gap-0.5 rounded-[7px] border border-border p-0.5">
+          <Button
+            v-for="option in themeOptions"
+            :key="option.value"
+            variant="ghost"
+            size="sm"
+            class="h-7 px-2.5 text-xs"
+            :class="
+              settings.themeMode === option.value
+                ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            "
+            @click="settings.themeMode = option.value"
           >
-            <SelectTrigger id="font-size" class="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="option in FONT_SIZES" :key="option.value" :value="option.value">
-                {{ option.label }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            {{ option.label }}
+          </Button>
         </div>
-      </div>
-    </section>
+      </SettingsRow>
+
+      <SettingsRow title="主题色">
+        <div class="flex items-center gap-2">
+          <button
+            v-for="accent in ACCENTS"
+            :key="accent.id"
+            type="button"
+            class="size-5 rounded-full border border-black/10 transition-transform hover:scale-110 dark:border-white/20"
+            :class="
+              currentAccent === accent.id
+                ? 'ring-2 ring-foreground/60 ring-offset-2 ring-offset-background'
+                : ''
+            "
+            :style="{ backgroundColor: accent.preview }"
+            :title="accent.label"
+            :aria-label="`主题色：${accent.label}`"
+            @click="selectAccent(accent.id)"
+          />
+          <input
+            type="color"
+            :value="customAccent"
+            class="size-5 cursor-pointer rounded-full border border-black/10 bg-transparent p-0 dark:border-white/20"
+            title="自定义主题色"
+            aria-label="自定义主题色"
+            @input="onCustomAccent"
+          />
+        </div>
+      </SettingsRow>
+
+      <SettingsRow title="字号" description="界面整体缩放，立即生效">
+        <Select
+          :model-value="currentFontSize"
+          @update:model-value="(value) => selectFontSize(Number(value) as FontSize)"
+        >
+          <SelectTrigger id="font-size" class="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="option in FONT_SIZES" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingsRow>
+    </SettingsSection>
 
     <!-- 通用 -->
-    <section>
-      <h2 class="px-1 pb-1.5 text-xs font-medium text-muted-foreground">通用</h2>
-      <div class="divide-y divide-border rounded-lg border border-border bg-card">
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div>
-            <p class="text-sm">关闭窗口时隐藏到托盘</p>
-            <p class="text-xs text-muted-foreground">关闭后应用保留在系统托盘，可随时唤起</p>
-          </div>
-          <Switch
-            :model-value="settings.closeToTray"
-            @update:model-value="(value) => (settings.closeToTray = value === true)"
-          />
+    <SettingsSection title="通用">
+      <SettingsRow title="关闭窗口时隐藏到托盘" description="关闭后应用保留在系统托盘，可随时唤起">
+        <Switch
+          :model-value="settings.closeToTray"
+          @update:model-value="(value) => (settings.closeToTray = value === true)"
+        />
+      </SettingsRow>
+      <SettingsRow title="开机自启" description="系统启动时自动运行本应用">
+        <Switch
+          :model-value="settings.autoStart"
+          @update:model-value="(value) => (settings.autoStart = value === true)"
+        />
+      </SettingsRow>
+      <SettingsRow title="系统通知" description="允许应用发送系统级通知">
+        <Button
+          variant="outline"
+          size="sm"
+          :disabled="!settings.notificationEnabled"
+          @click="onTestNotification"
+        >
+          测试
+        </Button>
+        <Switch
+          :model-value="settings.notificationEnabled"
+          @update:model-value="(value) => (settings.notificationEnabled = value === true)"
+        />
+      </SettingsRow>
+    </SettingsSection>
+
+    <!-- 快捷键 -->
+    <SettingsSection title="快捷键">
+      <SettingsRow
+        title="全局快捷键（唤起窗口）"
+        description="点击后按下按键组合录制；Esc 取消，Backspace/Delete 清除。需含 Cmd/Ctrl/Alt，被占用或与菜单快捷键冲突时注册失败（见日志）"
+      >
+        <div class="flex flex-col items-end gap-1">
+          <ShortcutRecorder v-model="settings.globalShortcut" />
+          <p v-if="globalShortcutError" class="text-xs text-destructive">
+            {{ globalShortcutError }}
+          </p>
         </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div>
-            <p class="text-sm">开机自启</p>
-            <p class="text-xs text-muted-foreground">系统启动时自动运行本应用</p>
+      </SettingsRow>
+    </SettingsSection>
+
+    <!-- 网络 -->
+    <SettingsSection title="网络">
+      <SettingsRow title="HTTP 代理" description="如 http://127.0.0.1:7890；留空直连">
+        <Input v-model="settings.proxyUrl" class="w-64" placeholder="留空直连" />
+      </SettingsRow>
+    </SettingsSection>
+
+    <!-- AI -->
+    <SettingsSection title="AI">
+      <SettingsRow
+        title="接口地址"
+        description="OpenAI 兼容 Base URL（如 https://api.openai.com/v1）"
+      >
+        <Input v-model="settings.aiBaseUrl" class="w-72" placeholder="https://api.openai.com/v1" />
+      </SettingsRow>
+      <SettingsRow title="API Key" description="明文保存在本机设置文件">
+        <Input v-model="settings.aiApiKey" type="password" class="w-72" placeholder="sk-..." />
+      </SettingsRow>
+      <SettingsRow title="模型" description="如 gpt-4o-mini / deepseek-chat">
+        <Input v-model="settings.aiModel" class="w-72" placeholder="gpt-4o-mini" />
+      </SettingsRow>
+    </SettingsSection>
+
+    <!-- 更新 -->
+    <SettingsSection title="更新">
+      <SettingsRow>
+        <template #label>
+          <p class="text-sm">启用在线更新</p>
+          <p class="text-xs text-muted-foreground">
+            当前版本{{ appVersion ? ` v${appVersion}` : '' }}
+            <template v-if="settings.updateLastCheckAt">
+              · 上次检查 {{ new Date(settings.updateLastCheckAt).toLocaleString() }}
+            </template>
+          </p>
+        </template>
+        <Switch
+          :model-value="settings.updateEnabled"
+          @update:model-value="(value) => (settings.updateEnabled = value === true)"
+        />
+      </SettingsRow>
+
+      <SettingsRow
+        title="更新服务器地址"
+        description="HTTPS；可填清单地址或目录（目录自动补 /latest.json）"
+      >
+        <Input
+          v-model="settings.updateServerUrl"
+          class="w-72"
+          placeholder="https://releases.example.com"
+          :disabled="!settings.updateEnabled"
+        />
+      </SettingsRow>
+
+      <SettingsRow title="启动时自动检查" description="应用启动后自动检查一次更新">
+        <Switch
+          :model-value="settings.updateAutoCheck"
+          :disabled="!settings.updateEnabled"
+          @update:model-value="(value) => (settings.updateAutoCheck = value === true)"
+        />
+      </SettingsRow>
+
+      <SettingsRow title="检查更新">
+        <Button
+          variant="outline"
+          size="sm"
+          :disabled="!settings.updateEnabled || !settings.updateServerUrl || updaterState.checking"
+          @click="onCheckUpdate"
+        >
+          {{ updaterState.checking ? '检查中…' : '立即检查' }}
+        </Button>
+      </SettingsRow>
+    </SettingsSection>
+
+    <!-- 日志 -->
+    <SettingsSection title="日志">
+      <SettingsRow title="日志级别">
+        <Select
+          :model-value="settings.logLevel"
+          @update:model-value="(value) => (settings.logLevel = value as LogLevel)"
+        >
+          <SelectTrigger id="log-level" class="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="option in logLevelOptions" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingsRow>
+      <SettingsRow title="日志文件目录">
+        <Button variant="outline" size="sm" @click="openLogDir">打开目录</Button>
+      </SettingsRow>
+    </SettingsSection>
+
+    <!-- 工具管理：树形（插件 → 工具），默认收起 -->
+    <SettingsSection title="工具管理">
+      <template #footer>禁用的工具将从侧边导航隐藏</template>
+      <div v-for="group in pluginGroups" :key="group.id">
+        <!-- 插件行：点击展开/收起 -->
+        <button
+          type="button"
+          class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
+          @click="toggleExpanded(group.id)"
+        >
+          <div class="flex min-w-0 items-center gap-2">
+            <ChevronRight
+              class="size-4 shrink-0 text-muted-foreground transition-transform"
+              :class="{ 'rotate-90': isExpanded(group.id) }"
+            />
+            <span class="truncate text-sm font-medium">{{ group.name }}</span>
+            <span class="shrink-0 text-xs text-muted-foreground">
+              {{ group.tools.length }} 个工具
+            </span>
           </div>
-          <Switch
-            :model-value="settings.autoStart"
-            @update:model-value="(value) => (settings.autoStart = value === true)"
-          />
-        </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div>
-            <p class="text-sm">系统通知</p>
-            <p class="text-xs text-muted-foreground">允许应用发送系统级通知</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              :disabled="!settings.notificationEnabled"
-              @click="onTestNotification"
-            >
-              测试
-            </Button>
+        </button>
+
+        <!-- 工具行：独立启停开关 -->
+        <div
+          v-show="isExpanded(group.id)"
+          class="divide-y divide-border/60 border-t border-border/60"
+        >
+          <div
+            v-for="tool in group.tools"
+            :key="tool.meta.id"
+            class="flex items-center justify-between gap-3 py-2.5 pl-8 pr-3"
+          >
+            <div class="min-w-0">
+              <p class="text-sm">{{ tool.meta.name }}</p>
+              <p v-if="tool.meta.description" class="truncate text-xs text-muted-foreground">
+                {{ tool.meta.description }}
+              </p>
+            </div>
             <Switch
-              :model-value="settings.notificationEnabled"
-              @update:model-value="(value) => (settings.notificationEnabled = value === true)"
+              :model-value="settings.isToolEnabled(tool.meta.id)"
+              @update:model-value="(value) => settings.setToolEnabled(tool.meta.id, value === true)"
             />
           </div>
         </div>
       </div>
-    </section>
-
-    <!-- 快捷键 -->
-    <section>
-      <h2 class="px-1 pb-1.5 text-xs font-medium text-muted-foreground">快捷键</h2>
-      <div class="divide-y divide-border rounded-lg border border-border bg-card">
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div class="min-w-0">
-            <p class="text-sm">全局快捷键（唤起窗口）</p>
-            <p class="text-xs text-muted-foreground">
-              点击后按下按键组合录制；Esc 取消，Backspace/Delete 清除。需含 Cmd/Ctrl/Alt，
-              被占用或与菜单快捷键冲突时注册失败（见日志）
-            </p>
-          </div>
-          <div class="flex flex-col items-end gap-1">
-            <ShortcutRecorder v-model="settings.globalShortcut" />
-            <p v-if="globalShortcutError" class="text-xs text-destructive">
-              {{ globalShortcutError }}
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 网络 -->
-    <section>
-      <h2 class="px-1 pb-1.5 text-xs font-medium text-muted-foreground">网络</h2>
-      <div class="divide-y divide-border rounded-lg border border-border bg-card">
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div class="min-w-0">
-            <p class="text-sm">HTTP 代理</p>
-            <p class="text-xs text-muted-foreground">如 http://127.0.0.1:7890；留空直连</p>
-          </div>
-          <Input v-model="settings.proxyUrl" class="w-64" placeholder="留空直连" />
-        </div>
-      </div>
-    </section>
-
-    <!-- AI -->
-    <section>
-      <h2 class="px-1 pb-1.5 text-xs font-medium text-muted-foreground">AI</h2>
-      <div class="divide-y divide-border rounded-lg border border-border bg-card">
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div class="min-w-0">
-            <p class="text-sm">接口地址</p>
-            <p class="text-xs text-muted-foreground">
-              OpenAI 兼容 Base URL（如 https://api.openai.com/v1）
-            </p>
-          </div>
-          <Input
-            v-model="settings.aiBaseUrl"
-            class="w-72"
-            placeholder="https://api.openai.com/v1"
-          />
-        </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div class="min-w-0">
-            <p class="text-sm">API Key</p>
-            <p class="text-xs text-muted-foreground">明文保存在本机设置文件</p>
-          </div>
-          <Input v-model="settings.aiApiKey" type="password" class="w-72" placeholder="sk-..." />
-        </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div class="min-w-0">
-            <p class="text-sm">模型</p>
-            <p class="text-xs text-muted-foreground">如 gpt-4o-mini / deepseek-chat</p>
-          </div>
-          <Input v-model="settings.aiModel" class="w-72" placeholder="gpt-4o-mini" />
-        </div>
-      </div>
-    </section>
-
-    <!-- 更新 -->
-    <section>
-      <h2 class="px-1 pb-1.5 text-xs font-medium text-muted-foreground">更新</h2>
-      <div class="divide-y divide-border rounded-lg border border-border bg-card">
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div>
-            <p class="text-sm">启用在线更新</p>
-            <p class="text-xs text-muted-foreground">
-              当前版本{{ appVersion ? ` v${appVersion}` : '' }}
-              <template v-if="settings.updateLastCheckAt">
-                · 上次检查 {{ new Date(settings.updateLastCheckAt).toLocaleString() }}
-              </template>
-            </p>
-          </div>
-          <Switch
-            :model-value="settings.updateEnabled"
-            @update:model-value="(value) => (settings.updateEnabled = value === true)"
-          />
-        </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div class="min-w-0">
-            <p class="text-sm">更新服务器地址</p>
-            <p class="text-xs text-muted-foreground">
-              HTTPS；可填清单地址或目录（目录自动补 /latest.json）
-            </p>
-          </div>
-          <Input
-            v-model="settings.updateServerUrl"
-            class="w-72"
-            placeholder="https://releases.example.com"
-            :disabled="!settings.updateEnabled"
-          />
-        </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div>
-            <p class="text-sm">启动时自动检查</p>
-            <p class="text-xs text-muted-foreground">应用启动后自动检查一次更新</p>
-          </div>
-          <Switch
-            :model-value="settings.updateAutoCheck"
-            :disabled="!settings.updateEnabled"
-            @update:model-value="(value) => (settings.updateAutoCheck = value === true)"
-          />
-        </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <span class="text-sm">检查更新</span>
-          <Button
-            variant="outline"
-            size="sm"
-            :disabled="
-              !settings.updateEnabled || !settings.updateServerUrl || updaterState.checking
-            "
-            @click="onCheckUpdate"
-          >
-            {{ updaterState.checking ? '检查中…' : '立即检查' }}
-          </Button>
-        </div>
-      </div>
-    </section>
-
-    <!-- 日志 -->
-    <section>
-      <h2 class="px-1 pb-1.5 text-xs font-medium text-muted-foreground">日志</h2>
-      <div class="divide-y divide-border rounded-lg border border-border bg-card">
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <span class="text-sm">日志级别</span>
-          <Select
-            :model-value="settings.logLevel"
-            @update:model-value="(value) => (settings.logLevel = value as LogLevel)"
-          >
-            <SelectTrigger id="log-level" class="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem
-                v-for="option in logLevelOptions"
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <span class="text-sm">日志文件目录</span>
-          <Button variant="outline" size="sm" @click="openLogDir">打开目录</Button>
-        </div>
-      </div>
-    </section>
-
-    <!-- 工具管理：树形（插件 → 工具），默认收起 -->
-    <section>
-      <h2 class="px-1 pb-1.5 text-xs font-medium text-muted-foreground">工具管理</h2>
-      <div class="divide-y divide-border rounded-lg border border-border bg-card">
-        <div v-for="group in pluginGroups" :key="group.id">
-          <!-- 插件行：点击展开/收起 -->
-          <button
-            type="button"
-            class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
-            @click="toggleExpanded(group.id)"
-          >
-            <div class="flex min-w-0 items-center gap-2">
-              <ChevronRight
-                class="size-4 shrink-0 text-muted-foreground transition-transform"
-                :class="{ 'rotate-90': isExpanded(group.id) }"
-              />
-              <span class="truncate text-sm font-medium">{{ group.name }}</span>
-              <span class="shrink-0 text-xs text-muted-foreground">
-                {{ group.tools.length }} 个工具
-              </span>
-            </div>
-          </button>
-
-          <!-- 工具行：独立启停开关 -->
-          <div
-            v-show="isExpanded(group.id)"
-            class="divide-y divide-border/60 border-t border-border/60"
-          >
-            <div
-              v-for="tool in group.tools"
-              :key="tool.meta.id"
-              class="flex items-center justify-between gap-3 py-2.5 pl-8 pr-3"
-            >
-              <div class="min-w-0">
-                <p class="text-sm">{{ tool.meta.name }}</p>
-                <p v-if="tool.meta.description" class="truncate text-xs text-muted-foreground">
-                  {{ tool.meta.description }}
-                </p>
-              </div>
-              <Switch
-                :model-value="settings.isToolEnabled(tool.meta.id)"
-                @update:model-value="
-                  (value) => settings.setToolEnabled(tool.meta.id, value === true)
-                "
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-      <p class="px-1 pt-1.5 text-xs text-muted-foreground">禁用的工具将从侧边导航隐藏</p>
-    </section>
+    </SettingsSection>
 
     <!-- 数据 -->
-    <section>
-      <h2 class="px-1 pb-1.5 text-xs font-medium text-muted-foreground">数据</h2>
-      <div class="divide-y divide-border rounded-lg border border-border bg-card">
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div>
-            <p class="text-sm">应用数据目录</p>
-            <p class="text-xs text-muted-foreground">SQLite 数据库与设置文件所在位置</p>
-          </div>
-          <Button variant="outline" size="sm" @click="openDataDir">打开目录</Button>
-        </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div>
-            <p class="text-sm">备份数据库</p>
-            <p class="text-xs text-muted-foreground">导出当前数据库副本到指定文件</p>
-          </div>
-          <Button variant="outline" size="sm" @click="onBackupDb">备份</Button>
-        </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div>
-            <p class="text-sm">恢复数据库</p>
-            <p class="text-xs text-muted-foreground">从备份文件覆盖当前数据（重启生效）</p>
-          </div>
-          <Button variant="outline" size="sm" @click="onRestoreDb">恢复</Button>
-        </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div>
-            <p class="text-sm">导出设置</p>
-            <p class="text-xs text-muted-foreground">将全部设置导出为 JSON 文件</p>
-          </div>
-          <Button variant="outline" size="sm" @click="onExportSettings">导出</Button>
-        </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div>
-            <p class="text-sm">导入设置</p>
-            <p class="text-xs text-muted-foreground">从 JSON 文件导入设置（重启生效）</p>
-          </div>
-          <Button variant="outline" size="sm" @click="onImportSettings">导入</Button>
-        </div>
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div>
-            <p class="text-sm text-destructive">重置数据库</p>
-            <p class="text-xs text-muted-foreground">清空全部数据并重启，不可恢复</p>
-          </div>
-          <Button variant="outline" size="sm" class="text-destructive" @click="onResetDb">
-            重置
-          </Button>
-        </div>
-      </div>
-    </section>
+    <SettingsSection title="数据">
+      <SettingsRow title="应用数据目录" description="SQLite 数据库与设置文件所在位置">
+        <Button variant="outline" size="sm" @click="openDataDir">打开目录</Button>
+      </SettingsRow>
+      <SettingsRow title="备份数据库" description="导出当前数据库副本到指定文件">
+        <Button variant="outline" size="sm" @click="onBackupDb">备份</Button>
+      </SettingsRow>
+      <SettingsRow title="恢复数据库" description="从备份文件覆盖当前数据（重启生效）">
+        <Button variant="outline" size="sm" @click="onRestoreDb">恢复</Button>
+      </SettingsRow>
+      <SettingsRow title="导出设置" description="将全部设置导出为 JSON 文件">
+        <Button variant="outline" size="sm" @click="onExportSettings">导出</Button>
+      </SettingsRow>
+      <SettingsRow title="导入设置" description="从 JSON 文件导入设置（重启生效）">
+        <Button variant="outline" size="sm" @click="onImportSettings">导入</Button>
+      </SettingsRow>
+      <SettingsRow>
+        <template #label>
+          <p class="text-sm text-destructive">重置数据库</p>
+          <p class="text-xs text-muted-foreground">清空全部数据并重启，不可恢复</p>
+        </template>
+        <Button variant="outline" size="sm" class="text-destructive" @click="onResetDb">
+          重置
+        </Button>
+      </SettingsRow>
+    </SettingsSection>
 
     <!-- 诊断 -->
-    <section>
-      <h2 class="px-1 pb-1.5 text-xs font-medium text-muted-foreground">诊断</h2>
-      <div class="divide-y divide-border rounded-lg border border-border bg-card">
-        <div class="flex items-center justify-between gap-3 px-3 py-2.5">
-          <div>
-            <p class="text-sm">导出诊断报告</p>
-            <p class="text-xs text-muted-foreground">环境信息 + 最近日志，便于反馈问题时附上</p>
-          </div>
-          <Button variant="outline" size="sm" @click="onExportDiagnostics">导出</Button>
-        </div>
-      </div>
-    </section>
+    <SettingsSection title="诊断">
+      <SettingsRow title="导出诊断报告" description="环境信息 + 最近日志，便于反馈问题时附上">
+        <Button variant="outline" size="sm" @click="onExportDiagnostics">导出</Button>
+      </SettingsRow>
+    </SettingsSection>
   </div>
 </template>

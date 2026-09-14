@@ -48,6 +48,9 @@ pub struct ManualInput {
     /// 来源类型：manual（原创）/ ai（AI 创作）
     #[serde(default = "default_manual_source")]
     pub source: String,
+    /// 对应草稿 id（草稿箱批量生成时传入），生成成功后据此移除草稿
+    #[serde(default)]
+    pub draft_id: Option<i64>,
 }
 
 fn default_manual_source() -> String {
@@ -77,6 +80,8 @@ pub struct Draft {
     pub author: String,
     pub content: String,
     pub source: String,
+    /// 已生成视频对应的处理记录 ref_id（NULL = 尚未生成）
+    pub generated_ref_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -193,6 +198,9 @@ pub struct HistoryRow {
     pub status: String,
     pub detail: String,
     pub video: String,
+    pub author: String,
+    pub source: String,
+    pub content: String,
     pub created_at: String,
 }
 

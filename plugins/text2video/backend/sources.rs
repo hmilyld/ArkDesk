@@ -76,6 +76,7 @@ mod tests {
             author: author.to_string(),
             content: "第一段。\n\n第二段。".to_string(),
             source: source.to_string(),
+            draft_id: None,
         }
     }
 

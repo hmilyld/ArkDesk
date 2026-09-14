@@ -6,13 +6,21 @@ import { onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { ipc } from '@/core/ipc';
-import { RefreshCw, FolderOpen, Trash2, Film } from '@lucide/vue';
+import { RefreshCw, FolderOpen, Trash2, Film, FileText } from '@lucide/vue';
 import ToolShell from '@/components/tool/ToolShell.vue';
 import { errorMessage, openArtifact as openPath, statusLabel, type HistoryRow } from '../shared';
 
 const rows = ref<HistoryRow[]>([]);
 const loading = ref(false);
+const viewing = ref<HistoryRow | null>(null);
 
 async function load(): Promise<void> {
   loading.value = true;
@@ -74,6 +82,10 @@ onMounted(load);
               {{ row.createdAt }}
             </td>
             <td class="whitespace-nowrap px-4 py-2.5 text-right">
+              <Button variant="ghost" size="sm" @click="viewing = row">
+                <FileText class="mr-1 size-3.5" />
+                查看
+              </Button>
               <template v-if="row.status === 'done' && row.video">
                 <Button variant="ghost" size="sm" @click="openPath(row.video, false)">
                   <Film class="mr-1 size-3.5" />
@@ -99,5 +111,37 @@ onMounted(load);
     >
       暂无处理记录
     </p>
+
+    <!-- 文章素材弹窗：保留生成时使用的文字内容 -->
+    <Dialog :open="!!viewing" @update:open="(open) => !open && (viewing = null)">
+      <DialogContent class="flex max-h-[85vh] flex-col sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle class="truncate">{{ viewing?.title || viewing?.refId }}</DialogTitle>
+        </DialogHeader>
+        <div class="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <span>作者：{{ viewing?.author || '佚名' }}</span>
+            <span>来源：{{ viewing?.source === 'ai' ? 'AI 创作' : '手动' }}</span>
+            <span>时间：{{ viewing?.createdAt }}</span>
+          </div>
+          <div
+            v-if="viewing?.status === 'done' && viewing?.video"
+            class="flex items-center gap-2 text-xs text-muted-foreground"
+          >
+            <span class="truncate">{{ viewing.video }}</span>
+            <Button variant="ghost" size="sm" @click="openPath(viewing.video, false)"
+              >打开视频</Button
+            >
+            <Button variant="ghost" size="sm" @click="openPath(viewing.video, true)">位置</Button>
+          </div>
+          <pre
+            class="whitespace-pre-wrap break-words rounded-lg border bg-card p-4 font-sans text-sm leading-relaxed"
+            >{{ viewing?.content || '（无正文内容）' }}</pre>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="viewing = null">关闭</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </ToolShell>
 </template>

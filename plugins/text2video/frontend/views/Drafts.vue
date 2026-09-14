@@ -2,7 +2,7 @@
   草稿箱：保存手动/AI 文章，多选后批量生成视频。
 -->
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +37,8 @@ const { running, progress, logs, summary, progressPercent, begin, finish, cancel
 const drafts = ref<Draft[]>([]);
 const selected = ref<number[]>([]);
 const loading = ref(false);
-const deleteAfterGenerate = ref(false);
+/** 是否显示已生成的草稿（默认隐藏，但数据保留在草稿箱） */
+const showGenerated = ref(false);
 
 const editorOpen = ref(false);
 const editor = ref<{ id?: number; title: string; author: string; content: string; source: string }>(
@@ -62,16 +63,22 @@ const editorForm = computed<ArticleValue>({
   },
 });
 
+/** 列表中可见的草稿（默认过滤掉已生成的） */
+const visibleDrafts = computed(() =>
+  showGenerated.value ? drafts.value : drafts.value.filter((d) => !d.generatedRefId)
+);
+const generatedCount = computed(() => drafts.value.filter((d) => d.generatedRefId).length);
 const selectedCount = computed(() => selected.value.length);
 const allSelected = computed(
-  () => drafts.value.length > 0 && selectedCount.value === drafts.value.length
+  () => visibleDrafts.value.length > 0 && selectedCount.value === visibleDrafts.value.length
 );
 
 async function load(): Promise<void> {
   loading.value = true;
   try {
     drafts.value = await ipc<Draft[]>('text2video_draft_list');
-    selected.value = selected.value.filter((id) => drafts.value.some((d) => d.id === id));
+    const visibleIds = new Set(visibleDrafts.value.map((d) => d.id));
+    selected.value = selected.value.filter((id) => visibleIds.has(id));
   } catch (err) {
     toast.error(`加载草稿失败: ${errorMessage(err)}`);
   } finally {
@@ -92,7 +99,7 @@ function toggleSelect(id: number, value: boolean | 'indeterminate'): void {
 }
 
 function toggleAll(value: boolean | 'indeterminate'): void {
-  selected.value = value === true ? drafts.value.map((d) => d.id) : [];
+  selected.value = value === true ? visibleDrafts.value.map((d) => d.id) : [];
 }
 
 function openNew(): void {
@@ -164,7 +171,7 @@ async function removeSelected(): Promise<void> {
 
 async function batchGenerate(): Promise<void> {
   if (running.value) return;
-  const items = drafts.value.filter((d) => selected.value.includes(d.id));
+  const items = visibleDrafts.value.filter((d) => selected.value.includes(d.id));
   if (!items.length) {
     toast.error('请先选择要生成的草稿');
     return;
@@ -179,23 +186,16 @@ async function batchGenerate(): Promise<void> {
         author: d.author,
         content: d.content,
         source: d.source,
+        draftId: d.id,
       })),
       channel,
     });
     summary.value = result;
 
-    // 生成后按需删除已成功出片的草稿（结果顺序与 inputs 一致）
-    if (deleteAfterGenerate.value && !result.cancelled) {
-      const succeededIds = result.results
-        .map((r, index) => (r.status === 'done' ? items[index]?.id : null))
-        .filter((id): id is number => id !== null);
-      if (succeededIds.length) {
-        for (const id of succeededIds) {
-          await ipc('text2video_draft_delete', { id });
-        }
-        selected.value = selected.value.filter((id) => !succeededIds.includes(id));
-        await load();
-      }
+    selected.value = [];
+    await load();
+    if (result.rendered > 0) {
+      toast.info(`已生成 ${result.rendered} 条，可在「显示已生成」中查看对应草稿`);
     }
 
     if (result.cancelled) {
@@ -210,6 +210,12 @@ async function batchGenerate(): Promise<void> {
     finish();
   }
 }
+
+// 隐藏已生成草稿时，同步取消对不可见项的选择
+watch(showGenerated, () => {
+  const visibleIds = new Set(visibleDrafts.value.map((d) => d.id));
+  selected.value = selected.value.filter((id) => visibleIds.has(id));
+});
 
 onMounted(load);
 </script>
@@ -236,11 +242,14 @@ onMounted(load);
             全选
           </label>
           <span class="text-xs text-muted-foreground">
-            已选 {{ selectedCount }} / {{ drafts.length }}
+            已选 {{ selectedCount }} / {{ visibleDrafts.length }}
           </span>
-          <label class="flex cursor-pointer items-center gap-2 text-sm">
-            <Checkbox v-model="deleteAfterGenerate" />
-            生成后删除草稿
+          <label
+            v-if="generatedCount"
+            class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground"
+          >
+            <Checkbox v-model="showGenerated" />
+            显示已生成（{{ generatedCount }}）
           </label>
           <div class="ml-auto flex items-center gap-2">
             <Button size="sm" :disabled="running || !selectedCount" @click="batchGenerate">
@@ -322,9 +331,9 @@ onMounted(load);
         </div>
 
         <!-- 草稿列表 -->
-        <div v-if="drafts.length" class="space-y-1.5">
+        <div v-if="visibleDrafts.length" class="space-y-1.5">
           <div
-            v-for="draft in drafts"
+            v-for="draft in visibleDrafts"
             :key="draft.id"
             class="flex items-center gap-3 rounded-lg border bg-card px-4 py-2.5"
           >
@@ -338,6 +347,7 @@ onMounted(load);
                 {{ draft.author || '佚名' }} · {{ draft.updatedAt }}
               </p>
             </div>
+            <Badge v-if="draft.generatedRefId" variant="outline">已生成</Badge>
             <Badge :variant="draft.source === 'ai' ? 'default' : 'secondary'">
               {{ draft.source === 'ai' ? 'AI' : '手动' }}
             </Badge>
@@ -357,7 +367,11 @@ onMounted(load);
           v-else
           class="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground"
         >
-          暂无草稿，点击右上角「新建草稿」，或在生成页把内容「存为草稿」
+          {{
+            drafts.length
+              ? '剩余草稿均已生成，可勾选「显示已生成」查看'
+              : '暂无草稿，点击右上角「新建草稿」，或在生成页把内容「存为草稿」'
+          }}
         </p>
       </div>
     </div>

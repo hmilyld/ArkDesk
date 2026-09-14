@@ -145,23 +145,46 @@ fn pick_bgm(dir: &str) -> Option<PathBuf> {
         .map(|p| std::fs::canonicalize(&p).unwrap_or(p))
 }
 
+/// 处理记录随附的文章快照（即便草稿被删，记录里也保留文字素材）
+#[derive(Default)]
+struct ArticleSnapshot<'a> {
+    author: &'a str,
+    source: &'a str,
+    content: &'a str,
+}
+
+/// 一条处理记录（避免 `mark` 参数过多）
+struct Record<'a> {
+    ref_id: &'a str,
+    kind: &'a str,
+    title: &'a str,
+    status: &'a str,
+    detail: &'a str,
+    video: &'a str,
+    meta: &'a str,
+}
+
 /// 写入处理记录；失败仅告警，不中断本次生成
-async fn mark(
-    ref_id: &str,
-    kind: &str,
-    title: &str,
-    status: &str,
-    detail: &str,
-    video: &str,
-    meta: &str,
-) {
+async fn mark(record: Record<'_>, article: &ArticleSnapshot<'_>) {
+    let Record {
+        ref_id,
+        kind,
+        title,
+        status,
+        detail,
+        video,
+        meta,
+    } = record;
     let result = crate::db::db_execute(SqlArgs {
         sql: "INSERT INTO text2video_processed
-              (ref_id, kind, title, status, detail, video, meta, created_at)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, datetime('now', 'localtime'))
+              (ref_id, kind, title, status, detail, video, meta,
+               author, source, content, created_at)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, datetime('now', 'localtime'))
               ON CONFLICT(ref_id) DO UPDATE SET
               status = excluded.status, detail = excluded.detail,
-              video = excluded.video, meta = excluded.meta"
+              video = excluded.video, meta = excluded.meta,
+              author = excluded.author, source = excluded.source,
+              content = excluded.content"
             .to_string(),
         params: vec![
             json!(ref_id),
@@ -171,6 +194,9 @@ async fn mark(
             json!(detail),
             json!(video),
             json!(meta),
+            json!(article.author),
+            json!(article.source),
+            json!(article.content),
         ],
     })
     .await;
@@ -263,6 +289,12 @@ pub async fn run(
         } else {
             draft.title.clone()
         };
+        let raw = inputs.get(index);
+        let article = ArticleSnapshot {
+            author: raw.map(|i| i.author.as_str()).unwrap_or(""),
+            source: draft.source_type.as_str(),
+            content: raw.map(|i| i.content.as_str()).unwrap_or(""),
+        };
         send(
             "cleaning",
             index + 1,
@@ -274,13 +306,16 @@ pub async fn run(
             Ok(content) => content,
             Err(Skip { reason, detail }) => {
                 mark(
-                    &draft.ref_id,
-                    &draft.source_type,
-                    &label,
-                    &reason,
-                    &detail,
-                    "",
-                    "",
+                    Record {
+                        ref_id: &draft.ref_id,
+                        kind: &draft.source_type,
+                        title: &label,
+                        status: &reason,
+                        detail: &detail,
+                        video: "",
+                        meta: "",
+                    },
+                    &article,
                 )
                 .await;
                 send(
@@ -367,13 +402,16 @@ pub async fn run(
             Err(err) => {
                 let detail = err.to_string();
                 mark(
-                    &draft.ref_id,
-                    &draft.source_type,
-                    &label,
-                    "render_failed",
-                    &detail,
-                    "",
-                    "",
+                    Record {
+                        ref_id: &draft.ref_id,
+                        kind: &draft.source_type,
+                        title: &label,
+                        status: "render_failed",
+                        detail: &detail,
+                        video: "",
+                        meta: "",
+                    },
+                    &article,
                 )
                 .await;
                 send("error", index + 1, total, format!("渲染失败: {detail}"));
@@ -416,13 +454,16 @@ pub async fn run(
 
         let video_str = video.to_string_lossy().to_string();
         mark(
-            &draft.ref_id,
-            &draft.source_type,
-            &label,
-            "done",
-            "",
-            &video_str,
-            &meta_json,
+            Record {
+                ref_id: &draft.ref_id,
+                kind: &draft.source_type,
+                title: &label,
+                status: "done",
+                detail: "",
+                video: &video_str,
+                meta: &meta_json,
+            },
+            &article,
         )
         .await;
 

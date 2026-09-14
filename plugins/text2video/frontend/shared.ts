@@ -143,6 +143,8 @@ export interface ManualInput {
   content: string;
   /** manual | ai */
   source?: string;
+  /** 草稿箱批量生成时传入，生成成功后由后端移除对应草稿 */
+  draftId?: number;
 }
 
 /** 标题 / 作者 / 正文（手动输入、草稿编辑共用的表单值） */
@@ -158,6 +160,8 @@ export interface Draft {
   author: string;
   content: string;
   source: string;
+  /** 已生成视频对应的处理记录 refId（null/undefined = 尚未生成） */
+  generatedRefId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -222,6 +226,11 @@ export interface HistoryRow {
   status: string;
   detail: string;
   video: string;
+  author: string;
+  /** manual | ai */
+  source: string;
+  /** 生成时使用的文章正文（文字素材备份） */
+  content: string;
   createdAt: string;
 }
 

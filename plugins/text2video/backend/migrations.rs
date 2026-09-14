@@ -34,5 +34,14 @@ pub fn all() -> Vec<crate::db::Migration> {
             updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
         );",
         ),
+        migration(
+            "text2video",
+            3,
+            "text2video_add_article_and_generated",
+            "ALTER TABLE text2video_processed ADD COLUMN author TEXT NOT NULL DEFAULT '';
+            ALTER TABLE text2video_processed ADD COLUMN source TEXT NOT NULL DEFAULT 'manual';
+            ALTER TABLE text2video_processed ADD COLUMN content TEXT NOT NULL DEFAULT '';
+            ALTER TABLE text2video_drafts ADD COLUMN generated_ref_id TEXT;",
+        ),
     ]
 }

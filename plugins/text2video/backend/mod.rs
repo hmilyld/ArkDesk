@@ -140,7 +140,21 @@ pub async fn text2video_generate_batch(
     }
     crate::tasks::begin("text2video");
 
+    let draft_ids: Vec<i64> = inputs.iter().filter_map(|i| i.draft_id).collect();
     let result = pipeline::run(&app, options, channel, inputs).await;
+
+    // 生成成功后标记对应草稿「已生成」（不删除，文字素材保留在草稿箱与处理记录中）
+    if let Ok(summary) = &result {
+        let succeeded: Vec<&str> = summary
+            .results
+            .iter()
+            .filter(|r| r.status == "done")
+            .map(|r| r.ref_id.as_str())
+            .collect();
+        if !succeeded.is_empty() {
+            mark_drafts_generated(draft_ids, &succeeded).await;
+        }
+    }
 
     match &result {
         Ok(_) => crate::tasks::emit_done(&app, "text2video"),
@@ -149,6 +163,29 @@ pub async fn text2video_generate_batch(
     crate::tasks::end("text2video");
     pipeline::RUNNING.store(false, Ordering::SeqCst);
     result
+}
+
+/// 标记已成功出片所对应的草稿（记录 `generated_ref_id`，保留草稿文字）。
+///
+/// `ref_id` 形如 `manual:<时间戳>:<seq>`，seq 为该批次内 inputs 的下标，
+/// 故以 seq 定位 `draft_ids` 中的草稿 id（保持与结果顺序一致）。
+async fn mark_drafts_generated(draft_ids: Vec<i64>, succeeded: &[&str]) {
+    for ref_id in succeeded {
+        let Some(seq) = ref_id.rsplit(':').next().and_then(|s| s.parse::<usize>().ok()) else {
+            continue;
+        };
+        let Some(&id) = draft_ids.get(seq) else {
+            continue;
+        };
+        if let Err(err) = crate::db::db_execute(SqlArgs {
+            sql: "UPDATE text2video_drafts SET generated_ref_id = $1 WHERE id = $2".to_string(),
+            params: vec![json!(ref_id), json!(id)],
+        })
+        .await
+        {
+            log::warn!("标记草稿已生成失败 ({id}): {err}");
+        }
+    }
 }
 
 /// AI 写文章（配置来自全局设置的 AI 分区）
@@ -180,7 +217,8 @@ pub async fn text2video_draft_save(draft: DraftInput) -> Result<i64, AppError> {
         Some(id) => {
             let result = crate::db::db_execute(SqlArgs {
                 sql: "UPDATE text2video_drafts SET title = $1, author = $2, content = $3,
-                      source = $4, updated_at = datetime('now', 'localtime') WHERE id = $5"
+                      source = $4, generated_ref_id = NULL,
+                      updated_at = datetime('now', 'localtime') WHERE id = $5"
                     .to_string(),
                 params: vec![
                     json!(draft.title.trim()),
@@ -221,7 +259,8 @@ pub async fn text2video_draft_save(draft: DraftInput) -> Result<i64, AppError> {
 #[tauri::command]
 pub async fn text2video_draft_list() -> Result<Vec<Draft>, AppError> {
     let result = crate::db::db_query_values(SqlArgs {
-        sql: "SELECT id, title, author, content, source, created_at, updated_at
+        sql: "SELECT id, title, author, content, source, generated_ref_id,
+                     created_at, updated_at
               FROM text2video_drafts ORDER BY updated_at DESC"
             .to_string(),
         params: vec![],
@@ -229,12 +268,22 @@ pub async fn text2video_draft_list() -> Result<Vec<Draft>, AppError> {
     .await?;
 
     let index_of = |name: &str| result.columns.iter().position(|c| c == name);
-    let (i_id, i_title, i_author, i_content, i_source, i_created, i_updated) = (
+    let (
+        i_id,
+        i_title,
+        i_author,
+        i_content,
+        i_source,
+        i_generated,
+        i_created,
+        i_updated,
+    ) = (
         index_of("id"),
         index_of("title"),
         index_of("author"),
         index_of("content"),
         index_of("source"),
+        index_of("generated_ref_id"),
         index_of("created_at"),
         index_of("updated_at"),
     );
@@ -257,6 +306,11 @@ pub async fn text2video_draft_list() -> Result<Vec<Draft>, AppError> {
             author: get_str(row, i_author),
             content: get_str(row, i_content),
             source: get_str(row, i_source),
+            generated_ref_id: i_generated
+                .and_then(|i| row.get(i))
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string()),
             created_at: get_str(row, i_created),
             updated_at: get_str(row, i_updated),
         })
@@ -284,7 +338,8 @@ pub fn text2video_cancel() {
 #[tauri::command]
 pub async fn text2video_history(limit: usize) -> Result<Vec<HistoryRow>, AppError> {
     let result = crate::db::db_query_values(SqlArgs {
-        sql: "SELECT ref_id, kind, title, status, detail, video, created_at
+        sql: "SELECT ref_id, kind, title, status, detail, video,
+                     author, source, content, created_at
               FROM text2video_processed ORDER BY created_at DESC LIMIT $1"
             .to_string(),
         params: vec![json!(limit as i64)],
@@ -292,13 +347,27 @@ pub async fn text2video_history(limit: usize) -> Result<Vec<HistoryRow>, AppErro
     .await?;
 
     let index_of = |name: &str| result.columns.iter().position(|c| c == name);
-    let (i_ref, i_kind, i_title, i_status, i_detail, i_video, i_created) = (
+    let (
+        i_ref,
+        i_kind,
+        i_title,
+        i_status,
+        i_detail,
+        i_video,
+        i_author,
+        i_source,
+        i_content,
+        i_created,
+    ) = (
         index_of("ref_id"),
         index_of("kind"),
         index_of("title"),
         index_of("status"),
         index_of("detail"),
         index_of("video"),
+        index_of("author"),
+        index_of("source"),
+        index_of("content"),
         index_of("created_at"),
     );
 
@@ -319,6 +388,9 @@ pub async fn text2video_history(limit: usize) -> Result<Vec<HistoryRow>, AppErro
             status: get(row, i_status),
             detail: get(row, i_detail),
             video: get(row, i_video),
+            author: get(row, i_author),
+            source: get(row, i_source),
+            content: get(row, i_content),
             created_at: get(row, i_created),
         })
         .collect())

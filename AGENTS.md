@@ -30,6 +30,31 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 
 约定：改前端跑 `pnpm lint && pnpm build`；改 Rust 跑 `pnpm lint:rs && pnpm fmt:rs && pnpm test:rs`。
 
+## 双仓库协作（上游优先）
+
+本仓库（ArkDesk）是上游框架仓库 **PocketArk** 的 fork，两个仓库所有权同一人：
+
+- `upstream` = `git@github.com:hmilyld/PocketArk.git`（框架 base）
+- `origin` = `git@github.com:hmilyld/ArkDesk.git`（本项目）
+
+**改动归属判定**：框架代码（`src/core`、`src-tauri/src` 的 db/http/tray/updater/menu/tasks/open/…、
+`scripts/`、CI、框架能力文档等）属**上游**；`plugins/<id>/`、本地层（`LOCAL.md` 所述）属**项目**。
+
+**若需改动上游框架代码，一律走「上游优先」流程，禁止在 ArkDesk 直接提交框架改动**（会产生分叉、后续
+merge 冲突）：
+
+1. 在 PocketArk 本地仓库新建分支（如 `fix/xxx`）→ 提交 → push。
+2. `gh pr create` 提 PR（base `main`）；CI（前端 lint/test/build）必须通过。
+3. 合并 PR 到 PocketArk `main`。
+4. 回到 ArkDesk：`git fetch upstream && git merge upstream/main`（或 rebase），使框架改动随上游流入。
+
+前提：ArkDesk 工作区必须先 clean（框架改动不要以「未提交状态」与 merge 并存，否则 merge 被拒）。因此
+调整上游文件的正确姿势是：**先在 PocketArk 改并合并，再在 ArkDesk merge 拿下来**，而不是在 ArkDesk
+就地改。
+
+本地 PocketArk 副本默认位于 `../PocketArk`。若涉及需要同时改框架与插件的功能，拆成两类提交：框架部分
+走上述上游 PR，插件部分留在 ArkDesk。
+
 ## 本地层（fork 专属）
 
 框架自身**不下载任何资源、不含个人工具**。若你的 fork 叠加了个人工具（字体/OCR 等

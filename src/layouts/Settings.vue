@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from 'vue';
+import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getToolsWithSettings, type ToolPlugin } from '@/core/plugins';
 import { useSettingsStore } from '@/stores/settings';
@@ -22,18 +22,26 @@ const asyncPanels = computed<Record<string, ReturnType<typeof defineAsyncCompone
     toolSettings.value.map((tool) => [tool.meta.id, defineAsyncComponent(tool.settings!.component)])
   )
 );
+
+/** 当前标签页：切换时把外层页面滚动容器回到顶部，避免沿用上一页的滚动位置 */
+const activeTab = ref('system');
+const rootEl = ref<HTMLElement | null>(null);
+watch(activeTab, () => rootEl.value?.closest('main')?.scrollTo({ top: 0 }));
 </script>
 
 <template>
-  <!-- 竖向设置导航：Tailwind 栅格居中 8 列（lg 以下满幅），惯用法同 ToolShell 页面 -->
-  <div class="mx-auto grid w-full grid-cols-12">
+  <!-- 竖向设置导航：Tailwind 栅格居中 8 列（lg 以下满幅），惯用法同 ToolShell 页面。
+       整页随 MainLayout 的 main 滚动；左侧导航 sticky 吸附在滚动容器顶部，始终可见。 -->
+  <div ref="rootEl" class="mx-auto grid w-full grid-cols-12">
     <Tabs
-      default-value="system"
+      v-model="activeTab"
       orientation="vertical"
-      class="col-span-12 lg:col-start-3 lg:col-span-8 min-h-full w-full gap-6 p-5"
+      class="col-span-12 lg:col-start-3 lg:col-span-8 items-start w-full gap-6 p-5"
     >
-      <!-- self-start 阻止列表被内容区高度拉伸（flex 默认 stretch） -->
-      <TabsList class="w-36 shrink-0 self-start flex-col items-stretch gap-1 bg-transparent p-0">
+      <!-- self-start 阻止列表被内容区高度拉伸（flex 默认 stretch）；top-5 抵消 Tabs 的 p-5 -->
+      <TabsList
+        class="sticky top-5 w-36 shrink-0 self-start flex-col items-stretch gap-1 bg-transparent p-0"
+      >
         <TabsTrigger
           value="system"
           class="h-auto flex-none justify-start px-3 py-1.5 text-sm font-normal"

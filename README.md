@@ -240,6 +240,23 @@ BLOB 列以 base64 返回；多语句原子写入用 `runInTransaction([{ sql, p
 配置存储在 `settings.json` 的 `tools.<toolId>` 命名空间，与 defaults 深合并
 （新增配置字段自动获得默认值）。参考 `hello-world/frontend/settings/Settings.vue`。
 
+**设置页 UI 统一**：设置面板一律使用 `@/components/settings` 的组件，勿自造标题 / 卡片样式，
+以保证与系统设置页视觉一致：
+
+```vue
+<template>
+  <div class="space-y-6">
+    <SettingsSection title="分组标题" description="可选说明">
+      <SettingsRow title="设置项标题" description="一行说明">
+        <Switch v-model="…" />
+        <!-- 右侧控件，宽度用 w-40 / w-64 / w-72 -->
+      </SettingsRow>
+      <!-- 密集数值字段：grid 内用 SettingsField（见其组件头注释） -->
+    </SettingsSection>
+  </div>
+</template>
+```
+
 ### 多功能插件
 
 一个插件目录可在 `plugin.json` 的 `tools` 数组声明多个工具项（参考 `hello-world/plugin.json`）：各工具项独立导航、

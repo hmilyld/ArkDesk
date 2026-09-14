@@ -38,7 +38,9 @@
 ## 3. 可选能力
 
 - **设置面板**：实现 `frontend/settings/Settings.vue`，plugin.json 声明 `settings.entry`，
-  配置读写用 `useToolSettings(pluginId, defaults)`（参考 hello-world/settings）
+  配置读写用 `useToolSettings(pluginId, defaults)`（参考 hello-world/settings）。
+  UI 统一用 `@/components/settings` 的 `SettingsSection` / `SettingsRow` / `SettingsField`
+  （骨架见模板 `frontend/settings/Settings.vue`），勿自造小节标题 / 卡片样式。
 - **数据库表**：`frontend/schema.ts` 定义 sqliteTable（自动聚合进 kdb）；
   Rust 侧在 `backend/migrations.rs` 追加迁移：`migration("插件id", version, ...)`，
   **version 在插件作用域内从 1 递增**（各插件互不干扰）。若插件此前用过旧的全局版本号，

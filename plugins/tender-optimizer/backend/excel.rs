@@ -51,10 +51,41 @@ pub struct TemplateData {
     pub warnings: Vec<String>,
 }
 
+/// 云同步「按需下载」占位文件（如 MEGAsync / iCloud）：本地仅有元数据，
+/// 直接读取会返回 ETIMEDOUT（macOS os error 60）。提前识别以给出可操作提示。
+#[cfg(target_os = "macos")]
+fn cloud_placeholder_error(path: &str) -> Option<AppError> {
+    use std::os::macos::fs::MetadataExt;
+    const UF_DATALESS: u32 = 0x4000_0000;
+    let flags = std::fs::metadata(path).ok()?.st_flags();
+    (flags & UF_DATALESS != 0).then(|| {
+        AppError::invalid_input(
+            "该文件尚未下载到本地（云同步占位文件）。请在 MEGAsync / 网盘中将其设为「可离线」\
+             或下载到本地后重试",
+        )
+    })
+}
+
+#[cfg(not(target_os = "macos"))]
+fn cloud_placeholder_error(_path: &str) -> Option<AppError> {
+    None
+}
+
 /// 解析统一模板。公司 / 场景 Sheet 缺失报错，评分参数 Sheet 缺失用默认值。
 pub fn import_template(path: &str) -> Result<TemplateData, AppError> {
-    let mut workbook: Xlsx<BufReader<std::fs::File>> = open_workbook(path)
-        .map_err(|err| AppError::invalid_input(format!("无法打开文件：{err}")))?;
+    if let Some(err) = cloud_placeholder_error(path) {
+        return Err(err);
+    }
+
+    let mut workbook: Xlsx<BufReader<std::fs::File>> =
+        open_workbook(path).map_err(|err: calamine::XlsxError| {
+        let mut message = format!("无法打开文件：{err}");
+        // 兜底：占位标志未能识别但仍超时（网络盘 / 同步目录读取超时）
+        if err.to_string().contains("timed out") {
+            message.push_str("。文件可能未下载到本地（云同步占位），请先将其设为可离线后再试");
+        }
+        AppError::invalid_input(message)
+    })?;
     parse_workbook(&mut workbook)
 }
 

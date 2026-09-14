@@ -541,24 +541,45 @@ mod tests {
         .await
         .unwrap();
 
+        // 仿真旧库：被「桥接登记」（不执行）的迁移所创建的业务表，在旧库中本就存在。
+        // 逐条执行这些迁移的 DDL，使后续新增迁移（ALTER 既有表）可正常应用。
+        let old_versions: std::collections::HashSet<i64> =
+            sqlx::query_scalar("SELECT version FROM _sqlx_migrations")
+                .fetch_all(&pool)
+                .await
+                .unwrap()
+                .into_iter()
+                .collect();
+        let mut adopted: Vec<(String, i64)> = Vec::new();
+        for adoption in crate::plugins::legacy_adoptions() {
+            for (old, new) in adoption.versions {
+                if old_versions.contains(old) {
+                    adopted.push((adoption.scope.to_string(), *new));
+                }
+            }
+        }
+        for migration in crate::plugins::collect_migrations() {
+            if adopted.contains(&(migration.scope.to_string(), migration.version)) {
+                sqlx::raw_sql(migration.sql).execute(&pool).await.unwrap();
+            }
+        }
+
         migrate_pool(&pool).await.expect("旧库迁移失败");
 
-        // 全部作用域迁移均被「桥接登记」，而非执行
+        // 全部作用域迁移均被记录，且每个 (scope, version) 唯一（桥接不重复执行旧迁移）
         let total = crate::plugins::collect_migrations().len() as i64;
         let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM plugin_migrations")
             .fetch_one(&pool)
             .await
             .unwrap();
-        assert_eq!(count, total, "旧库全部迁移应被桥接登记");
-
-        // 桥接不执行 DDL：全新库中不应出现业务表
-        let tender_table: Option<String> = sqlx::query_scalar(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='tender_companies'",
+        assert_eq!(count, total, "旧库全部迁移应被登记");
+        let distinct: i64 = sqlx::query_scalar(
+            "SELECT COUNT(DISTINCT scope || ':' || version) FROM plugin_migrations",
         )
-        .fetch_optional(&pool)
+        .fetch_one(&pool)
         .await
         .unwrap();
-        assert!(tender_table.is_none(), "桥接不应执行建表 DDL");
+        assert_eq!(distinct, total, "桥接与执行不应重复登记同一迁移");
 
         pool.close().await;
         std::fs::remove_dir_all(&temp_dir).ok();

@@ -59,7 +59,7 @@ onMounted(load);
       <table class="w-full text-sm">
         <thead>
           <tr class="border-b text-left text-xs text-muted-foreground">
-            <th class="px-4 py-2.5 font-medium">标题</th>
+            <th class="w-full px-4 py-2.5 font-medium">标题</th>
             <th class="px-4 py-2.5 font-medium">状态</th>
             <th class="px-4 py-2.5 font-medium">时间</th>
             <th class="px-4 py-2.5 text-right font-medium">操作</th>

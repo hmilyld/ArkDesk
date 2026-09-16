@@ -99,7 +99,7 @@ const groups = computed<ToolGroup[]>(() => {
     <div class="col-span-12 space-y-5 p-5 lg:col-start-2 lg:col-span-10">
       <!-- 状态台：卡片基面 + 强调色光晕，随主题/主题色联动（浅色不刺眼、深色有层次） -->
       <section
-        class="home-enter relative overflow-hidden rounded-xl border bg-card px-6 py-6 shadow-sm sm:px-8"
+        class="home-enter relative overflow-hidden rounded-lg border bg-card px-6 py-6 shadow-sm sm:px-8"
       >
         <div
           class="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full bg-primary/10 blur-3xl"
@@ -170,7 +170,7 @@ const groups = computed<ToolGroup[]>(() => {
               v-for="tool in group.tools"
               :key="tool.meta.id"
               :to="`/tool/${tool.meta.id}`"
-              class="group flex items-start gap-3 rounded-lg border bg-card p-3.5 transition-colors hover:border-primary/40 hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
+              class="group flex items-start gap-3 rounded-lg border bg-card p-3.5 transition-colors hover:border-primary/40 hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/60"
             >
               <span
                 class="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors group-hover:text-primary"

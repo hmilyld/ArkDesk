@@ -27,19 +27,20 @@ export function useInterceptor() {
   let unlistenWs: UnlistenFn | null = null;
 
   async function refreshStatus(): Promise<void> {
-    status.value = await ipc<ProxyStatus>('network_tools_proxy_status');
+    status.value = (await ipc<ProxyStatus | null>('network_tools_proxy_status')) ?? null;
   }
 
   async function refreshFlows(): Promise<void> {
-    flows.value = await ipc<FlowSummary[]>('network_tools_flows_list');
+    flows.value = (await ipc<FlowSummary[] | null>('network_tools_flows_list')) ?? [];
   }
 
   async function refreshWs(): Promise<void> {
-    wsRecords.value = await ipc<WsSummary[]>('network_tools_ws_list');
+    wsRecords.value = (await ipc<WsSummary[] | null>('network_tools_ws_list')) ?? [];
   }
 
   async function refreshSystemProxy(): Promise<void> {
-    systemProxy.value = await ipc<SystemProxyStatus>('network_tools_system_proxy_status');
+    systemProxy.value =
+      (await ipc<SystemProxyStatus | null>('network_tools_system_proxy_status')) ?? null;
   }
 
   async function systemProxyEnable(port: number): Promise<void> {

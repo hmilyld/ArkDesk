@@ -154,11 +154,55 @@ fn apply_window_background(ns_window: *mut std::ffi::c_void, dark: bool) {
     unsafe { (*ns_window).setBackgroundColor(Some(&color)) };
 }
 
+/// 材质是否已启用：启用后 NSWindow 背景不再实色打底（否则会盖住材质），
+/// 防白闪改由前端不透明底（`bg-background` 覆盖整个视口）保证。
+static VIBRANCY_ACTIVE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// 应用窗口材质（DESIGN-macos.md §2 / DESIGN-windows.md §2）：
+/// - macOS：`underWindowBackground`（behind-window），内容层保持不透明，仅半透明 chrome 透出桌面；
+/// - Windows：`tabbed`（Mica Alt，官方推荐给含导航与命令区的应用）；
+/// - 其他平台或失败：不启用，CSS 材质 token 自动落到实色（含 prefers-reduced-transparency）。
+fn apply_window_effects(window: &tauri::WebviewWindow) {
+    #[cfg(target_os = "macos")]
+    {
+        use tauri::window::{Effect, EffectState, EffectsBuilder};
+        let effects = EffectsBuilder::new()
+            .effect(Effect::UnderWindowBackground)
+            .state(EffectState::FollowsWindowActiveState)
+            .build();
+        match window.set_effects(effects) {
+            Ok(()) => {
+                VIBRANCY_ACTIVE.store(true, std::sync::atomic::Ordering::Relaxed);
+                log::info!("窗口材质已启用：macOS underWindowBackground");
+            }
+            Err(err) => log::warn!("窗口材质启用失败，回退实色: {err}"),
+        }
+    }
+    #[cfg(target_os = "windows")]
+    {
+        use tauri::window::{Effect, EffectsBuilder};
+        let effects = EffectsBuilder::new().effect(Effect::Tabbed).build();
+        match window.set_effects(effects) {
+            Ok(()) => {
+                VIBRANCY_ACTIVE.store(true, std::sync::atomic::Ordering::Relaxed);
+                log::info!("窗口材质已启用：Windows Mica Alt（tabbed）");
+            }
+            Err(err) => log::warn!("窗口材质启用失败，回退实色: {err}"),
+        }
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    let _ = window;
+}
+
 /// 前端主题切换时同步 NSWindow 背景色（经 ipc 调用）
 #[tauri::command]
 fn set_window_background(window: tauri::WebviewWindow, dark: bool) -> Result<(), error::AppError> {
     #[cfg(target_os = "macos")]
     {
+        // 材质启用时不做实色打底：桌面/效果层需要透出，防白闪由前端不透明底保证
+        if VIBRANCY_ACTIVE.load(std::sync::atomic::Ordering::Relaxed) {
+            return Ok(());
+        }
         let ns_window = window.ns_window().map_err(|err| {
             error::AppError::custom(error::code::IPC_ERROR, format!("获取 NSWindow 失败: {err}"))
         })?;
@@ -302,6 +346,12 @@ pub fn run() {
                 if let Ok(ns_window) = window.ns_window() {
                     apply_window_background(ns_window, true);
                 }
+            }
+
+            // 窗口材质（B 方案）：macOS behind-window / Windows Mica Alt；
+            // 失败即回退——CSS 侧材质 token 会落到实色，不影响可用性
+            if let Some(window) = app.get_webview_window("main") {
+                apply_window_effects(&window);
             }
 
             // 数据库：固定路径 + 执行迁移（兼容历史 _sqlx_migrations 记录）

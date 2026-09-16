@@ -28,7 +28,7 @@ defineProps<{
     <p class="text-sm text-muted-foreground">未获取到表结构</p>
   </div>
 
-  <div v-else class="overflow-hidden rounded-lg border border-border bg-card">
+  <div v-else class="overflow-hidden rounded-lg border bg-card">
     <Table>
       <TableHeader>
         <TableRow class="hover:bg-transparent">

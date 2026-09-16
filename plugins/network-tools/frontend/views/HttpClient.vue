@@ -17,6 +17,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import ToolShell from '@/components/tool/ToolShell.vue';
+import Panel from '@/components/tool/Panel.vue';
+import ErrorState from '@/components/native/ErrorState.vue';
 import CollectionsSidebar from '../components/CollectionsSidebar.vue';
 import CurlDialog from '../components/CurlDialog.vue';
 import RequestTabs from '../components/RequestTabs.vue';
@@ -57,6 +59,11 @@ const spec = ref<HttpRequestSpec>(createRequestSpec());
 const meta = ref<RequestMeta>({ id: null, name: '未命名请求', collectionId: null });
 const warnings = ref<string[]>([]);
 const curlOpen = ref(false);
+/** 工具页内可定位的校验/操作错误（就地错误条，不用 toast） */
+const formError = ref('');
+/** 保存成功后的短暂状态提示（§4：成功用状态变化表达，不弹 toast） */
+const saveFlash = ref(false);
+let flashTimer: ReturnType<typeof setTimeout> | null = null;
 
 const {
   collections,
@@ -143,9 +150,13 @@ onActivated(async () => {
 });
 onDeactivated(flushDraft);
 onBeforeUnmount(flushDraft);
+onBeforeUnmount(() => {
+  if (flashTimer) clearTimeout(flashTimer);
+});
 
 async function handleSend(): Promise<void> {
   if (sending.value) return;
+  formError.value = '';
   const activeVars = collectVars(
     varsOf(settings.value.activeEnvironmentId).map((item) => ({
       key: item.key,
@@ -155,11 +166,11 @@ async function handleSend(): Promise<void> {
   );
   const { spec: resolved, missing } = resolveSpec(spec.value, activeVars);
   if (missing.length) {
-    toast.error(`存在未解析变量：${missing.join('、')}`);
+    formError.value = `存在未解析变量：${missing.join('、')}`;
     return;
   }
   if (!resolved.url.trim()) {
-    toast.error('请填写请求 URL');
+    formError.value = '请填写请求 URL';
     return;
   }
 
@@ -224,12 +235,15 @@ async function handleSelectRequest(id: number): Promise<void> {
 
 async function handleSave(): Promise<void> {
   if (!meta.value.name.trim()) {
-    toast.error('请填写请求名称');
+    formError.value = '请填写请求名称';
     return;
   }
+  formError.value = '';
   const id = await saveRequest(spec.value, meta.value);
   meta.value = { ...meta.value, id };
-  toast.success('已保存');
+  saveFlash.value = true;
+  if (flashTimer) clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => (saveFlash.value = false), 2000);
 }
 
 async function handleRenameCollection(id: number, name: string): Promise<void> {
@@ -269,10 +283,10 @@ async function handleMoveRequest(id: number, collectionId: number | null): Promi
 async function handleOpenHistory(row: HistoryRow): Promise<void> {
   try {
     spec.value = normalizeSpec(JSON.parse(row.request));
-    meta.value = { id: null, name: `${row.method} ${row.url}`, collectionId: null };
-    toast.info('已载入历史请求（未保存）');
+    meta.value = { id: null, name: `${row.method} ${row.url}（历史）`, collectionId: null };
+    formError.value = '';
   } catch {
-    toast.error('历史请求解析失败');
+    formError.value = '历史请求解析失败，无法载入';
   }
 }
 async function handleDeleteHistory(id: number): Promise<void> {
@@ -302,7 +316,6 @@ async function exportBundleFile(bundle: Bundle, defaultName: string): Promise<vo
   if (!target) return;
   try {
     await ipc('file_write_text', { path: target, contents: stringifyBundle(bundle) });
-    toast.success('已导出', { description: target });
   } catch (err) {
     toast.error(`导出失败：${errorMessage(err)}`);
   }
@@ -373,7 +386,7 @@ async function handleImportBundle(): Promise<void> {
   try {
     bundle = parseBundle(await ipc<string>('file_read_text', { path: selected }));
   } catch (err) {
-    toast.error(`导入失败：${errorMessage(err)}`);
+    formError.value = `导入失败：${errorMessage(err)}`;
     return;
   }
   try {
@@ -411,7 +424,6 @@ async function handleImportBundle(): Promise<void> {
       }
     }
     await Promise.all([refreshCollections(), refreshEnvironments()]);
-    toast.success('导入完成');
   } catch (err) {
     toast.error(`导入失败：${errorMessage(err)}`);
   }
@@ -425,15 +437,17 @@ async function handleImportBundle(): Promise<void> {
   >
     <template #actions>
       <Button variant="outline" size="sm" @click="curlOpen = true">
-        <Terminal class="size-4" />
+        <Terminal class="mr-1 size-3.5" />
         cURL
       </Button>
     </template>
 
     <div class="grid grid-cols-12 items-start gap-4">
       <aside class="col-span-12 lg:col-span-3">
-        <div
-          class="h-[70vh] rounded-lg border border-border bg-card p-3 lg:sticky lg:top-28 lg:h-[calc(100vh-9.5rem)]"
+        <Panel
+          title="集合与历史"
+          class="flex h-[70vh] flex-col lg:sticky lg:top-28 lg:h-[calc(100vh-9.5rem)]"
+          body-class="min-h-0 flex-1 space-y-0 p-3"
         >
           <CollectionsSidebar
             :collections="collections"
@@ -457,17 +471,20 @@ async function handleImportBundle(): Promise<void> {
             @clear-history="handleClearHistory"
             @delete-history="handleDeleteHistory"
           />
-        </div>
+        </Panel>
       </aside>
 
       <section class="col-span-12 flex flex-col gap-4 lg:col-span-9 lg:h-[calc(100vh-9.5rem)]">
-        <div
-          class="max-h-[60%] shrink-0 space-y-3 overflow-auto rounded-lg border border-border bg-card p-3"
+        <Panel
+          title="请求"
+          :hint="saveFlash ? '已保存' : undefined"
+          class="flex max-h-[60%] shrink-0 flex-col"
+          body-class="flex min-h-0 flex-1 flex-col gap-3 space-y-0 overflow-auto p-4"
         >
           <div class="flex flex-wrap items-center gap-2">
-            <Input v-model="meta.name" placeholder="请求名称" class="w-40" spellcheck="false" />
+            <Input v-model="meta.name" placeholder="请求名称" class="h-8 w-40" spellcheck="false" />
             <Select v-model="spec.method">
-              <SelectTrigger class="w-28">
+              <SelectTrigger size="sm" class="w-28">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -479,29 +496,31 @@ async function handleImportBundle(): Promise<void> {
             <Input
               v-model="spec.url"
               placeholder="https://api.example.com/{{id}}"
-              class="min-w-48 flex-1 font-mono text-xs"
+              class="h-8 min-w-48 flex-1 font-mono text-xs"
               spellcheck="false"
               @keydown.enter="handleSend"
             />
-            <Button v-if="!sending" :disabled="sending" @click="handleSend">
-              <Send class="size-4" />
+            <Button v-if="!sending" size="sm" :disabled="sending" @click="handleSend">
+              <Send class="mr-1 size-3.5" />
               发送
             </Button>
-            <Button v-else variant="destructive" @click="cancelSend">
-              <Square class="size-4" />
+            <Button v-else variant="destructive" size="sm" @click="cancelSend">
+              <Square class="mr-1 size-3.5" />
               停止
             </Button>
-            <Button variant="outline" @click="handleSave">
-              <Save class="size-4" />
+            <Button variant="outline" size="sm" @click="handleSave">
+              <Save class="mr-1 size-3.5" />
               保存
             </Button>
             <Loader2 v-if="sending" class="size-4 animate-spin text-muted-foreground" />
           </div>
 
+          <ErrorState v-if="formError" :message="formError" />
+
           <div v-if="environments.length > 0" class="flex items-center gap-2">
             <span class="text-xs text-muted-foreground">环境</span>
             <Select v-model="activeEnvValue">
-              <SelectTrigger class="w-48">
+              <SelectTrigger size="sm" class="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -518,9 +537,13 @@ async function handleImportBundle(): Promise<void> {
           </p>
 
           <RequestTabs v-model="spec" />
-        </div>
+        </Panel>
 
-        <div class="min-h-0 flex-1 rounded-lg border border-border bg-card p-3">
+        <Panel
+          title="响应"
+          class="flex min-h-0 flex-1 flex-col"
+          body-class="flex min-h-0 flex-1 flex-col space-y-0 p-4"
+        >
           <ResponsePanel
             :response="response"
             :loading="sending"
@@ -529,7 +552,7 @@ async function handleImportBundle(): Promise<void> {
             fill
             @apply-cookie="handleApplyCookie"
           />
-        </div>
+        </Panel>
       </section>
     </div>
 

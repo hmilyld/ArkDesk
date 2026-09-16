@@ -31,7 +31,7 @@ function textOf(cell: Cell): string {
 <template>
   <div class="max-h-[460px] overflow-auto">
     <table class="w-full border-collapse text-sm">
-      <thead class="sticky top-0 bg-muted/80 backdrop-blur-sm">
+      <thead class="sticky top-0 bg-muted">
         <tr>
           <th
             v-for="(column, index) in table.columns"
@@ -43,7 +43,7 @@ function textOf(cell: Cell): string {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(row, rowIndex) in rows" :key="rowIndex" class="even:bg-muted/30">
+        <tr v-for="(row, rowIndex) in rows" :key="rowIndex" class="even:bg-sunken">
           <td
             v-for="(cell, cellIndex) in row"
             :key="cellIndex"

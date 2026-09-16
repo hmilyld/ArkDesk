@@ -117,7 +117,7 @@ const userAgent = navigator.userAgent;
             </p>
           </div>
           <div
-            class="rounded-lg border border-dashed border-border bg-card px-4 py-6 text-center text-xs text-muted-foreground"
+            class="rounded-lg border border-dashed border bg-card px-4 py-6 text-center text-xs text-muted-foreground"
           >
             把文件拖进窗口试试 —— 或从命令行传入文件路径启动应用
           </div>
@@ -150,7 +150,7 @@ const userAgent = navigator.userAgent;
               registerShortcut 注册页面级快捷键，返回取消函数在卸载时调用
             </p>
           </div>
-          <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+          <div class="flex items-center gap-3 rounded-lg border bg-card px-4 py-3">
             <span class="font-mono text-sm">{{ comboLabel }}</span>
             <span class="text-xs text-muted-foreground">已触发 {{ hotkeyCount }} 次</span>
           </div>
@@ -166,7 +166,7 @@ const userAgent = navigator.userAgent;
               isMac 驱动平台差异（样式与快捷键修饰键）；下方为只读环境信息
             </p>
           </div>
-          <div class="rounded-lg border border-border bg-card px-4 py-3 font-mono text-xs">
+          <div class="rounded-lg border bg-card px-4 py-3 font-mono text-xs">
             <p><span class="text-muted-foreground">isMac：</span>{{ isMac }}</p>
             <p class="break-all">
               <span class="text-muted-foreground">userAgent：</span>{{ userAgent }}

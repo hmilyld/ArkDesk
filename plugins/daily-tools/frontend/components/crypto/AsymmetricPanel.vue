@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Panel from '@/components/tool/Panel.vue';
+import Segmented from '@/components/native/Segmented.vue';
 import {
   Select,
   SelectContent,
@@ -223,32 +224,14 @@ async function run(): Promise<void> {
     <div class="col-span-12 space-y-4 lg:col-span-8 lg:col-start-3">
       <Panel body-class="space-y-4">
         <div class="flex flex-wrap items-center gap-3">
-          <div class="inline-flex rounded-lg bg-muted p-0.5 text-sm">
-            <button
-              type="button"
-              class="rounded-md px-3 py-1 transition-colors"
-              :class="
-                algorithm === 'rsa'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              "
-              @click="algorithm = 'rsa'"
-            >
-              RSA
-            </button>
-            <button
-              type="button"
-              class="rounded-md px-3 py-1 transition-colors"
-              :class="
-                algorithm === 'sm2'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              "
-              @click="algorithm = 'sm2'"
-            >
-              SM2（国密）
-            </button>
-          </div>
+          <Segmented
+            v-model="algorithm"
+            size="sm"
+            :segments="[
+              { value: 'rsa', label: 'RSA' },
+              { value: 'sm2', label: 'SM2（国密）' },
+            ]"
+          />
           <Select v-model="operation">
             <SelectTrigger class="h-9 w-40"><SelectValue /></SelectTrigger>
             <SelectContent>

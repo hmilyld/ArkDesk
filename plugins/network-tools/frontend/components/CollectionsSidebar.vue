@@ -27,6 +27,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import EmptyState from '@/components/native/EmptyState.vue';
+import SearchField from '@/components/native/SearchField.vue';
 import type { CollectionRow, RequestBriefRow } from '../composables/useCollections';
 import type { HistoryRow } from '../composables/useHistory';
 import { formatDuration, httpMethodClass } from '../shared';
@@ -166,6 +168,12 @@ function toggle(id: number): void {
   expanded.value = next;
 }
 
+/** 键盘激活：集合行展开/收起，请求行载入 */
+function activateNode(node: TreeNode): void {
+  if (node.collection) toggle(node.collection.id);
+  else if (node.request) emit('select-request', node.request.id);
+}
+
 // ── 指针拖拽（WebView 下比原生 HTML5 DnD 可靠） ──
 const dragging = ref(false);
 const dropKey = ref<string | null>(null);
@@ -267,57 +275,61 @@ function commitRename(): void {
       <TabsTrigger value="history" class="flex-1">历史</TabsTrigger>
     </TabsList>
 
-    <Input
-      v-model="search"
-      placeholder="搜索请求 / 集合 / 历史"
-      class="h-7 text-xs"
-      spellcheck="false"
-    />
+    <SearchField v-model="search" placeholder="搜索请求 / 集合 / 历史" spellcheck="false" />
 
     <TabsContent value="collections" class="flex min-h-0 flex-1 flex-col gap-2">
       <div class="flex items-center gap-1">
-        <Button variant="outline" size="xs" class="flex-1" @click="emit('new-folder', null)">
-          <FolderPlus class="size-3.5" />
+        <Button variant="outline" size="sm" class="flex-1" @click="emit('new-folder', null)">
+          <FolderPlus class="mr-1 size-3.5" />
           文件夹
         </Button>
-        <Button variant="outline" size="xs" class="flex-1" @click="emit('new-request', null)">
-          <Plus class="size-3.5" />
+        <Button variant="outline" size="sm" class="flex-1" @click="emit('new-request', null)">
+          <Plus class="mr-1 size-3.5" />
           请求
         </Button>
       </div>
       <div class="flex items-center gap-1">
-        <Button variant="ghost" size="xs" class="flex-1" @click="emit('import-bundle')">
-          <Upload class="size-3.5" />
+        <Button variant="ghost" size="sm" class="flex-1" @click="emit('import-bundle')">
+          <Upload class="mr-1 size-3.5" />
           导入
         </Button>
-        <Button variant="ghost" size="xs" class="flex-1" @click="emit('export-all')">
-          <Download class="size-3.5" />
+        <Button variant="ghost" size="sm" class="flex-1" @click="emit('export-all')">
+          <Download class="mr-1 size-3.5" />
           导出全部
         </Button>
       </div>
       <div
-        class="min-h-0 flex-1 overflow-auto rounded-md border border-border/60"
+        class="flex min-h-0 flex-1 flex-col overflow-auto"
+        role="tree"
         data-drop-key="root-area"
         data-drop-parent="root"
       >
         <div
           v-for="node in tree"
           :key="node.collection ? `c-${node.collection.id}` : `r-${node.request?.id}`"
-          class="group flex items-center gap-1 rounded-sm px-1 py-0.5 select-none hover:bg-muted/60"
+          class="group flex items-center gap-1 rounded-md px-1 py-0.5 select-none hover:bg-accent focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/60 outline-none"
           :class="[
             node.request && node.request.id === activeRequestId ? 'bg-muted' : '',
             dragging && dropKey === keyOf(node) ? 'ring-1 ring-primary ring-inset' : '',
             dragging ? 'cursor-grabbing' : 'cursor-grab',
           ]"
+          role="treeitem"
+          tabindex="0"
+          :aria-expanded="node.collection ? isExpanded(node.collection.id) : undefined"
+          :aria-selected="node.request ? node.request.id === activeRequestId : undefined"
           :data-drop-key="keyOf(node)"
           :data-drop-parent="dropParentOf(node)"
           :style="{ paddingLeft: `${node.depth * 14 + 4}px` }"
           @pointerdown="onPointerDown(node, $event)"
+          @keydown.enter.self.prevent="activateNode(node)"
+          @keydown.space.self.prevent="activateNode(node)"
         >
           <template v-if="node.collection">
             <button
               type="button"
               class="flex size-4 shrink-0 items-center justify-center text-muted-foreground"
+              :aria-label="isExpanded(node.collection.id) ? '收起' : '展开'"
+              :title="isExpanded(node.collection.id) ? '收起' : '展开'"
               @click="toggle(node.collection.id)"
             >
               <component
@@ -329,7 +341,7 @@ function commitRename(): void {
             <Input
               v-if="editingId === node.collection.id"
               v-model="editingName"
-              class="h-6 flex-1 text-xs"
+              class="h-7 flex-1 text-xs"
               @keydown.enter="commitRename"
               @keydown.esc="editingId = null"
               @blur="commitRename"
@@ -338,7 +350,7 @@ function commitRename(): void {
           </template>
           <template v-else-if="node.request">
             <span
-              class="w-9 shrink-0 text-right text-[10px] font-semibold"
+              class="w-14 shrink-0 text-right text-xs font-semibold"
               :class="httpMethodClass(node.request.method)"
             >
               {{ node.request.method }}
@@ -346,7 +358,7 @@ function commitRename(): void {
             <Input
               v-if="editingId === node.request.id"
               v-model="editingName"
-              class="h-6 flex-1 text-xs"
+              class="h-7 flex-1 text-xs"
               @keydown.enter="commitRename"
               @keydown.esc="editingId = null"
               @blur="commitRename"
@@ -360,11 +372,15 @@ function commitRename(): void {
             </span>
           </template>
 
-          <span class="flex shrink-0 items-center opacity-0 group-hover:opacity-100">
+          <span
+            class="flex shrink-0 items-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+            @click.stop
+          >
             <template v-if="node.collection">
               <button
                 type="button"
                 title="新建请求"
+                aria-label="新建请求"
                 class="p-0.5 text-muted-foreground hover:text-foreground"
                 @click="emit('new-request', node.collection.id)"
               >
@@ -376,6 +392,7 @@ function commitRename(): void {
                 <button
                   type="button"
                   title="移动到文件夹"
+                  aria-label="移动到文件夹"
                   class="p-0.5 text-muted-foreground hover:text-foreground"
                   @click.stop
                 >
@@ -410,6 +427,7 @@ function commitRename(): void {
             <button
               type="button"
               title="导出"
+              aria-label="导出"
               class="p-0.5 text-muted-foreground hover:text-foreground"
               @click="
                 node.collection
@@ -422,6 +440,7 @@ function commitRename(): void {
             <button
               type="button"
               title="重命名"
+              aria-label="重命名"
               class="p-0.5 text-muted-foreground hover:text-foreground"
               @click="startRename(node)"
             >
@@ -430,6 +449,7 @@ function commitRename(): void {
             <button
               type="button"
               title="删除"
+              aria-label="删除"
               class="p-0.5 text-muted-foreground hover:text-destructive"
               @click="
                 node.collection
@@ -441,9 +461,14 @@ function commitRename(): void {
             </button>
           </span>
         </div>
-        <p v-if="tree.length === 0" class="px-3 py-6 text-center text-xs text-muted-foreground">
-          {{ search.trim() ? '无匹配结果' : '暂无集合，点击上方新建' }}
-        </p>
+
+        <EmptyState
+          v-if="tree.length === 0"
+          class="my-auto"
+          :icon="Folder"
+          :title="search.trim() ? '无匹配结果' : '暂无集合'"
+          :description="search.trim() ? '换一个关键词试试' : '点击上方「文件夹」或「请求」新建'"
+        />
       </div>
     </TabsContent>
 
@@ -452,54 +477,57 @@ function commitRename(): void {
         <span class="text-xs text-muted-foreground">{{ filteredHistory.length }} 条</span>
         <Button
           variant="ghost"
-          size="xs"
+          size="sm"
           :disabled="history.length === 0"
           @click="emit('clear-history')"
         >
-          <Eraser class="size-3.5" />
+          <Eraser class="mr-1 size-3.5" />
           清空
         </Button>
       </div>
-      <div class="min-h-0 flex-1 overflow-auto rounded-md border border-border/60">
+      <div class="flex min-h-0 flex-1 flex-col divide-y overflow-auto">
         <div
           v-for="row in filteredHistory"
           :key="row.id"
-          class="group flex items-center gap-2 px-2 py-1 hover:bg-muted/60"
+          class="group flex items-center gap-2 px-2 py-1 hover:bg-accent"
         >
           <Clock class="size-3.5 shrink-0 text-muted-foreground" />
           <span
-            class="w-9 shrink-0 text-right text-[10px] font-semibold"
+            class="w-14 shrink-0 text-right text-xs font-semibold"
             :class="httpMethodClass(row.method)"
           >
             {{ row.method }}
           </span>
           <button
             type="button"
-            class="min-w-0 flex-1 truncate text-left text-xs"
+            class="min-w-0 flex-1 truncate rounded-md text-left text-xs focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/60 outline-none"
             @click="emit('open-history', row)"
           >
             {{ row.url }}
           </button>
-          <span class="shrink-0 font-mono text-[10px] text-muted-foreground">
+          <span class="shrink-0 font-mono text-xs text-muted-foreground">
             {{ row.error ? 'ERR' : row.status }}
           </span>
-          <span class="shrink-0 font-mono text-[10px] text-muted-foreground">
+          <span class="shrink-0 font-mono text-xs text-muted-foreground">
             {{ formatDuration(row.elapsed_ms) }}
           </span>
           <button
             type="button"
-            class="shrink-0 p-0.5 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
+            class="shrink-0 p-0.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:text-destructive"
+            title="删除"
+            aria-label="删除"
             @click="emit('delete-history', row.id)"
           >
             <Trash2 class="size-3.5" />
           </button>
         </div>
-        <p
+        <EmptyState
           v-if="filteredHistory.length === 0"
-          class="px-3 py-6 text-center text-xs text-muted-foreground"
-        >
-          暂无历史记录
-        </p>
+          class="my-auto"
+          :icon="Clock"
+          title="暂无历史记录"
+          description="发送请求后会自动记录（可在设置中关闭）"
+        />
       </div>
     </TabsContent>
   </Tabs>

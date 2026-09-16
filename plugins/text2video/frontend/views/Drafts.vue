@@ -16,8 +16,21 @@ import {
 } from '@/components/ui/dialog';
 import { ipc } from '@/core/ipc';
 import { notifyIfBackground } from '@/core/notify';
-import { Plus, RefreshCw, Trash2, Pencil, Play, Square, Film, FolderOpen } from '@lucide/vue';
+import {
+  FileText,
+  Plus,
+  RefreshCw,
+  Trash2,
+  Pencil,
+  Play,
+  Square,
+  Film,
+  FolderOpen,
+} from '@lucide/vue';
 import ToolShell from '@/components/tool/ToolShell.vue';
+import Panel from '@/components/tool/Panel.vue';
+import EmptyState from '@/components/native/EmptyState.vue';
+import ListRow from '@/components/native/ListRow.vue';
 import ArticleForm from '../components/ArticleForm.vue';
 import { useGeneration } from '../composables/useGeneration';
 import {
@@ -235,40 +248,79 @@ onMounted(load);
 
     <div class="mx-auto grid w-full grid-cols-12 gap-4">
       <div class="col-span-12 space-y-4">
-        <!-- 工具栏 -->
-        <div class="flex flex-wrap items-center gap-3 rounded-lg border bg-card px-4 py-2.5">
-          <label class="flex cursor-pointer items-center gap-2 text-sm">
-            <Checkbox :model-value="allSelected" @update:model-value="toggleAll" />
-            全选
-          </label>
-          <span class="text-xs text-muted-foreground">
-            已选 {{ selectedCount }} / {{ visibleDrafts.length }}
-          </span>
-          <label
-            v-if="generatedCount"
-            class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground"
-          >
-            <Checkbox v-model="showGenerated" />
-            显示已生成（{{ generatedCount }}）
-          </label>
-          <div class="ml-auto flex items-center gap-2">
+        <!-- 草稿列表：选择操作在面板头部；条目用分隔线（一条一卡会叠盒子） -->
+        <Panel title="草稿" :hint="`已选 ${selectedCount} / ${visibleDrafts.length}`">
+          <template #actions>
+            <label class="flex cursor-pointer items-center gap-1.5 text-sm">
+              <Checkbox :model-value="allSelected" @update:model-value="toggleAll" />
+              全选
+            </label>
+            <label
+              v-if="generatedCount"
+              class="flex cursor-pointer items-center gap-1.5 text-sm text-muted-foreground"
+            >
+              <Checkbox v-model="showGenerated" />
+              显示已生成（{{ generatedCount }}）
+            </label>
             <Button size="sm" :disabled="running || !selectedCount" @click="batchGenerate">
-              <Play class="mr-1 size-4" />
+              <Play class="mr-1 size-3.5" />
               批量生成
             </Button>
             <Button v-if="running" variant="destructive" size="sm" @click="cancel">
-              <Square class="mr-1 size-4" />
+              <Square class="mr-1 size-3.5" />
               取消
             </Button>
             <Button variant="outline" size="sm" :disabled="!selectedCount" @click="removeSelected">
               <Trash2 class="mr-1 size-3.5" />
               删除所选
             </Button>
+          </template>
+
+          <div v-if="visibleDrafts.length" class="divide-y">
+            <ListRow
+              v-for="draft in visibleDrafts"
+              :key="draft.id"
+              :title="draft.title"
+              :description="`${draft.author || '佚名'} · ${draft.updatedAt}`"
+              class="px-0 py-2.5"
+            >
+              <template #leading>
+                <Checkbox
+                  :model-value="isSelected(draft.id)"
+                  @update:model-value="(value) => toggleSelect(draft.id, value)"
+                />
+              </template>
+              <template #trailing>
+                <Badge v-if="draft.generatedRefId" variant="outline">已生成</Badge>
+                <Badge :variant="draft.source === 'ai' ? 'default' : 'secondary'">
+                  {{ draft.source === 'ai' ? 'AI' : '手动' }}
+                </Badge>
+                <Button variant="ghost" size="sm" @click="openEdit(draft)">
+                  <Pencil class="mr-1 size-3.5" />
+                  编辑
+                </Button>
+                <Button variant="ghost" size="sm" @click="remove(draft.id)">
+                  <Trash2 class="mr-1 size-3.5" />
+                  删除
+                </Button>
+              </template>
+            </ListRow>
           </div>
-        </div>
+
+          <EmptyState
+            v-else
+            :icon="FileText"
+            :title="drafts.length ? '剩余草稿均已生成' : '暂无草稿'"
+            :description="
+              drafts.length
+                ? '勾选「显示已生成」可查看已生成的草稿'
+                : '点击右上角「新建草稿」，或在生成页把内容「存为草稿」'
+            "
+          />
+        </Panel>
 
         <!-- 进度 -->
-        <div v-if="running || logs.length" class="space-y-2 rounded-lg border bg-card p-4">
+        <Panel v-if="running || logs.length" title="生成进度">
           <div class="flex items-center justify-between text-sm">
             <span class="font-medium">
               {{ STAGE_LABELS[progress.stage] ?? (progress.stage || '就绪') }}
@@ -284,95 +336,40 @@ onMounted(load);
             />
           </div>
           <pre
-            class="max-h-40 overflow-auto whitespace-pre-wrap break-words rounded bg-console p-3 font-mono text-xs leading-relaxed text-muted-foreground"
+            class="max-h-40 overflow-auto rounded-md bg-console p-3 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-console-foreground/80"
             >{{ logs.join('\n') }}</pre>
-        </div>
+        </Panel>
 
-        <!-- 结果 -->
-        <div v-if="summary" class="space-y-2">
-          <h3 class="text-sm font-semibold">
-            本次结果
-            <span class="ml-2 text-xs font-normal text-muted-foreground">
-              {{ summary.cancelled ? '已取消' : '完成' }} · 输出到
-              {{ summary.outputDir }}
-            </span>
-          </h3>
-          <div class="space-y-2">
-            <div
-              v-for="item in summary.results"
-              :key="item.refId"
-              class="flex items-center justify-between gap-3 rounded-lg border bg-card px-4 py-2.5"
-            >
-              <div class="flex min-w-0 items-center gap-3">
-                <Film class="size-4 shrink-0 text-muted-foreground" />
-                <div class="min-w-0">
-                  <p class="truncate text-sm">{{ item.title }}</p>
-                  <p v-if="item.detail" class="truncate text-xs text-muted-foreground">
-                    {{ item.detail }}
-                  </p>
-                </div>
-              </div>
-              <div class="flex shrink-0 items-center gap-2">
-                <Badge :variant="item.status === 'done' ? 'default' : 'secondary'">
-                  {{ statusLabel(item.status) }}
-                </Badge>
-                <template v-if="item.status === 'done'">
-                  <Button variant="ghost" size="sm" @click="openPath(item.video, false)">
-                    打开视频
-                  </Button>
-                  <Button variant="ghost" size="sm" @click="openPath(item.video, true)">
-                    <FolderOpen class="mr-1 size-3.5" />
-                    位置
-                  </Button>
-                </template>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 草稿列表 -->
-        <div v-if="visibleDrafts.length" class="space-y-1.5">
-          <div
-            v-for="draft in visibleDrafts"
-            :key="draft.id"
-            class="flex items-center gap-3 rounded-lg border bg-card px-4 py-2.5"
-          >
-            <Checkbox
-              :model-value="isSelected(draft.id)"
-              @update:model-value="(value) => toggleSelect(draft.id, value)"
-            />
-            <div class="min-w-0 flex-1">
-              <p class="truncate text-sm">{{ draft.title }}</p>
-              <p class="truncate text-xs text-muted-foreground">
-                {{ draft.author || '佚名' }} · {{ draft.updatedAt }}
-              </p>
-            </div>
-            <Badge v-if="draft.generatedRefId" variant="outline">已生成</Badge>
-            <Badge :variant="draft.source === 'ai' ? 'default' : 'secondary'">
-              {{ draft.source === 'ai' ? 'AI' : '手动' }}
-            </Badge>
-            <div class="flex shrink-0 items-center gap-1">
-              <Button variant="ghost" size="sm" @click="openEdit(draft)">
-                <Pencil class="mr-1 size-3.5" />
-                编辑
-              </Button>
-              <Button variant="ghost" size="sm" @click="remove(draft.id)">
-                <Trash2 class="mr-1 size-3.5" />
-                删除
-              </Button>
-            </div>
-          </div>
-        </div>
-        <p
-          v-else
-          class="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground"
+        <!-- 本次结果 -->
+        <Panel
+          v-if="summary"
+          title="本次结果"
+          :hint="`${summary.cancelled ? '已取消' : '完成'} · ${summary.outputDir}`"
         >
-          {{
-            drafts.length
-              ? '剩余草稿均已生成，可勾选「显示已生成」查看'
-              : '暂无草稿，点击右上角「新建草稿」，或在生成页把内容「存为草稿」'
-          }}
-        </p>
+          <ListRow
+            v-for="item in summary.results"
+            :key="item.refId"
+            :icon="Film"
+            :title="item.title"
+            :description="item.detail"
+            class="px-0 py-2"
+          >
+            <template #trailing>
+              <Badge :variant="item.status === 'done' ? 'default' : 'secondary'">
+                {{ statusLabel(item.status) }}
+              </Badge>
+              <template v-if="item.status === 'done'">
+                <Button variant="ghost" size="sm" @click="openPath(item.video, false)">
+                  打开视频
+                </Button>
+                <Button variant="ghost" size="sm" @click="openPath(item.video, true)">
+                  <FolderOpen class="mr-1 size-3.5" />
+                  位置
+                </Button>
+              </template>
+            </template>
+          </ListRow>
+        </Panel>
       </div>
     </div>
 

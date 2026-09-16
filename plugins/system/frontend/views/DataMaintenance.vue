@@ -6,7 +6,7 @@
 <script setup lang="ts">
 import { computed, onActivated, onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
-import { Plus, RefreshCw } from '@lucide/vue';
+import { Plus, RefreshCw, Table2 } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -51,6 +51,8 @@ import TableSchema from '../components/TableSchema.vue';
 import RowEditorDialog from '../components/RowEditorDialog.vue';
 import RowDetailDialog from '../components/RowDetailDialog.vue';
 import ToolShell from '@/components/tool/ToolShell.vue';
+import Panel from '@/components/tool/Panel.vue';
+import EmptyState from '@/components/native/EmptyState.vue';
 
 function fail(operation: string, err: unknown): void {
   const error = normalizeError(err);
@@ -325,59 +327,62 @@ onActivated(refreshAll);
       <section
         class="col-span-12 flex min-w-0 flex-col md:col-span-8 md:max-h-[calc(100dvh-145px)] md:overflow-hidden lg:col-span-9"
       >
-        <div v-if="!selected" class="rounded-lg border border-dashed py-24 text-center">
-          <p class="text-sm text-muted-foreground">从左侧选择一个表</p>
-          <p class="mt-1 text-xs text-muted-foreground">可查看结构、DDL，并直接编辑数据</p>
-        </div>
+        <Panel v-if="!selected" title="表详情">
+          <EmptyState
+            :icon="Table2"
+            title="从左侧选择一个表"
+            description="可查看结构、DDL，并直接编辑数据"
+          />
+        </Panel>
 
         <Tabs v-else v-model="tab" class="min-h-0 flex-1">
-          <div class="mb-3 flex shrink-0 items-center justify-between gap-3">
-            <div class="flex min-w-0 items-center gap-2">
-              <h3 class="truncate font-mono text-sm font-semibold">{{ selected }}</h3>
-              <Badge variant="secondary">{{ total }} 行</Badge>
-              <Badge v-if="!canEdit" variant="outline" class="text-muted-foreground">
+          <Panel class="flex min-h-0 flex-1 flex-col" body-class="min-h-0 flex-1 p-0 space-y-0">
+            <template #title>
+              <span class="font-mono">{{ selected }}</span>
+              <Badge variant="secondary" class="ml-1.5">{{ total }} 行</Badge>
+              <Badge v-if="!canEdit" variant="outline" class="ml-1 font-normal">
                 只读（无 rowid）
               </Badge>
-            </div>
-            <div class="flex shrink-0 items-center gap-2">
+            </template>
+            <template #actions>
               <TabsList>
                 <TabsTrigger value="data">数据</TabsTrigger>
                 <TabsTrigger value="schema">结构</TabsTrigger>
                 <TabsTrigger value="ddl">DDL</TabsTrigger>
               </TabsList>
               <Button size="sm" :disabled="!canEdit" @click="addOpen = true">
-                <Plus class="size-4" />
+                <Plus class="size-3.5" />
                 新增行
               </Button>
-            </div>
-          </div>
+            </template>
 
-          <TabsContent value="data" class="mt-0 flex min-h-0 flex-col">
-            <DataGrid
-              :columns="schema?.columns ?? []"
-              :rows="rows"
-              :loading="rowsLoading"
-              :readonly="!canEdit"
-              :page="page"
-              :page-count="pageCount"
-              :total="total"
-              @edit-cell="handleEditCell"
-              @view-row="(row) => openRowDialog(row, 'view')"
-              @edit-row="(row) => openRowDialog(row, 'edit')"
-              @delete-row="askDeleteRow"
-              @page-change="gotoPage"
-            />
-          </TabsContent>
+            <TabsContent value="data" class="mt-0 flex min-h-0 flex-col p-4">
+              <DataGrid
+                :columns="schema?.columns ?? []"
+                :rows="rows"
+                :loading="rowsLoading"
+                :readonly="!canEdit"
+                :page="page"
+                :page-count="pageCount"
+                :total="total"
+                @edit-cell="handleEditCell"
+                @view-row="(row) => openRowDialog(row, 'view')"
+                @edit-row="(row) => openRowDialog(row, 'edit')"
+                @delete-row="askDeleteRow"
+                @page-change="gotoPage"
+              />
+            </TabsContent>
 
-          <TabsContent value="schema" class="mt-0 min-h-0 overflow-y-auto">
-            <TableSchema :schema="schema" :loading="schemaLoading" />
-          </TabsContent>
+            <TabsContent value="schema" class="mt-0 min-h-0 overflow-y-auto p-4">
+              <TableSchema :schema="schema" :loading="schemaLoading" />
+            </TabsContent>
 
-          <TabsContent value="ddl" class="mt-0 min-h-0 overflow-y-auto">
-            <pre
-              class="rounded-lg border border-border bg-console p-3 font-mono text-xs leading-5 text-console-foreground"
-              >{{ schema?.ddl ?? '（未获取到 DDL）' }}</pre>
-          </TabsContent>
+            <TabsContent value="ddl" class="mt-0 min-h-0 overflow-y-auto p-4">
+              <pre
+                class="rounded-md bg-console p-3 font-mono text-xs leading-5 text-console-foreground"
+                >{{ schema?.ddl ?? '（未获取到 DDL）' }}</pre>
+            </TabsContent>
+          </Panel>
         </Tabs>
       </section>
     </div>

@@ -8,7 +8,7 @@
 import { computed, onUnmounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { open as openFileDialog, save as saveFileDialog } from '@tauri-apps/plugin-dialog';
-import { ArrowLeftRight, FileDown, FileUp, RotateCcw } from '@lucide/vue';
+import { ArrowLeftRight, FileDown, FileUp, RotateCcw, Table as TableIcon } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,7 @@ import { Switch } from '@/components/ui/switch';
 import { SettingsRow, SettingsSection } from '@/components/settings';
 import { Textarea } from '@/components/ui/textarea';
 import Panel from '@/components/tool/Panel.vue';
+import EmptyState from '@/components/native/EmptyState.vue';
 import ToolShell from '@/components/tool/ToolShell.vue';
 import { ipc } from '@/core/ipc';
 import { onOpenFiles } from '@/core/open-with';
@@ -391,7 +392,7 @@ onUnmounted(offOpenFiles);
         </template>
 
         <!-- 格式 -->
-        <SettingsSection title="格式" class="rounded-md bg-transparent">
+        <SettingsSection title="格式" class="border-0 bg-transparent">
           <SettingsRow title="源格式">
             <Select v-model="sourceFormat">
               <SelectTrigger class="h-9 w-56"><SelectValue /></SelectTrigger>
@@ -416,7 +417,7 @@ onUnmounted(offOpenFiles);
         </SettingsSection>
 
         <!-- 输入选项：一行一个设置，标题在左、控件在右（HIG：开关只放在列表行里） -->
-        <SettingsSection title="输入选项" class="rounded-md bg-transparent">
+        <SettingsSection title="输入选项" class="border-0 bg-transparent">
           <SettingsRow v-if="showJsonPath" title="数据路径" description="根节点就是数组时留空">
             <Input
               v-model="jsonPath"
@@ -455,7 +456,7 @@ onUnmounted(offOpenFiles);
         </SettingsSection>
 
         <!-- 输出选项 -->
-        <SettingsSection title="输出选项" class="rounded-md bg-transparent">
+        <SettingsSection title="输出选项" class="border-0 bg-transparent">
           <SettingsRow v-if="targetFormat === 'markdown'" title="换行转 &lt;br&gt;">
             <Switch v-model="escapeNewlines" size="sm" />
           </SettingsRow>
@@ -527,7 +528,7 @@ onUnmounted(offOpenFiles);
         <template v-if="sourceFormat === 'xlsx'">
           <button
             type="button"
-            class="flex min-h-[180px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md bg-muted/30 px-6 py-8 text-center transition-colors hover:bg-muted/50"
+            class="flex min-h-[180px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md bg-sunken px-6 py-8 text-center transition-colors hover:bg-accent"
             @click="openXlsxFile"
           >
             <FileUp class="size-8 text-muted-foreground" />
@@ -634,9 +635,12 @@ onUnmounted(offOpenFiles);
             >{{ previewText }}</pre>
         </template>
 
-        <p v-else-if="!error" class="py-10 text-center text-sm text-muted-foreground">
-          输入数据后自动转换
-        </p>
+        <EmptyState
+          v-else-if="!error"
+          :icon="TableIcon"
+          title="还没有数据"
+          description="在左侧粘贴 JSON 或选择文件，转换结果会显示在这里"
+        />
       </Panel>
     </div>
   </ToolShell>

@@ -6,7 +6,7 @@
 import { computed, onActivated, onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { save as saveFileDialog } from '@tauri-apps/plugin-dialog';
-import { Eye, FileDown, Trash2 } from '@lucide/vue';
+import { Eye, FileDown, FileClock, RefreshCw, Trash2 } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -53,6 +53,9 @@ import { logger } from '@/core/logger';
 import { desc, eq } from 'drizzle-orm';
 import { tenderHistory, type TenderHistory } from '../schema';
 import ToolShell from '@/components/tool/ToolShell.vue';
+import Panel from '@/components/tool/Panel.vue';
+import EmptyState from '@/components/native/EmptyState.vue';
+import LoadingState from '@/components/native/LoadingState.vue';
 
 // ── 列表与分页（前端分页：全量拉取，本地切页） ────────────────
 const history = ref<TenderHistory[]>([]);
@@ -132,7 +135,6 @@ async function confirmDelete(): Promise<void> {
   deleteOpen.value = false;
   try {
     await kdb.delete(tenderHistory).where(eq(tenderHistory.id, row.id));
-    toast.success(`已删除（ID: ${row.id}）`, { description: row.bestScenario ?? undefined });
   } finally {
     deletingRow.value = null;
     await loadHistory();
@@ -188,127 +190,151 @@ onActivated(loadHistory);
 <template>
   <ToolShell title="测算历史" description="每次运行测算自动归档，支持结果对比、工作簿导出与删除">
     <template #actions>
-      <Button variant="outline" size="sm" :disabled="loading" @click="loadHistory">刷新</Button>
+      <Button variant="outline" size="sm" :disabled="loading" @click="loadHistory">
+        <RefreshCw class="size-3.5" :class="{ 'animate-spin': loading }" />
+        刷新
+      </Button>
     </template>
 
-    <div class="mb-3 flex items-center justify-between gap-3">
-      <p class="text-xs text-muted-foreground">
-        共 {{ history.length }} 条 · 每页 {{ PAGE_SIZE }} 条
-      </p>
-    </div>
+    <Panel
+      title="测算记录"
+      :hint="history.length ? `共 ${history.length} 条 · 每页 ${PAGE_SIZE} 条` : undefined"
+      body-class="space-y-0 p-0"
+    >
+      <LoadingState v-if="loading && history.length === 0" class="p-4" :rows="6" />
 
-    <p v-if="loading" class="py-10 text-center text-xs text-muted-foreground">加载中…</p>
-    <div v-else-if="history.length === 0" class="rounded-lg border border-dashed py-12 text-center">
-      <p class="text-sm text-muted-foreground">暂无测算记录</p>
-      <p class="mt-1 text-xs text-muted-foreground">
-        到「报价测算」页运行一次测算后会自动归档到这里
-      </p>
-    </div>
-    <div v-else class="overflow-hidden rounded-lg border border-border bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow class="hover:bg-transparent">
-            <TableHead class="w-14 pl-3">ID</TableHead>
-            <TableHead class="max-w-36">方案名称</TableHead>
-            <TableHead class="w-40">测算时间</TableHead>
-            <TableHead class="w-24">公司数</TableHead>
-            <TableHead class="w-24">场景数</TableHead>
-            <TableHead>最优场景</TableHead>
-            <TableHead class="w-28">目标报价(万)</TableHead>
-            <TableHead class="w-20">得分</TableHead>
-            <TableHead class="w-32 pr-3 text-right">操作</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableRow v-for="row in pageRows" :key="row.id" class="hover:bg-accent/40">
-            <TableCell class="pl-3 font-mono text-xs text-muted-foreground">
-              {{ row.id }}
-            </TableCell>
-            <TableCell class="max-w-0 truncate">
-              <span v-if="row.planName" class="font-medium">{{ row.planName }}</span>
-              <span v-else class="text-xs text-muted-foreground">-</span>
-            </TableCell>
-            <TableCell class="font-mono text-xs text-muted-foreground">
-              {{ row.createdAt }}
-            </TableCell>
-            <TableCell class="font-mono text-xs">{{ row.numCompanies }}</TableCell>
-            <TableCell class="font-mono text-xs">{{ row.numScenarios }}</TableCell>
-            <TableCell class="max-w-0 truncate">
-              <span class="font-medium">{{ row.bestScenario ?? '-' }}</span>
-            </TableCell>
-            <TableCell class="font-mono text-xs font-semibold">
-              {{ formatWan(row.targetPrice, 4) }}
-            </TableCell>
-            <TableCell class="font-mono text-xs text-success">
-              {{ formatWan(row.bestScore) }}
-            </TableCell>
-            <TableCell class="pr-3 text-right">
-              <div class="inline-flex items-center gap-0.5">
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="查看详情"
-                  @click="openDetail(row)"
-                >
-                  <Eye class="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="导出结果"
-                  :disabled="exportingId === row.id"
-                  @click="exportRow(row)"
-                >
-                  <FileDown class="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="删除记录"
-                  @click="askDelete(row)"
-                >
-                  <Trash2 class="size-4 text-muted-foreground" />
-                </Button>
-              </div>
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-    </div>
-
-    <!-- 分页 -->
-    <div v-if="history.length > 0" class="mt-3 flex items-center justify-center gap-1.5">
-      <Button variant="outline" size="sm" :disabled="page === 1" @click="gotoPage(page - 1)">
-        上一页
-      </Button>
-      <template v-for="(n, index) in pageNumbers" :key="n">
-        <span
-          v-if="index > 0 && n - pageNumbers[index - 1]! > 1"
-          class="px-1 text-muted-foreground"
-        >
-          …
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          class="min-w-8 px-2 font-mono"
-          :class="
-            n === page ? 'border-primary/50 bg-primary/10 text-primary' : 'text-muted-foreground'
-          "
-          @click="gotoPage(n)"
-        >
-          {{ n }}
-        </Button>
-      </template>
-      <Button
-        variant="outline"
-        size="sm"
-        :disabled="page === pageCount"
-        @click="gotoPage(page + 1)"
+      <EmptyState
+        v-else-if="history.length === 0"
+        :icon="FileClock"
+        title="暂无测算记录"
+        description="到「报价测算」页运行一次测算后会自动归档到这里"
       >
-        下一页
-      </Button>
-    </div>
+        <Button variant="outline" size="sm" @click="loadHistory">
+          <RefreshCw class="size-3.5" />
+          刷新
+        </Button>
+      </EmptyState>
+
+      <template v-else>
+        <Table>
+          <TableHeader>
+            <TableRow class="hover:bg-transparent">
+              <TableHead class="w-14 pl-3">ID</TableHead>
+              <TableHead class="max-w-36">方案名称</TableHead>
+              <TableHead class="w-40">测算时间</TableHead>
+              <TableHead class="w-24 text-right">公司数</TableHead>
+              <TableHead class="w-24 text-right">场景数</TableHead>
+              <TableHead>最优场景</TableHead>
+              <TableHead class="w-32 text-right">目标报价 (万)</TableHead>
+              <TableHead class="w-20 text-right">得分</TableHead>
+              <TableHead class="w-32 pr-3 text-right">操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="row in pageRows" :key="row.id" class="hover:bg-accent/40">
+              <TableCell class="pl-3 font-mono text-xs text-muted-foreground tabular-nums">
+                {{ row.id }}
+              </TableCell>
+              <TableCell class="max-w-0 truncate">
+                <span v-if="row.planName" class="font-medium">{{ row.planName }}</span>
+                <span v-else class="text-xs text-muted-foreground">-</span>
+              </TableCell>
+              <TableCell class="font-mono text-xs text-muted-foreground tabular-nums">
+                {{ row.createdAt }}
+              </TableCell>
+              <TableCell class="text-right font-mono text-xs tabular-nums">
+                {{ row.numCompanies }}
+              </TableCell>
+              <TableCell class="text-right font-mono text-xs tabular-nums">
+                {{ row.numScenarios }}
+              </TableCell>
+              <TableCell class="max-w-0 truncate">
+                <span class="font-medium">{{ row.bestScenario ?? '-' }}</span>
+              </TableCell>
+              <TableCell class="text-right font-mono text-xs font-semibold tabular-nums">
+                {{ formatWan(row.targetPrice, 4) }}
+              </TableCell>
+              <TableCell class="text-right font-mono text-xs text-success tabular-nums">
+                {{ formatWan(row.bestScore) }}
+              </TableCell>
+              <TableCell class="pr-3 text-right">
+                <div class="inline-flex items-center gap-0.5">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="查看详情"
+                    title="查看详情"
+                    @click="openDetail(row)"
+                  >
+                    <Eye class="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="导出结果"
+                    title="导出结果"
+                    :disabled="exportingId === row.id"
+                    @click="exportRow(row)"
+                  >
+                    <FileDown class="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="删除记录"
+                    title="删除记录"
+                    @click="askDelete(row)"
+                  >
+                    <Trash2 class="size-4 text-muted-foreground" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+
+        <!-- 分页 -->
+        <div class="flex items-center justify-between gap-3 border-t px-4 py-2.5">
+          <p class="text-xs text-muted-foreground tabular-nums">
+            共 {{ history.length }} 条 · 每页 {{ PAGE_SIZE }} 条
+          </p>
+          <div class="flex items-center gap-1.5">
+            <Button variant="outline" size="sm" :disabled="page === 1" @click="gotoPage(page - 1)">
+              上一页
+            </Button>
+            <template v-for="(n, index) in pageNumbers" :key="n">
+              <span
+                v-if="index > 0 && n - pageNumbers[index - 1]! > 1"
+                class="px-1 text-muted-foreground"
+              >
+                …
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                class="min-w-8 px-2 font-mono tabular-nums"
+                :class="
+                  n === page
+                    ? 'border-primary/50 bg-primary/10 text-primary'
+                    : 'text-muted-foreground'
+                "
+                @click="gotoPage(n)"
+              >
+                {{ n }}
+              </Button>
+            </template>
+            <Button
+              variant="outline"
+              size="sm"
+              :disabled="page === pageCount"
+              @click="gotoPage(page + 1)"
+            >
+              下一页
+            </Button>
+          </div>
+        </div>
+      </template>
+    </Panel>
 
     <!-- 详情弹窗：最优方案 + 场景对比 + 公司推荐 -->
     <Dialog :open="detail !== null" @update:open="(v) => (detail = v ? detail : null)">
@@ -328,8 +354,8 @@ onActivated(loadHistory);
           </DialogHeader>
 
           <div class="max-h-[65vh] space-y-4 overflow-y-auto py-1">
-            <!-- 最优方案 -->
-            <div class="rounded-lg border border-border bg-card p-3">
+            <!-- 最优方案：inset 底，不叠盒子 -->
+            <div class="rounded-md bg-muted p-3">
               <div class="mb-2 flex items-center gap-2">
                 <Badge>最优方案</Badge>
                 <span class="text-sm font-medium">{{ detailBest.scenario_name }}</span>
@@ -337,27 +363,27 @@ onActivated(loadHistory);
               <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div>
                   <p class="text-xs text-muted-foreground">目标报价</p>
-                  <p class="font-mono text-lg font-semibold">
+                  <p class="font-mono text-lg font-semibold tabular-nums">
                     {{ detailBest.target_price.toFixed(4) }} 万
                   </p>
                 </div>
                 <div>
                   <p class="text-xs text-muted-foreground">预期得分</p>
-                  <p class="font-mono text-lg font-semibold text-success">
+                  <p class="font-mono text-lg font-semibold tabular-nums text-success">
                     {{ detailBest.target_score.toFixed(2) }}
                   </p>
                 </div>
                 <div>
                   <p class="text-xs text-muted-foreground">基准价</p>
-                  <p class="font-mono text-lg font-semibold">
+                  <p class="font-mono text-lg font-semibold tabular-nums">
                     {{ detailBest.base_price.toFixed(2) }} 万
                   </p>
                 </div>
                 <div>
                   <p class="text-xs text-muted-foreground">预测均价 / 搜索范围</p>
-                  <p class="font-mono text-lg font-semibold">
+                  <p class="font-mono text-lg font-semibold tabular-nums">
                     {{ detailBest.search_center.toFixed(2) }}
-                    <span class="text-xs text-muted-foreground">
+                    <span class="text-sm text-muted-foreground">
                       ±{{ detailBest.search_range.toFixed(2) }}
                     </span>
                   </p>
@@ -365,89 +391,88 @@ onActivated(loadHistory);
               </div>
             </div>
 
-            <!-- 场景对比 -->
-            <div class="overflow-hidden rounded-lg border border-border">
-              <Table>
-                <TableHeader>
-                  <TableRow class="hover:bg-transparent">
-                    <TableHead class="pl-3">场景</TableHead>
-                    <TableHead class="w-28">降幅</TableHead>
-                    <TableHead class="w-24">标准差</TableHead>
-                    <TableHead class="w-20">参与率</TableHead>
-                    <TableHead class="w-28">目标报价(万)</TableHead>
-                    <TableHead class="w-16">得分</TableHead>
-                    <TableHead class="w-16"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow
+            <!-- 场景对比：行分隔走 divide-y，不额外画盒子 -->
+            <section>
+              <h4 class="mb-1.5 text-xs font-medium text-muted-foreground">场景对比</h4>
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b text-left text-xs text-muted-foreground">
+                    <th class="px-3 py-2 font-medium">场景</th>
+                    <th class="px-3 py-2 font-medium">降幅</th>
+                    <th class="px-3 py-2 font-medium">标准差</th>
+                    <th class="px-3 py-2 text-right font-medium">参与率</th>
+                    <th class="px-3 py-2 text-right font-medium">目标报价 (万)</th>
+                    <th class="px-3 py-2 text-right font-medium">得分</th>
+                    <th class="px-3 py-2 text-right font-medium">结果</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y">
+                  <tr
                     v-for="(r, index) in detail.results"
                     :key="r.scenario_name"
-                    :class="index === detail.row.bestIndex ? 'bg-primary/5' : ''"
-                    class="hover:bg-transparent"
+                    :class="index === detail.row.bestIndex ? 'bg-muted' : ''"
                   >
-                    <TableCell class="pl-3 font-medium">{{ r.scenario_name }}</TableCell>
-                    <TableCell class="font-mono text-xs">
+                    <td class="px-3 py-2 font-medium">{{ r.scenario_name }}</td>
+                    <td class="px-3 py-2 font-mono text-xs tabular-nums">
                       {{ formatReduction(r.reduction_type, r.reduction_value) }}
-                    </TableCell>
-                    <TableCell class="text-xs text-muted-foreground">
+                    </td>
+                    <td class="px-3 py-2 text-xs text-muted-foreground">
                       {{ formatStd(r.reduction_type, r.std_dev) }}
-                    </TableCell>
-                    <TableCell class="text-xs text-muted-foreground">
+                    </td>
+                    <td class="px-3 py-2 text-right text-xs text-muted-foreground tabular-nums">
                       {{ formatRate(r.participation_rate) }}
-                    </TableCell>
-                    <TableCell class="font-mono text-xs font-semibold">
+                    </td>
+                    <td class="px-3 py-2 text-right font-mono text-xs font-semibold tabular-nums">
                       {{ r.target_price.toFixed(4) }}
-                    </TableCell>
-                    <TableCell class="font-mono text-xs">{{ r.target_score.toFixed(2) }}</TableCell>
-                    <TableCell class="text-right">
+                    </td>
+                    <td class="px-3 py-2 text-right font-mono text-xs tabular-nums">
+                      {{ r.target_score.toFixed(2) }}
+                    </td>
+                    <td class="px-3 py-2 text-right">
                       <Badge v-if="index === detail.row.bestIndex" variant="default">最优</Badge>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
 
             <!-- 公司推荐报价 -->
-            <div class="overflow-hidden rounded-lg border border-border">
-              <Table>
-                <TableHeader>
-                  <TableRow class="hover:bg-transparent">
-                    <TableHead class="pl-3">公司</TableHead>
-                    <TableHead class="w-20">类型</TableHead>
-                    <TableHead class="w-28">第一轮报价</TableHead>
-                    <TableHead class="w-28">推荐报价(万)</TableHead>
-                    <TableHead class="w-24">变化(万)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow
-                    v-for="rec in detailRecommended"
-                    :key="rec.index"
-                    class="hover:bg-transparent"
-                  >
-                    <TableCell class="pl-3">
+            <section>
+              <h4 class="mb-1.5 text-xs font-medium text-muted-foreground">公司推荐报价</h4>
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b text-left text-xs text-muted-foreground">
+                    <th class="px-3 py-2 font-medium">公司</th>
+                    <th class="px-3 py-2 font-medium">类型</th>
+                    <th class="px-3 py-2 text-right font-medium">第一轮报价</th>
+                    <th class="px-3 py-2 text-right font-medium">推荐报价 (万)</th>
+                    <th class="px-3 py-2 text-right font-medium">变化 (万)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y">
+                  <tr v-for="rec in detailRecommended" :key="rec.index">
+                    <td class="px-3 py-2">
                       {{ detail.companies[rec.index]?.name ?? '-' }}
-                    </TableCell>
-                    <TableCell class="text-xs text-muted-foreground">
+                    </td>
+                    <td class="px-3 py-2 text-xs text-muted-foreground">
                       {{ COMPANY_TYPE_LABELS[detail.companies[rec.index]?.company_type ?? 'U'] }}
-                    </TableCell>
-                    <TableCell class="font-mono text-xs">
+                    </td>
+                    <td class="px-3 py-2 text-right font-mono text-xs tabular-nums">
                       {{ formatWan(detail.companies[rec.index]?.round1_price) }}
-                    </TableCell>
-                    <TableCell class="font-mono text-xs">
+                    </td>
+                    <td class="px-3 py-2 text-right font-mono text-xs tabular-nums">
                       {{ rec.recommended_price === null ? '-' : rec.recommended_price.toFixed(4) }}
-                    </TableCell>
-                    <TableCell
-                      class="font-mono text-xs"
+                    </td>
+                    <td
+                      class="px-3 py-2 text-right font-mono text-xs tabular-nums"
                       :class="(rec.change ?? 0) < 0 ? 'text-success' : 'text-muted-foreground'"
                     >
                       {{ rec.change === null ? '-' : rec.change.toFixed(4) }}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
           </div>
         </template>
       </DialogContent>

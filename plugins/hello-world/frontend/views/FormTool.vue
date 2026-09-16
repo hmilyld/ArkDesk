@@ -78,7 +78,7 @@ async function submit(): Promise<void> {
   <ToolShell title="表单" description="全部表单控件演示：校验后参数化写入 hello_tasks 表">
     <div class="mx-auto grid w-full grid-cols-12">
       <form class="col-span-12 md:col-start-4 md:col-span-6 space-y-3" @submit.prevent="submit">
-        <div class="divide-y divide-border/60 rounded-lg border border-border bg-card">
+        <div class="divide-y divide-border/60 rounded-lg border bg-card">
           <!-- 文本输入 + 校验 -->
           <div class="flex items-center justify-between gap-3 px-3 py-2.5">
             <Label for="task-title" class="shrink-0">任务标题</Label>

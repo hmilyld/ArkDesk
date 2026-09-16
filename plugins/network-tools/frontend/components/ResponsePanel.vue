@@ -6,11 +6,14 @@
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { save as saveFileDialog } from '@tauri-apps/plugin-dialog';
-import { Check, Copy, Download } from '@lucide/vue';
+import { Check, Copy, Download, Inbox } from '@lucide/vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ipc } from '@/core/ipc';
+import EmptyState from '@/components/native/EmptyState.vue';
+import ErrorState from '@/components/native/ErrorState.vue';
+import Segmented from '@/components/native/Segmented.vue';
 import { errorMessage } from '../error';
 import {
   copyToClipboard,
@@ -36,6 +39,7 @@ const emit = defineEmits<{ 'apply-cookie': [cookieHeader: string] }>();
 
 const viewMode = ref<'pretty' | 'raw'>('pretty');
 const copied = ref(false);
+const localError = ref('');
 
 const bodyText = computed(() => props.response?.bodyText ?? '');
 const prettyText = computed(() => prettyBody(bodyText.value, props.response?.contentType));
@@ -56,15 +60,15 @@ const setCookies = computed(() =>
   headerEntries.value.filter((header) => header.name.toLowerCase() === 'set-cookie')
 );
 
-async function copyText(text: string, label = '已复制'): Promise<void> {
+async function copyText(text: string): Promise<void> {
   if (!text) return;
   try {
     await copyToClipboard(text);
+    localError.value = '';
     copied.value = true;
-    toast.success(label);
     setTimeout(() => (copied.value = false), 1500);
   } catch {
-    toast.error('复制失败');
+    localError.value = '复制到剪贴板失败，请检查系统剪贴板权限';
   }
 }
 
@@ -91,7 +95,6 @@ async function download(): Promise<void> {
     } else {
       await ipc('file_write_text', { path: target, contents: res.bodyText ?? '' });
     }
-    toast.success('已保存', { description: target });
   } catch (err) {
     toast.error(`保存失败：${errorMessage(err)}`);
   }
@@ -105,12 +108,8 @@ function applySetCookie(setCookieValue: string): void {
 
 <template>
   <div class="flex h-full min-h-0 flex-col gap-3">
-    <p
-      v-if="error"
-      class="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 font-mono text-xs text-destructive"
-    >
-      {{ error }}
-    </p>
+    <ErrorState v-if="error" :message="error" />
+    <ErrorState v-if="localError" :message="localError" />
     <p
       v-for="warning in warnings"
       :key="warning"
@@ -119,12 +118,13 @@ function applySetCookie(setCookieValue: string): void {
       {{ warning }}
     </p>
 
-    <div
+    <EmptyState
       v-if="!response && !error"
-      class="flex flex-1 items-center justify-center rounded-lg border border-dashed text-xs text-muted-foreground"
-    >
-      {{ loading ? '请求中…' : '发送请求后在此查看响应' }}
-    </div>
+      class="flex-1"
+      :icon="Inbox"
+      :title="loading ? '请求中…' : '尚无响应'"
+      :description="loading ? undefined : '发送请求后在此查看响应'"
+    />
 
     <template v-if="response">
       <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -145,7 +145,7 @@ function applySetCookie(setCookieValue: string): void {
 
       <p
         v-if="response.redirectLocation"
-        class="rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-xs"
+        class="rounded-md border bg-sunken px-3 py-2 font-mono text-xs"
       >
         重定向至：{{ response.redirectLocation }}
       </p>
@@ -158,36 +158,26 @@ function applySetCookie(setCookieValue: string): void {
             <TabsTrigger value="cookies">Cookies ({{ setCookies.length }})</TabsTrigger>
           </TabsList>
           <div class="flex items-center gap-1">
-            <template v-if="!response.isBinary">
-              <Button
-                variant="ghost"
-                size="xs"
-                :class="{ 'text-primary': viewMode === 'pretty' }"
-                :disabled="!hasPretty"
-                @click="viewMode = 'pretty'"
-              >
-                Pretty
-              </Button>
-              <Button
-                variant="ghost"
-                size="xs"
-                :class="{ 'text-primary': viewMode === 'raw' }"
-                @click="viewMode = 'raw'"
-              >
-                Raw
-              </Button>
-            </template>
+            <Segmented
+              v-if="!response.isBinary && hasPretty"
+              v-model="viewMode"
+              size="sm"
+              :segments="[
+                { value: 'pretty', label: 'Pretty' },
+                { value: 'raw', label: 'Raw' },
+              ]"
+            />
             <Button
               v-if="!response.isBinary"
               variant="ghost"
-              size="xs"
-              @click="copyText(displayBody, '已复制响应体')"
+              size="sm"
+              @click="copyText(displayBody)"
             >
-              <component :is="copied ? Check : Copy" class="size-3.5" />
+              <component :is="copied ? Check : Copy" class="mr-1 size-3.5" />
               复制
             </Button>
-            <Button variant="ghost" size="xs" @click="download">
-              <Download class="size-3.5" />
+            <Button variant="ghost" size="sm" @click="download">
+              <Download class="mr-1 size-3.5" />
               下载
             </Button>
           </div>
@@ -196,7 +186,7 @@ function applySetCookie(setCookieValue: string): void {
         <TabsContent value="body" class="min-h-0 flex-1">
           <div
             v-if="response.isBinary"
-            class="rounded-lg border border-border p-4 text-xs text-muted-foreground"
+            class="rounded-md border bg-muted p-4 text-xs text-muted-foreground"
           >
             二进制响应（{{ response.contentType || '未知类型' }}，{{
               formatBytes(response.sizeBytes)
@@ -204,51 +194,51 @@ function applySetCookie(setCookieValue: string): void {
           </div>
           <pre
             v-else
-            class="overflow-auto rounded-lg border border-border bg-console p-3 font-mono text-xs leading-5 text-console-foreground whitespace-pre-wrap break-all"
+            class="overflow-auto rounded-md bg-console p-3 font-mono text-xs leading-relaxed text-console-foreground whitespace-pre-wrap break-words"
             :class="fill ? 'h-full min-h-0' : 'max-h-96 min-h-40'"
             >{{ displayBody || emptyHint }}</pre>
         </TabsContent>
 
         <TabsContent value="headers" class="min-h-0 flex-1">
           <div
-            class="divide-y divide-border/60 overflow-auto rounded-lg border border-border font-mono text-xs"
+            v-if="headerEntries.length"
+            class="divide-y overflow-auto rounded-md border font-mono text-xs"
             :class="fill ? 'h-full' : 'max-h-96'"
           >
             <p
               v-for="(header, index) in headerEntries"
               :key="`${header.name}-${index}`"
-              class="px-3 py-1.5 break-all"
+              class="px-3 py-1.5 break-words"
             >
               <span class="text-muted-foreground">{{ header.name }}:</span> {{ header.value }}
             </p>
-            <p
-              v-if="headerEntries.length === 0"
-              class="px-3 py-4 text-center text-muted-foreground"
-            >
-              无响应头
-            </p>
           </div>
+          <EmptyState v-else :icon="Inbox" title="无响应头" description="该响应未携带任何响应头" />
         </TabsContent>
 
         <TabsContent value="cookies" class="min-h-0 flex-1">
-          <div class="space-y-2 overflow-auto" :class="fill ? 'h-full' : 'max-h-96'">
+          <div
+            v-if="setCookies.length"
+            class="divide-y overflow-auto rounded-md border"
+            :class="fill ? 'h-full' : 'max-h-96'"
+          >
             <div
               v-for="(cookie, index) in setCookies"
               :key="index"
-              class="flex items-start justify-between gap-3 rounded-lg border border-border px-3 py-2"
+              class="flex items-start justify-between gap-3 px-3 py-2"
             >
-              <span class="min-w-0 flex-1 break-all font-mono text-xs">{{ cookie.value }}</span>
-              <Button variant="outline" size="xs" @click="applySetCookie(cookie.value)">
+              <span class="min-w-0 flex-1 break-words font-mono text-xs">{{ cookie.value }}</span>
+              <Button variant="outline" size="sm" @click="applySetCookie(cookie.value)">
                 复制到 Cookie 编辑器
               </Button>
             </div>
-            <p
-              v-if="setCookies.length === 0"
-              class="py-4 text-center text-xs text-muted-foreground"
-            >
-              响应未下发 Set-Cookie
-            </p>
           </div>
+          <EmptyState
+            v-else
+            :icon="Inbox"
+            title="响应未下发 Set-Cookie"
+            description="服务端未在此响应中设置 Cookie"
+          />
         </TabsContent>
       </Tabs>
     </template>

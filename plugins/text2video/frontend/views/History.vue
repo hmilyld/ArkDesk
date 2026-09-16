@@ -44,6 +44,13 @@ async function remove(refId: string): Promise<void> {
 }
 
 onMounted(load);
+
+/** 状态徽标语义色（DESIGN.md §2.5：状态用语义色，不用 accent） */
+function statusClass(status: string): string {
+  if (status === 'done') return 'bg-success/10 text-success';
+  if (status === 'failed') return 'bg-destructive/10 text-destructive';
+  return 'text-muted-foreground';
+}
 </script>
 
 <template>
@@ -74,7 +81,7 @@ onMounted(load);
               </p>
             </td>
             <td class="px-4 py-2.5">
-              <Badge :variant="row.status === 'done' ? 'default' : 'secondary'">
+              <Badge :class="statusClass(row.status)">
                 {{ statusLabel(row.status) }}
               </Badge>
             </td>

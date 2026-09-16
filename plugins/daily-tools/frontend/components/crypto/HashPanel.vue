@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Panel from '@/components/tool/Panel.vue';
+import Segmented from '@/components/native/Segmented.vue';
 import {
   Select,
   SelectContent,
@@ -142,32 +143,14 @@ async function pickFile(): Promise<void> {
       <!-- 哈希 / HMAC -->
       <Panel body-class="space-y-4">
         <!-- 模式切换 -->
-        <div class="inline-flex rounded-lg bg-muted p-0.5 text-sm">
-          <button
-            type="button"
-            class="rounded-md px-3 py-1 transition-colors"
-            :class="
-              mode === 'hash'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            "
-            @click="mode = 'hash'"
-          >
-            哈希
-          </button>
-          <button
-            type="button"
-            class="rounded-md px-3 py-1 transition-colors"
-            :class="
-              mode === 'hmac'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            "
-            @click="mode = 'hmac'"
-          >
-            HMAC
-          </button>
-        </div>
+        <Segmented
+          v-model="mode"
+          size="sm"
+          :segments="[
+            { value: 'hash', label: '哈希' },
+            { value: 'hmac', label: 'HMAC' },
+          ]"
+        />
 
         <Textarea
           v-model="text"

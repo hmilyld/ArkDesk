@@ -182,10 +182,11 @@ async function handleDeleteEnvironment(id: number): Promise<void> {
 
     <!-- 请求拦截 -->
     <SettingsSection title="请求拦截">
-      <div class="grid grid-cols-2 gap-3 p-3">
+      <div class="grid grid-cols-2 gap-x-6 gap-y-3 p-3">
         <SettingsField label="代理端口" description="0 = 首次启动时询问">
           <Input
             type="number"
+            class="w-32"
             :model-value="settings.interceptorPort"
             min="0"
             max="65535"
@@ -195,6 +196,7 @@ async function handleDeleteEnvironment(id: number): Promise<void> {
         <SettingsField label="捕获体大小上限（KB）">
           <Input
             type="number"
+            class="w-32"
             :model-value="settings.interceptorMaxBodyKb"
             min="1"
             :disabled="!settings.interceptorRecordBodies"
@@ -204,6 +206,7 @@ async function handleDeleteEnvironment(id: number): Promise<void> {
         <SettingsField label="流量条数上限">
           <Input
             type="number"
+            class="w-32"
             :model-value="settings.interceptorMaxFlows"
             min="1"
             @update:model-value="(value) => setNumber('interceptorMaxFlows', value)"
@@ -212,6 +215,7 @@ async function handleDeleteEnvironment(id: number): Promise<void> {
         <SettingsField label="WebSocket 每连接帧数上限">
           <Input
             type="number"
+            class="w-32"
             :model-value="settings.interceptorMaxWsFrames"
             min="1"
             @update:model-value="(value) => setNumber('interceptorMaxWsFrames', value)"

@@ -18,6 +18,7 @@ import {
 import { open as openFileDialog, save as saveFileDialog } from '@tauri-apps/plugin-dialog';
 import { AlertTriangle, Dices, FileUp, Play, Save } from '@lucide/vue';
 import Panel from '@/components/tool/Panel.vue';
+import Segmented from '@/components/native/Segmented.vue';
 import { ipc } from '@/core/ipc';
 import { useCryptoCall } from '../../composables/useCryptoCall';
 import { errorMessage } from '../../shared';
@@ -186,32 +187,14 @@ async function runFile(): Promise<void> {
       <!-- 操作与参数 -->
       <Panel body-class="space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="inline-flex rounded-lg bg-muted p-0.5 text-sm">
-            <button
-              type="button"
-              class="rounded-md px-3 py-1 transition-colors"
-              :class="
-                operation === 'encrypt'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              "
-              @click="operation = 'encrypt'"
-            >
-              加密
-            </button>
-            <button
-              type="button"
-              class="rounded-md px-3 py-1 transition-colors"
-              :class="
-                operation === 'decrypt'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              "
-              @click="operation = 'decrypt'"
-            >
-              解密
-            </button>
-          </div>
+          <Segmented
+            v-model="operation"
+            size="sm"
+            :segments="[
+              { value: 'encrypt', label: '加密' },
+              { value: 'decrypt', label: '解密' },
+            ]"
+          />
           <Button
             variant="ghost"
             size="sm"

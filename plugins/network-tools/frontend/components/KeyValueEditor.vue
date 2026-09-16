@@ -56,12 +56,19 @@ function add(): void {
         class="font-mono text-xs"
         @update:model-value="(value) => patch(row.id, { value: String(value) })"
       />
-      <Button variant="ghost" size="icon-sm" type="button" @click="remove(row.id)">
-        <Trash2 class="size-4" />
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        type="button"
+        title="删除"
+        aria-label="删除"
+        @click="remove(row.id)"
+      >
+        <Trash2 class="size-3.5" />
       </Button>
     </div>
     <Button variant="outline" size="sm" type="button" class="w-full" @click="add">
-      <Plus class="size-4" />
+      <Plus class="mr-1 size-3.5" />
       {{ addLabel }}
     </Button>
   </div>

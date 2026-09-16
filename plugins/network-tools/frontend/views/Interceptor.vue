@@ -8,7 +8,6 @@ import { save as saveFileDialog } from '@tauri-apps/plugin-dialog';
 import { Activity, Play, ShieldCheck, Square, Trash2 } from '@lucide/vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -19,6 +18,10 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ToolShell from '@/components/tool/ToolShell.vue';
+import Panel from '@/components/tool/Panel.vue';
+import EmptyState from '@/components/native/EmptyState.vue';
+import ErrorState from '@/components/native/ErrorState.vue';
+import SearchField from '@/components/native/SearchField.vue';
 import CaDialog from '../components/intercept/CaDialog.vue';
 import FlowDetail from '../components/intercept/FlowDetail.vue';
 import FlowList from '../components/intercept/FlowList.vue';
@@ -70,6 +73,10 @@ const selectedFlow = ref<FlowRecord | null>(null);
 const selectedWs = ref<WsRecord | null>(null);
 const portDialogOpen = ref(false);
 const caDialogOpen = ref(false);
+/** 启动代理失败的原地错误（列表面板内错误条） */
+const startError = ref('');
+/** 载入流量/WS 详情失败的原地错误（详情面板内错误条） */
+const detailError = ref('');
 
 // 最新发生的流量置顶
 const filteredFlows = computed(() => filterFlows(flows.value, filter.value).slice().reverse());
@@ -86,18 +93,17 @@ function currentConfig(): ProxyConfig {
 }
 
 async function startWithPort(port: number): Promise<void> {
+  startError.value = '';
   try {
     await start(port, currentConfig());
-    toast.success(`代理已启动`, { description: `127.0.0.1:${port}` });
   } catch (err) {
-    toast.error(`启动失败：${errorMessage(err)}`);
+    startError.value = `启动失败：${errorMessage(err)}`;
     portDialogOpen.value = true;
     return;
   }
   if (settings.value.interceptorAutoSystemProxy && systemProxy.value?.supported !== false) {
     try {
       await systemProxyEnable(port);
-      toast.info('已设置系统代理指向本地');
     } catch (err) {
       toast.error(`设置系统代理失败：${errorMessage(err)}`);
     }
@@ -108,10 +114,8 @@ async function toggleSystemProxy(value: boolean | 'indeterminate'): Promise<void
   try {
     if (value === true && status.value?.port) {
       await systemProxyEnable(status.value.port);
-      toast.success('系统代理已指向本地');
     } else {
       await systemProxyDisable();
-      toast.info('系统代理已还原');
     }
   } catch (err) {
     toast.error(`系统代理操作失败：${errorMessage(err)}`);
@@ -135,7 +139,6 @@ async function handlePortConfirm(port: number): Promise<void> {
 async function handleStop(): Promise<void> {
   await stop();
   await refreshSystemProxy();
-  toast.info('代理已停止');
 }
 
 async function handleClear(): Promise<void> {
@@ -150,11 +153,12 @@ async function selectFlow(id: number): Promise<void> {
   selectedWsId.value = null;
   selectedWs.value = null;
   selectedFlowId.value = id;
+  detailError.value = '';
   try {
     selectedFlow.value = await getFlow(id);
   } catch (err) {
     selectedFlow.value = null;
-    toast.error(errorMessage(err));
+    detailError.value = errorMessage(err);
   }
 }
 
@@ -162,11 +166,12 @@ async function selectWs(id: number): Promise<void> {
   selectedFlowId.value = null;
   selectedFlow.value = null;
   selectedWsId.value = id;
+  detailError.value = '';
   try {
     selectedWs.value = await getWs(id);
   } catch (err) {
     selectedWs.value = null;
-    toast.error(errorMessage(err));
+    detailError.value = errorMessage(err);
   }
 }
 
@@ -175,7 +180,6 @@ async function handleExportCa(): Promise<void> {
   if (!target) return;
   try {
     await exportCa(target);
-    toast.success('已导出证书', { description: target });
   } catch (err) {
     toast.error(`导出失败：${errorMessage(err)}`);
   }
@@ -184,7 +188,7 @@ async function handleExportCa(): Promise<void> {
 async function handleRegenerateCa(): Promise<void> {
   try {
     await regenerateCa();
-    toast.success('已重新生成根证书，请重新安装信任');
+    toast.info('已重新生成根证书，请重新安装信任');
   } catch (err) {
     toast.error(`重新生成失败：${errorMessage(err)}`);
   }
@@ -222,27 +226,28 @@ onBeforeUnmount(() => {
   <ToolShell title="请求拦截" description="本地 MITM 代理：捕获、查看、编辑并重放 HTTP(S) 请求">
     <template #actions>
       <Badge :variant="running ? 'default' : 'secondary'" class="gap-1">
-        <Activity class="size-3" />
+        <Activity class="size-3.5" />
         {{ running ? `运行中 · ${status?.port}` : '未启动' }}
       </Badge>
       <div class="flex items-center gap-1.5" :title="systemProxy?.detail">
         <span class="text-xs text-muted-foreground">系统代理</span>
         <Switch
+          size="sm"
           :model-value="systemProxy?.enabled ?? false"
           :disabled="!systemProxy?.supported || loading || (!running && !systemProxy?.enabled)"
           @update:model-value="toggleSystemProxy"
         />
       </div>
       <Button v-if="!running" size="sm" :disabled="loading" @click="handleStart">
-        <Play class="size-4" />
+        <Play class="mr-1 size-3.5" />
         启动
       </Button>
       <Button v-else variant="destructive" size="sm" :disabled="loading" @click="handleStop">
-        <Square class="size-4" />
+        <Square class="mr-1 size-3.5" />
         停止
       </Button>
       <Button variant="outline" size="sm" @click="caDialogOpen = true">
-        <ShieldCheck class="size-4" />
+        <ShieldCheck class="mr-1 size-3.5" />
         根证书
       </Button>
       <Button
@@ -251,118 +256,123 @@ onBeforeUnmount(() => {
         :disabled="flows.length === 0 && wsRecords.length === 0"
         @click="handleClear"
       >
-        <Trash2 class="size-4" />
+        <Trash2 class="mr-1 size-3.5" />
         清空
       </Button>
     </template>
 
     <div class="grid grid-cols-12 items-start gap-4">
       <section class="col-span-12 lg:col-span-5">
-        <div
-          class="flex h-[calc(100vh-11rem)] flex-col gap-2 rounded-lg border border-border bg-card p-3"
+        <Panel
+          title="流量"
+          class="flex h-[calc(100vh-11rem)] flex-col"
+          body-class="flex min-h-0 flex-1 flex-col space-y-0 p-0"
         >
-          <Tabs v-model="sourceTab">
-            <TabsList class="w-full">
-              <TabsTrigger value="http" class="flex-1">HTTP ({{ flows.length }})</TabsTrigger>
-              <TabsTrigger value="ws" class="flex-1"
-                >WebSocket ({{ wsRecords.length }})</TabsTrigger
-              >
-            </TabsList>
-          </Tabs>
+          <div class="space-y-2 p-3">
+            <Tabs v-model="sourceTab">
+              <TabsList class="w-full">
+                <TabsTrigger value="http" class="flex-1">HTTP ({{ flows.length }})</TabsTrigger>
+                <TabsTrigger value="ws" class="flex-1"
+                  >WebSocket ({{ wsRecords.length }})</TabsTrigger
+                >
+              </TabsList>
+            </Tabs>
 
-          <div v-if="sourceTab === 'http'" class="grid grid-cols-2 gap-1.5">
-            <Input
-              v-model="filter.host"
-              placeholder="Host 过滤"
-              class="h-8 text-xs"
-              spellcheck="false"
-            />
-            <Select v-model="filter.method">
-              <SelectTrigger size="sm" class="text-xs">
-                <SelectValue placeholder="方法" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">全部方法</SelectItem>
-                <SelectItem v-for="method in HTTP_METHODS" :key="method" :value="method">
-                  {{ method }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Input
-              v-model="filter.url"
-              placeholder="URL 关键字"
-              class="h-8 text-xs"
-              spellcheck="false"
-            />
-            <Select v-model="filter.status">
-              <SelectTrigger size="sm" class="text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem
-                  v-for="option in STATUS_OPTIONS"
-                  :key="option.value"
-                  :value="option.value"
-                >
-                  {{ option.label }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Select v-model="filter.type" class="col-span-2">
-              <SelectTrigger size="sm" class="w-full text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem
-                  v-for="option in TYPE_OPTIONS"
-                  :key="option.value"
-                  :value="option.value"
-                >
-                  {{ option.label }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <ErrorState v-if="startError" :message="startError" />
+
+            <div v-if="sourceTab === 'http'" class="grid grid-cols-2 gap-1.5">
+              <SearchField v-model="filter.host" placeholder="Host 过滤" spellcheck="false" />
+              <Select v-model="filter.method">
+                <SelectTrigger size="sm" class="w-full text-xs">
+                  <SelectValue placeholder="方法" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">全部方法</SelectItem>
+                  <SelectItem v-for="method in HTTP_METHODS" :key="method" :value="method">
+                    {{ method }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <SearchField v-model="filter.url" placeholder="URL 关键字" spellcheck="false" />
+              <Select v-model="filter.status">
+                <SelectTrigger size="sm" class="w-full text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    v-for="option in STATUS_OPTIONS"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <Select v-model="filter.type" class="col-span-2">
+                <SelectTrigger size="sm" class="w-full text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    v-for="option in TYPE_OPTIONS"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div class="min-h-0 flex-1 overflow-hidden rounded-md border border-border/60">
+          <div class="min-h-0 flex-1 overflow-hidden border-t">
             <FlowList
               v-if="sourceTab === 'http'"
               :flows="filteredFlows"
               :selected-id="selectedFlowId"
               @select="selectFlow"
             />
-            <div v-else class="h-full overflow-auto">
+            <div v-else class="flex h-full flex-col divide-y overflow-auto">
               <button
                 v-for="item in sortedWs"
                 :key="item.id"
                 type="button"
-                class="flex w-full items-center gap-2 border-b border-border/50 px-2 py-1.5 text-left hover:bg-muted/60"
-                :class="item.id === selectedWsId ? 'bg-muted' : ''"
+                class="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-accent focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/60 focus-visible:ring-inset outline-none"
+                :class="item.id === selectedWsId ? 'bg-primary/10' : ''"
+                :aria-current="item.id === selectedWsId ? 'true' : undefined"
                 @click="selectWs(item.id)"
               >
-                <span class="min-w-0 flex-1 truncate text-xs font-mono">{{ item.url }}</span>
-                <span class="shrink-0 text-[10px] text-muted-foreground"
-                  >{{ item.frameCount }} 帧</span
-                >
+                <span class="min-w-0 flex-1 truncate font-mono text-xs">{{ item.url }}</span>
+                <span class="shrink-0 text-xs text-muted-foreground">{{ item.frameCount }} 帧</span>
               </button>
-              <p
+              <EmptyState
                 v-if="wsRecords.length === 0"
-                class="px-3 py-8 text-center text-xs text-muted-foreground"
-              >
-                暂无 WebSocket 连接
-              </p>
+                class="my-auto"
+                :icon="Activity"
+                title="暂无 WebSocket 连接"
+                description="启动代理并让应用走系统代理后，连接会显示在这里"
+              />
             </div>
           </div>
-        </div>
+        </Panel>
       </section>
 
       <section class="col-span-12 lg:col-span-7">
-        <div
-          class="h-[calc(100vh-11rem)] overflow-hidden rounded-lg border border-border bg-card p-3"
+        <Panel
+          title="详情"
+          class="flex h-[calc(100vh-11rem)] flex-col"
+          body-class="flex min-h-0 flex-1 flex-col gap-2 space-y-0 p-3"
         >
-          <FlowDetail v-if="sourceTab === 'http'" :flow="selectedFlow" :flow-body-temp="bodyTemp" />
-          <WsDetail v-else :record="selectedWs" />
-        </div>
+          <ErrorState v-if="detailError" :message="detailError" />
+          <div class="min-h-0 flex-1">
+            <FlowDetail
+              v-if="sourceTab === 'http'"
+              :flow="selectedFlow"
+              :flow-body-temp="bodyTemp"
+            />
+            <WsDetail v-else :record="selectedWs" />
+          </div>
+        </Panel>
       </section>
     </div>
 

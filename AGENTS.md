@@ -143,14 +143,18 @@ merge 冲突）：
 - **HTTP**：走 `@/core/http`（Rust reqwest，无 CORS），禁止 webview 内 `fetch` 采集。简单/采集请求用 `getJson/postJson/request`；需要自定义重定向、SSL 校验、超时、cookie 模式、multipart 上传、二进制响应或取消时用 `http.send()`（Rust `http_send`，与采集用全局 Client 隔离）。
 - **日志**：用 `@/core/logger` 的 `logger` 或插件 `ctx.logger`，禁止裸 `println!`。
 - **图标**：只允许 `@lucide/vue`（`lucide-vue-next` 已弃用，勿再引入）。
+- **样式**：shadcn-vue 语义色（`bg-primary` 等），禁止硬编码色值；已有 `text-success/warning/info`、`bg-console` 等 token。
 - **设计规范（唯一事实源）**：所有 UI 视觉与交互遵循 `DESIGN.md`（共享核心：token、组件语义、三态与反馈、文案、反例清单）+
-  `DESIGN-macos.md` / `DESIGN-windows.md`（平台层）+ `DESIGN-appendix.md`（逐控件 Do/Don't）。视觉取值只能来自 token；
+  `DESIGN-macos.md` / `DESIGN-windows.md`（平台层）+ `DESIGN-appendix.md`（逐控件 Do/Don't 与迁移映射）。视觉取值只能来自 token；
   机器校验由 `pnpm lint` 里的 `scripts/lint-design.mjs` 承担（R1 旧卡片配方 / R2 任意透明度表面 / R3 非浮层 rounded-xl /
-  R4 写死控件尺寸 / R5 动效压制 / R6 焦点环表达式），`pnpm lint:design` 为严格模式。**平台差异只允许落在**：
-  材质与回退、窗口壳、菜单与快捷键呈现、对话框按钮语义、焦点视觉、圆角档（由 `[data-platform]` 覆盖 token 实现）。
+  R4 写死控件尺寸 / R5 动效压制 / R6 焦点环表达式）。**当前存量已清零**，`pnpm lint` 起即为硬门禁；
+  `pnpm lint:design` 为严格模式（CI 可直接用）。
+  **平台差异只允许落在**：材质与回退、窗口壳、菜单与快捷键呈现、对话框按钮语义、焦点视觉、圆角档（由 `[data-platform]` 覆盖 token 实现）。
+- **设计改造推进计划**：进行中的改造状态、上游同步步骤与剩余批次见 `MIGRATION.md`（fork 专属交接文件）。
+- **设计迁移风险登记**：Windows 平台层（`DESIGN-windows.md`）**尚未做视觉验证**（开发机为 macOS）——
+  首次在 Windows 验证前，涉及 Windows 的改动属"静态正确"，需按该文件 §11 待办逐项确认并回填。
 - **设计走查**：`src/dev/preview-bridge.ts`（仅 dev + 非 Tauri 生效）让 Web 层可在浏览器渲染，
   配合 `scripts/design-shot.mjs` 可脚本化截图核对规范（用法见 `DESIGN-appendix.md §3.5`）。
-- **样式**：shadcn-vue 语义色（`bg-primary` 等），禁止硬编码色值；已有 `text-success/warning/info`、`bg-console` 等 token。
 - **工具页模块**：页面里每个功能模块（设置 / 输入 / 输出 / 结果 / 列表）一律用 `@/components/tool/Panel` 包裹（外框 + 头部条标题 + 右上角动作 + 正文），不要在页面上裸露模块，也不要在 Panel 内嵌套卡片——预览、表格等组件自身不带外框，外框交给 Panel。头部标题用 `text-xs font-medium text-muted-foreground`，动作按钮 `size="sm"`、图标 `size-3.5`；正文默认 `space-y-3 p-4`（满幅场景用 `body-class` 覆盖）；错误条用 `rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive`。
 - **设置页 UI**：系统设置页与所有插件设置面板统一用 `@/components/settings` 的 `SettingsSection` / `SettingsRow` / `SettingsField`（单一事实源，视觉随系统设置页），勿自造小节标题与卡片样式；密集数值字段在 `SettingsSection` 内用 grid + `SettingsField`。
 - **代码风格**：prettier 单引号、100 列、尾逗号 es5；提交前跑 `pnpm format`。

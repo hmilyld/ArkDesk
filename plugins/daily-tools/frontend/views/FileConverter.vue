@@ -88,7 +88,7 @@ function handleReset(): void {
 
           <button
             type="button"
-            class="flex min-h-[180px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md bg-muted/30 px-6 py-8 text-center transition-colors hover:bg-muted/50"
+            class="flex min-h-[180px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md bg-sunken px-6 py-8 text-center transition-colors hover:bg-accent"
             @click="handleOpenFile"
           >
             <Upload class="size-8 text-muted-foreground" />

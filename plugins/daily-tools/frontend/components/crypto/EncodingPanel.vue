@@ -18,6 +18,7 @@ import { open as openFileDialog, save as saveFileDialog } from '@tauri-apps/plug
 import { toast } from 'vue-sonner';
 import { ArrowLeftRight, FileUp, Save } from '@lucide/vue';
 import Panel from '@/components/tool/Panel.vue';
+import Segmented from '@/components/native/Segmented.vue';
 import { useCryptoCall } from '../../composables/useCryptoCall';
 import {
   BYTE_FORMATS,
@@ -224,32 +225,14 @@ async function saveEncodedFile(): Promise<void> {
       <!-- 编解码 -->
       <Panel body-class="space-y-4">
         <div class="flex items-center justify-between">
-          <div class="inline-flex rounded-lg bg-muted p-0.5 text-sm">
-            <button
-              type="button"
-              class="rounded-md px-3 py-1 transition-colors"
-              :class="
-                mode === 'encode'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              "
-              @click="mode = 'encode'"
-            >
-              编码
-            </button>
-            <button
-              type="button"
-              class="rounded-md px-3 py-1 transition-colors"
-              :class="
-                mode === 'decode'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              "
-              @click="mode = 'decode'"
-            >
-              解码
-            </button>
-          </div>
+          <Segmented
+            v-model="mode"
+            size="sm"
+            :segments="[
+              { value: 'encode', label: '编码' },
+              { value: 'decode', label: '解码' },
+            ]"
+          />
           <Button variant="ghost" size="sm" @click="mode = mode === 'encode' ? 'decode' : 'encode'">
             <ArrowLeftRight class="mr-1 size-3.5" />
             互换

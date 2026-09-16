@@ -37,6 +37,10 @@ import {
   Eraser,
 } from '@lucide/vue';
 import ToolShell from '@/components/tool/ToolShell.vue';
+import Panel from '@/components/tool/Panel.vue';
+import FormRow from '@/components/native/FormRow.vue';
+import Segmented from '@/components/native/Segmented.vue';
+import ListRow from '@/components/native/ListRow.vue';
 import ArticleForm from '../components/ArticleForm.vue';
 import { useGeneration } from '../composables/useGeneration';
 import {
@@ -57,6 +61,9 @@ const gen = useGeneration();
 const { running, progress, logs, summary, progressPercent, begin, finish, cancel, openPath } = gen;
 
 const sourceMode = ref<'manual' | 'ai'>('manual');
+/** 环境是否就绪（面板头部提示用） */
+const envReady = computed(() => Boolean(env.value?.ffmpegOk && env.value?.fontsOk));
+
 const env = ref<EnvStatus | null>(null);
 const envLoading = ref(false);
 const manual = ref<{ title: string; author: string; content: string; source: string }>({
@@ -235,144 +242,146 @@ onMounted(checkEnv);
 
 <template>
   <ToolShell title="视频生成" description="输入或 AI 创作文章 → 竖屏滚动短视频">
-    <template #actions>
-      <Button variant="outline" size="sm" :disabled="envLoading" @click="checkEnv">
-        <RefreshCw class="mr-1 size-3.5" :class="{ 'animate-spin': envLoading }" />
-        环境检查
-      </Button>
-    </template>
-
     <div class="mx-auto grid w-full grid-cols-12 gap-4">
-      <div class="col-span-12 space-y-4 lg:col-start-2 lg:col-span-10">
-        <!-- 环境状态 -->
-        <div
-          class="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border bg-card px-4 py-3 text-sm"
-        >
-          <span class="flex items-center gap-1.5">
-            <component
-              :is="env?.ffmpegOk ? CheckCircle2 : XCircle"
-              class="size-4"
-              :class="env?.ffmpegOk ? 'text-success' : 'text-destructive'"
-            />
-            ffmpeg
-            <span class="text-xs text-muted-foreground">{{ env?.ffmpegPath || '未找到' }}</span>
-          </span>
-          <span class="flex items-center gap-1.5">
-            <component
-              :is="env?.fontsOk ? CheckCircle2 : XCircle"
-              class="size-4"
-              :class="env?.fontsOk ? 'text-success' : 'text-destructive'"
-            />
-            中文字体
-          </span>
-          <span class="flex min-w-0 items-center gap-1.5">
-            <Info class="size-4 text-muted-foreground" />
-            输出
-            <span class="truncate text-xs text-muted-foreground">{{ env?.outputDir }}</span>
-          </span>
-        </div>
-
-        <!-- 来源切换 -->
-        <div class="inline-flex rounded-lg border bg-card p-1">
-          <Button
-            :variant="sourceMode === 'manual' ? 'default' : 'ghost'"
-            size="sm"
-            @click="sourceMode = 'manual'"
-          >
-            <PenLine class="mr-1 size-3.5" />
-            手动输入
-          </Button>
-          <Button
-            :variant="sourceMode === 'ai' ? 'default' : 'ghost'"
-            size="sm"
-            @click="sourceMode = 'ai'"
-          >
-            <Sparkles class="mr-1 size-3.5" />
-            AI 生成
-          </Button>
-        </div>
-
-        <!-- 手动输入 -->
-        <div v-if="sourceMode === 'manual'" class="space-y-3 rounded-lg border bg-card p-4">
-          <ArticleForm v-model="manualForm" />
-          <div class="flex items-center gap-2">
-            <Button variant="outline" :disabled="running" @click="saveDraft">
-              <Save class="mr-1 size-4" />
-              存为草稿
+      <div class="col-span-12 space-y-4 lg:col-span-8 lg:col-start-3">
+        <!-- 环境 -->
+        <Panel title="环境" :hint="envReady ? '就绪' : '有缺失'">
+          <template #actions>
+            <Button variant="outline" size="sm" :disabled="envLoading" @click="checkEnv">
+              <RefreshCw class="mr-1 size-3.5" :class="{ 'animate-spin': envLoading }" />
+              环境检查
             </Button>
-            <span v-if="manual.source === 'ai'" class="text-xs text-muted-foreground">
-              当前内容来自 AI 创作
+          </template>
+
+          <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <span class="flex items-center gap-1.5">
+              <component
+                :is="env?.ffmpegOk ? CheckCircle2 : XCircle"
+                class="size-4"
+                :class="env?.ffmpegOk ? 'text-success' : 'text-destructive'"
+              />
+              ffmpeg
+              <span class="text-xs text-muted-foreground">{{ env?.ffmpegPath || '未找到' }}</span>
+            </span>
+            <span class="flex items-center gap-1.5">
+              <component
+                :is="env?.fontsOk ? CheckCircle2 : XCircle"
+                class="size-4"
+                :class="env?.fontsOk ? 'text-success' : 'text-destructive'"
+              />
+              中文字体
+            </span>
+            <span class="flex min-w-0 items-center gap-1.5">
+              <Info class="size-4 text-muted-foreground" />
+              输出
+              <span class="truncate text-xs text-muted-foreground">{{ env?.outputDir }}</span>
             </span>
           </div>
-        </div>
+        </Panel>
 
-        <!-- AI 生成 -->
-        <div v-else class="space-y-3 rounded-lg border bg-card p-4">
-          <div class="inline-flex rounded-lg border p-0.5">
-            <Button
-              :variant="aiMode === 'structured' ? 'secondary' : 'ghost'"
-              size="sm"
-              @click="aiMode = 'structured'"
-            >
-              结构化
-            </Button>
-            <Button
-              :variant="aiMode === 'free' ? 'secondary' : 'ghost'"
-              size="sm"
-              @click="aiMode = 'free'"
-            >
-              自由提示词
-            </Button>
-          </div>
-
-          <div v-if="aiMode === 'structured'" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div class="space-y-1.5">
-              <Label for="ai-topic">主题</Label>
-              <Input id="ai-topic" v-model="aiTopic" placeholder="如：坚持的意义" />
-            </div>
-            <div class="space-y-1.5">
-              <Label for="ai-style">风格</Label>
-              <Input id="ai-style" v-model="aiStyle" placeholder="如：励志、散文、科普" />
-            </div>
-            <div class="space-y-1.5">
-              <Label for="ai-words">字数</Label>
-              <Input id="ai-words" v-model.number="aiWordCount" type="number" min="100" />
-            </div>
-          </div>
-          <div v-else class="space-y-1.5">
-            <div class="flex items-center justify-between">
-              <Label for="ai-prompt">提示词</Label>
-              <Button
-                v-if="aiPrompt"
-                variant="ghost"
-                size="sm"
-                class="h-7 text-xs"
-                @click="aiPrompt = ''"
-              >
-                <Eraser class="mr-1 size-3.5" />
-                清空
-              </Button>
-            </div>
-            <Textarea
-              id="ai-prompt"
-              v-model="aiPrompt"
-              :rows="6"
-              placeholder="描述你想要的文章，例如：写一篇关于「早起的价值」的励志短文，约 900 字"
+        <!-- 内容：来源模式放面板头部，正文随模式切换 -->
+        <Panel title="内容" :hint="sourceMode === 'manual' ? '手动输入' : 'AI 生成'">
+          <template #actions>
+            <Segmented
+              v-model="sourceMode"
+              :segments="[
+                { value: 'manual', label: '手动输入', icon: PenLine },
+                { value: 'ai', label: 'AI 生成', icon: Sparkles },
+              ]"
             />
-            <p class="text-xs text-muted-foreground">提示词会自动保存，下次打开仍会显示。</p>
-          </div>
+          </template>
 
-          <Button :disabled="aiLoading" @click="generateArticle">
-            <Sparkles class="mr-1 size-4" :class="{ 'animate-pulse': aiLoading }" />
-            {{ aiLoading ? '生成中…' : '生成文章' }}
-          </Button>
-          <p class="text-xs text-muted-foreground">
-            生成后会填入「手动输入」表单，可编辑、存草稿或直接出片。AI 配置在「系统设置 → AI」。
-          </p>
-        </div>
+          <!-- 手动输入 -->
+          <template v-if="sourceMode === 'manual'">
+            <ArticleForm v-model="manualForm" />
+            <div class="flex items-center gap-2">
+              <Button variant="secondary" :disabled="running" @click="saveDraft">
+                <Save class="mr-1 size-4" />
+                存为草稿
+              </Button>
+              <span v-if="manual.source === 'ai'" class="text-xs text-muted-foreground">
+                当前内容来自 AI 创作
+              </span>
+            </div>
+          </template>
 
-        <!-- 通用控制 -->
-        <div class="flex flex-wrap items-center gap-3 rounded-lg border bg-card p-4">
+          <!-- AI 生成 -->
+          <template v-else>
+            <Segmented
+              v-model="aiMode"
+              size="sm"
+              :segments="[
+                { value: 'structured', label: '结构化' },
+                { value: 'free', label: '自由提示词' },
+              ]"
+            />
+
+            <div v-if="aiMode === 'structured'" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <FormRow label="主题">
+                <template #default="{ id }">
+                  <Input :id="id" v-model="aiTopic" placeholder="如：坚持的意义" />
+                </template>
+              </FormRow>
+              <FormRow label="风格">
+                <template #default="{ id }">
+                  <Input :id="id" v-model="aiStyle" placeholder="如：励志、散文、科普" />
+                </template>
+              </FormRow>
+              <FormRow label="字数">
+                <template #default="{ id }">
+                  <Input :id="id" v-model.number="aiWordCount" type="number" min="100" />
+                </template>
+              </FormRow>
+            </div>
+
+            <FormRow v-else label="提示词" description="提示词会自动保存，下次打开仍会显示。">
+              <template #label-action>
+                <Button
+                  v-if="aiPrompt"
+                  variant="ghost"
+                  size="sm"
+                  class="h-7 text-xs"
+                  @click="aiPrompt = ''"
+                >
+                  <Eraser class="mr-1 size-3.5" />
+                  清空
+                </Button>
+              </template>
+              <template #default="{ id }">
+                <Textarea
+                  :id="id"
+                  v-model="aiPrompt"
+                  :rows="6"
+                  placeholder="描述你想要的文章，例如：写一篇关于「早起的价值」的励志短文，约 900 字"
+                />
+              </template>
+            </FormRow>
+
+            <div class="flex items-center gap-3">
+              <Button variant="secondary" :disabled="aiLoading" @click="generateArticle">
+                <Sparkles class="mr-1 size-4" :class="{ 'animate-pulse': aiLoading }" />
+                {{ aiLoading ? '生成中…' : '生成文章' }}
+              </Button>
+              <p class="text-xs text-muted-foreground">
+                生成后填入「手动输入」表单；AI 配置在「系统设置 → AI」。
+              </p>
+            </div>
+          </template>
+        </Panel>
+
+        <!-- 生成与日志 -->
+        <Panel title="生成">
+          <template #actions>
+            <Button v-if="running" variant="destructive" size="sm" @click="cancel">
+              <Square class="mr-1 size-3.5" />
+              取消
+            </Button>
+            <Button v-else :disabled="sourceMode === 'ai' || running" @click="start">
+              <Play class="mr-1 size-3.5" />
+              开始生成
+            </Button>
+          </template>
+
           <div class="w-40 space-y-1.5">
             <Label>主题</Label>
             <Select v-model="settings.themeMode">
@@ -386,80 +395,57 @@ onMounted(checkEnv);
               </SelectContent>
             </Select>
           </div>
-          <div class="flex items-end gap-2 pt-5">
-            <Button :disabled="running || sourceMode === 'ai'" @click="start">
-              <Play class="mr-1 size-4" />
-              开始生成
-            </Button>
-            <Button v-if="running" variant="destructive" @click="cancel">
-              <Square class="mr-1 size-4" />
-              取消
-            </Button>
-          </div>
-        </div>
 
-        <!-- 进度 -->
-        <div v-if="running || logs.length" class="space-y-2 rounded-lg border bg-card p-4">
-          <div class="flex items-center justify-between text-sm">
-            <span class="font-medium">
-              {{ STAGE_LABELS[progress.stage] ?? (progress.stage || '就绪') }}
-            </span>
-            <span v-if="progress.total" class="text-xs text-muted-foreground">
-              {{ progress.current }} / {{ progress.total }}
-            </span>
-          </div>
-          <div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              class="h-full rounded-full bg-primary transition-all"
-              :style="{ width: `${progressPercent}%` }"
-            />
-          </div>
-          <pre
-            class="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-console p-3 font-mono text-xs leading-relaxed text-muted-foreground"
-            >{{ logs.join('\n') }}</pre>
-        </div>
-
-        <!-- 结果 -->
-        <div v-if="summary" class="space-y-2">
-          <h3 class="text-sm font-semibold">
-            本次结果
-            <span class="ml-2 text-xs font-normal text-muted-foreground">
-              {{ summary.cancelled ? '已取消' : '完成' }} · 输出到
-              {{ summary.outputDir }}
-            </span>
-          </h3>
-          <div class="space-y-2">
-            <div
-              v-for="item in summary.results"
-              :key="item.refId"
-              class="flex items-center justify-between gap-3 rounded-lg border bg-card px-4 py-2.5"
-            >
-              <div class="flex min-w-0 items-center gap-3">
-                <Film class="size-4 shrink-0 text-muted-foreground" />
-                <div class="min-w-0">
-                  <p class="truncate text-sm">{{ item.title }}</p>
-                  <p v-if="item.detail" class="truncate text-xs text-muted-foreground">
-                    {{ item.detail }}
-                  </p>
-                </div>
-              </div>
-              <div class="flex shrink-0 items-center gap-2">
-                <Badge :variant="item.status === 'done' ? 'default' : 'secondary'">
-                  {{ statusLabel(item.status) }}
-                </Badge>
-                <template v-if="item.status === 'done'">
-                  <Button variant="ghost" size="sm" @click="openPath(item.video, false)">
-                    打开视频
-                  </Button>
-                  <Button variant="ghost" size="sm" @click="openPath(item.video, true)">
-                    <FolderOpen class="mr-1 size-3.5" />
-                    位置
-                  </Button>
-                </template>
-              </div>
+          <template v-if="running || logs.length">
+            <div class="flex items-center justify-between text-sm">
+              <span class="font-medium">
+                {{ STAGE_LABELS[progress.stage] ?? (progress.stage || '就绪') }}
+              </span>
+              <span v-if="progress.total" class="text-xs text-muted-foreground">
+                {{ progress.current }} / {{ progress.total }}
+              </span>
             </div>
-          </div>
-        </div>
+            <div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                class="h-full rounded-full bg-primary transition-all"
+                :style="{ width: `${progressPercent}%` }"
+              />
+            </div>
+            <pre
+              class="max-h-48 overflow-auto rounded-md bg-console p-3 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-console-foreground/80"
+              >{{ logs.join('\n') }}</pre>
+          </template>
+        </Panel>
+
+        <!-- 本次结果 -->
+        <Panel
+          v-if="summary"
+          title="本次结果"
+          :hint="`${summary.cancelled ? '已取消' : '完成'} · ${summary.outputDir}`"
+        >
+          <ListRow
+            v-for="item in summary.results"
+            :key="item.refId"
+            :icon="Film"
+            :title="item.title"
+            :description="item.detail"
+          >
+            <template #trailing>
+              <Badge :variant="item.status === 'done' ? 'default' : 'secondary'">
+                {{ statusLabel(item.status) }}
+              </Badge>
+              <template v-if="item.status === 'done'">
+                <Button variant="ghost" size="sm" @click="openPath(item.video, false)">
+                  打开视频
+                </Button>
+                <Button variant="ghost" size="sm" @click="openPath(item.video, true)">
+                  <FolderOpen class="mr-1 size-3.5" />
+                  位置
+                </Button>
+              </template>
+            </template>
+          </ListRow>
+        </Panel>
       </div>
     </div>
   </ToolShell>

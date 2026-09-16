@@ -157,7 +157,7 @@ onUnmounted(() => {
 
           <button
             type="button"
-            class="flex min-h-[180px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md bg-muted/30 px-6 py-8 text-center transition-colors hover:bg-muted/50"
+            class="flex min-h-[180px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md bg-sunken px-6 py-8 text-center transition-colors hover:bg-accent"
             @click="handleOpenImage"
           >
             <Upload class="size-8 text-muted-foreground" />
@@ -195,7 +195,7 @@ onUnmounted(() => {
           <!-- 图片预览 + 识别结果 双栏 -->
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Panel class="min-w-0" title="图片预览" body-class="p-2">
-              <div class="flex items-center justify-center rounded-sm bg-muted/30 p-2">
+              <div class="flex items-center justify-center rounded-sm bg-sunken p-2">
                 <img
                   :src="imagePreview"
                   :alt="fileName"

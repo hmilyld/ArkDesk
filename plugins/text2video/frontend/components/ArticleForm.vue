@@ -4,8 +4,8 @@
 -->
 <script setup lang="ts">
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import FormRow from '@/components/native/FormRow.vue';
 import type { ArticleValue } from '../shared';
 
 const model = defineModel<ArticleValue>({ required: true });
@@ -25,33 +25,38 @@ function setField(key: keyof ArticleValue, value: string | number): void {
           : 'grid grid-cols-1 gap-4 sm:grid-cols-3'
       "
     >
-      <div :class="props.compact ? 'space-y-1.5' : 'space-y-1.5 sm:col-span-2'">
-        <Label>标题</Label>
-        <Input
-          :model-value="model.title"
-          placeholder="视频标题"
-          @update:model-value="(value) => setField('title', value)"
-        />
-      </div>
-      <div class="space-y-1.5">
-        <Label>作者</Label>
-        <Input
-          :model-value="model.author"
-          placeholder="留空则显示「佚名」"
-          @update:model-value="(value) => setField('author', value)"
-        />
-      </div>
+      <FormRow label="标题" :class="props.compact ? '' : 'sm:col-span-2'">
+        <template #default="{ id }">
+          <Input
+            :id="id"
+            :model-value="model.title"
+            placeholder="视频标题"
+            @update:model-value="(value) => setField('title', value)"
+          />
+        </template>
+      </FormRow>
+      <FormRow label="作者">
+        <template #default="{ id }">
+          <Input
+            :id="id"
+            :model-value="model.author"
+            placeholder="留空则显示「佚名」"
+            @update:model-value="(value) => setField('author', value)"
+          />
+        </template>
+      </FormRow>
     </div>
-    <div class="space-y-1.5">
-      <Label>正文</Label>
-      <Textarea
-        :model-value="model.content"
-        :rows="props.compact ? 10 : 14"
-        :class="props.compact ? 'max-h-[45vh] min-h-40 resize-none overflow-auto' : ''"
-        placeholder="段落之间用空行分隔"
-        @update:model-value="(value) => setField('content', value)"
-      />
-      <p class="text-xs text-muted-foreground">段落之间用空行分隔；正文会按标点自动分句排版。</p>
-    </div>
+    <FormRow label="正文" description="段落之间用空行分隔；正文会按标点自动分句排版。">
+      <template #default="{ id }">
+        <Textarea
+          :id="id"
+          :model-value="model.content"
+          :rows="props.compact ? 10 : 14"
+          :class="props.compact ? 'max-h-[45vh] min-h-40 resize-none overflow-auto' : ''"
+          placeholder="段落之间用空行分隔"
+          @update:model-value="(value) => setField('content', value)"
+        />
+      </template>
+    </FormRow>
   </div>
 </template>

@@ -16,13 +16,14 @@ fork 的 `main` = **上游框架 + 本地层 + 插件层（全部批次）**，�
 
 ## 1. 上游（PocketArk）状态（全部已合并）
 
-| PR  | squash    | 内容                                                                                                                                                                                                      |
-| --- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| #5  | `a8a792e` | 4 份 `DESIGN*.md` + `AGENTS.md` 约定；token 层（`src/assets/index.css`）+ `scripts/lint-design.mjs`；`src/components/native/*` 门面组件 + `ui/*` 焦点环/浮层圆角；`preview-bridge.ts` + `design-shot.mjs` |
-| #6  | `04e64fb` | 走查工具修复：`main.ts` 接入预览桥（此前是死代码）、`design-shot` 参数移到 hash 之前、主题键改从 `core/theme` 的 `STORAGE_KEYS` 读取                                                                      |
-| #7  | `8421592` | 框架层设计 lint 存量清零（R1/R2/R3/R4/R6；SideNav rail 固定 px 登记 `design-lint-ignore`）                                                                                                                |
-| #8  | `de687e2` | 壳层材质与设置页 pane：ToolShell/TitleBar 材质底、设置页横向 pane 条、主题三态改 `Segmented`、Toaster 位置、ToolErrorBoundary 走 `normalizeError`                                                         |
-| #9  | `8021585` | 应用窗口材质（Rust）：macOS `underWindowBackground` / Windows Mica Alt + `VIBRANCY_ACTIVE` 防实色打底                                                                                                     |
+| PR  | squash    | 内容                                                                                                                                                                                                                     |
+| --- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| #5  | `a8a792e` | 4 份 `DESIGN*.md` + `AGENTS.md` 约定；token 层（`src/assets/index.css`）+ `scripts/lint-design.mjs`；`src/components/native/*` 门面组件 + `ui/*` 焦点环/浮层圆角；`preview-bridge.ts` + `design-shot.mjs`                |
+| #6  | `04e64fb` | 走查工具修复：`main.ts` 接入预览桥（此前是死代码）、`design-shot` 参数移到 hash 之前、主题键改从 `core/theme` 的 `STORAGE_KEYS` 读取                                                                                     |
+| #7  | `8421592` | 框架层设计 lint 存量清零（R1/R2/R3/R4/R6；SideNav rail 固定 px 登记 `design-lint-ignore`）                                                                                                                               |
+| #8  | `de687e2` | 壳层材质与设置页 pane：ToolShell/TitleBar 材质底、设置页横向 pane 条、主题三态改 `Segmented`、Toaster 位置、ToolErrorBoundary 走 `normalizeError`                                                                        |
+| #9  | `8021585` | 应用窗口材质（Rust）：macOS `underWindowBackground` / Windows Mica Alt + `VIBRANCY_ACTIVE` 防实色打底                                                                                                                    |
+| #10 | `eb1b9ba` | 清理 base 里的 fork 残留：UA 品牌硬编码改 `CARGO_PKG_NAME` 派生；预览桥移除 fork 插件夹具、改为**插件自带夹具扩展点**；`DESIGN-appendix` 文档纠偏；补齐 P4-1/P4-2（hello-world / system），**base lint 严格模式 0 违规** |
 
 > #5 的 P3 层实际只上游了 `SideNav` 的一部分；其余壳层与 Rust 材质由 #8 / #9 补齐（这是本轮新增的三个 PR 的原因）。
 
@@ -68,13 +69,11 @@ pnpm lint && pnpm build && pnpm test && cargo check --manifest-path src-tauri/Ca
 
 ## 5. 剩余工作与遗留
 
-无剩余批次。遗留项（非阻塞，按需排期）：
+无剩余批次（base 的 P4-1/P4-2 已随上游 #10 完成，双方 lint 严格模式均 0 违规）。遗留项（非阻塞，按需排期）：
 
-1. **上游 `plugins/hello-world` 仍有 12 处 R1**（旧卡片配方）——即 `DESIGN-appendix.md` §4 的 **P4-1 上游示例插件活样板**批次。
-   fork 这边的 hello-world 已是迁移版，所以 fork 侧 lint 为 0；base 侧要全绿需另开一个上游 PR。
-2. **network-tools**：启动/停止/系统代理/CA 仍用 toast 表达结果（系统级操作、无就地位置）；`HttpClient` 的「不能移动到自身或其子级」受侧栏组件契约限制暂留 toast。
-3. **tender-optimizer**：蒙特卡洛测算后端无 channel/task 参数 → **无进度与取消**（后端改动属插件层，可单独排期）；「评分参数」面板在预览夹具下 `paramsRow` 为空 → 只有头部（真机迁移始终会插入该行）。
-4. **真机验证**：macOS vibrancy（窗口失焦/聚焦的 chrome 变化）与 Windows Mica Alt 需在真机按 `DESIGN-macos.md` / `DESIGN-windows.md` §11 逐项确认并回填。
+1. **network-tools**：启动/停止/系统代理/CA 仍用 toast 表达结果（系统级操作、无就地位置）；`HttpClient` 的「不能移动到自身或其子级」受侧栏组件契约限制暂留 toast。
+2. **tender-optimizer**：蒙特卡洛测算后端无 channel/task 参数 → **无进度与取消**（后端改动属插件层，可单独排期）；「评分参数」面板在预览夹具下 `paramsRow` 为空 → 只有头部（真机迁移始终会插入该行）。
+3. **真机验证**：macOS vibrancy（窗口失焦/聚焦的 chrome 变化）与 Windows Mica Alt 需在真机按 `DESIGN-macos.md` / `DESIGN-windows.md` §11 逐项确认并回填。
 
 ## 6. 走查与自证（无需人工截图）
 
@@ -88,9 +87,11 @@ node scripts/design-shot.mjs --url "/tool/http-client" --out /tmp/a.png \
 > `http-client` / `http-interceptor` / `tender-optimizer` / `tender-history` / `text2video-drafts`。
 > 参数必须放在 hash 之前（`?theme=…` 在 `#` 前），否则 `location.search` 为空、参数不生效。
 
-- 预览桥 `src/dev/preview-bridge.ts`：仅 dev + 非 Tauri 生效；localStorage 版 `plugin-store` + 业务命令夹具
-  （`db_query_values` 按 SQL 形态、`text2video_*` 列表夹具）；URL 参数 `?theme=&font=&accent=&platform=`。
-- 本轮已核对：`/settings`（暗/亮 + pane 条）、`http-client`（暗/亮、1080/1512、win）、`http-interceptor`、`tender-optimizer`（暗/亮 13）、`tender-history`。
+- 预览桥 `src/dev/preview-bridge.ts`：仅 dev + 非 Tauri 生效；localStorage 版 `plugin-store` + 框架命令夹具
+  （`db_query_values` 按 SQL 形态）；URL 参数 `?theme=&font=&accent=&platform=`。
+- **插件夹具属插件**：`plugins/<id>/frontend/preview.ts` 默认导出 `Record<命令名, 返回值>`，dev 下由预览桥 glob
+  自动并入（base 侧已不含任何插件业务命令）。新增走查页面时先补该文件（本仓库已有 `plugins/text2video/frontend/preview.ts`）。
+- 本轮已核对：`/settings`（暗/亮 + pane 条）、`http-client`（暗/亮、1080/1512、win）、`http-interceptor`、`tender-optimizer`（暗/亮 13）、`tender-history`、`text2video-drafts`（验证插件自带夹具）。
 
 ## 7. 硬约束（勿回退）
 
@@ -106,3 +107,4 @@ node scripts/design-shot.mjs --url "/tool/http-client" --out /tmp/a.png \
   否则浏览器预览会白屏（真机后端始终返回数组，不影响线上行为）。
 - 窗口材质：启用后 `set_window_background` 不做实色打底（否则盖住材质），防白闪靠前端不透明底；
   勿删 `VIBRANCY_ACTIVE` 的提前返回（`src-tauri/src/lib.rs`）。
+- 插件预览夹具只放 `plugins/<id>/frontend/preview.ts`，**不要**再把插件命令写进 `src/dev/preview-bridge.ts`（base 不接受 fork 插件名）。

@@ -60,7 +60,7 @@
     {
       "id": "hello-template",
       "name": "页面模板",
-      "description": "12 span 布局档位与空态 / 加载态 / 错误态标准写法",
+      "description": "模块 Panel + 12 span 布局档位与空态 / 加载态 / 错误态标准写法",
       "icon": "LayoutTemplate",
       "entry": "frontend/views/TemplateTool.vue"
     }

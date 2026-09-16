@@ -13,6 +13,7 @@ import { desc, eq } from 'drizzle-orm';
 import { useToolSettings } from '@/core/plugins';
 import { helloNotes, type HelloNote } from '../schema';
 import { HELLO_CONFIG_DEFAULTS, type HelloWorldConfig } from '../shared';
+import Panel from '@/components/tool/Panel.vue';
 import ToolShell from '@/components/tool/ToolShell.vue';
 
 /** 配置来自设置页（Settings.vue / shared.ts），此处只读 */
@@ -86,15 +87,12 @@ onActivated(loadNotes);
     description="Rust 集成大全：IPC 命令、日志管道、SQLite 读写——插件开发的最小完整链路"
   >
     <div class="mx-auto grid w-full grid-cols-12">
-      <div class="col-span-12 lg:col-start-3 lg:col-span-8 space-y-6">
+      <div class="col-span-12 space-y-4 lg:col-span-8 lg:col-start-3">
         <!-- 分区一：IPC 命令调用 -->
-        <section class="space-y-2.5">
-          <div>
-            <h3 class="text-sm font-medium">IPC 命令调用</h3>
-            <p class="text-xs text-muted-foreground">
-              前端 ipc() → Rust 命令 → 返回结果（空输入触发错误路径，Rust 侧 hello_world_greet）
-            </p>
-          </div>
+        <Panel title="IPC 命令调用">
+          <p class="text-xs text-muted-foreground">
+            前端 ipc() → Rust 命令 → 返回结果（空输入触发错误路径，Rust 侧 hello_world_greet）
+          </p>
           <form class="flex gap-2" @submit.prevent="callGreet">
             <Input v-model="name" placeholder="输入名字" class="max-w-xs" />
             <Button type="submit" :disabled="greetingLoading">问候</Button>
@@ -105,31 +103,25 @@ onActivated(loadNotes);
           >
             {{ greeting }}
           </p>
-        </section>
+        </Panel>
 
         <!-- 分区二：日志管道 -->
-        <section class="space-y-2.5">
-          <div>
-            <h3 class="text-sm font-medium">日志管道</h3>
-            <p class="text-xs text-muted-foreground">
-              logger 各级别写入真实日志文件，级别阈值在设置页调整
-            </p>
-          </div>
+        <Panel title="日志管道">
+          <p class="text-xs text-muted-foreground">
+            logger 各级别写入真实日志文件，级别阈值在设置页调整
+          </p>
           <div class="flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" @click="demoLog('info')">Info 日志</Button>
             <Button variant="secondary" size="sm" @click="demoLog('warn')">警告日志</Button>
             <Button variant="secondary" size="sm" @click="demoLog('error')">错误日志</Button>
           </div>
-        </section>
+        </Panel>
 
         <!-- 分区三：SQLite 读写 -->
-        <section class="space-y-2.5">
-          <div>
-            <h3 class="text-sm font-medium">SQLite 读写</h3>
-            <p class="text-xs text-muted-foreground">
-              kdb 对象化查询（hello_notes 表），迁移由 Rust 侧 hello_world 模块定义
-            </p>
-          </div>
+        <Panel title="SQLite 读写">
+          <p class="text-xs text-muted-foreground">
+            kdb 对象化查询（hello_notes 表），迁移由 Rust 侧 hello_world 模块定义
+          </p>
           <form class="flex gap-2" @submit.prevent="addNote">
             <Input v-model="noteDraft" placeholder="写点什么…" class="max-w-xs" />
             <Button type="submit" variant="secondary">添加</Button>
@@ -139,10 +131,7 @@ onActivated(loadNotes);
           <p v-else-if="notes.length === 0" class="text-xs text-muted-foreground">
             还没有记录，添加一条试试
           </p>
-          <div
-            v-else
-            class="divide-y divide-border/60 overflow-hidden rounded-lg border border-border bg-card"
-          >
+          <div v-else class="divide-y divide-border/60">
             <div
               v-for="note in notes"
               :key="note.id"
@@ -164,7 +153,7 @@ onActivated(loadNotes);
               </Button>
             </div>
           </div>
-        </section>
+        </Panel>
       </div>
     </div>
   </ToolShell>

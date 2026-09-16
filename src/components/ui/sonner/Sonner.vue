@@ -38,7 +38,7 @@ const delegatedProps = reactiveOmit(props, 'class', 'toastOptions');
     :toast-options="
       props.toastOptions ?? {
         classes: {
-          toast: 'rounded-md backdrop-blur-md shadow-lg',
+          toast: 'rounded-xl backdrop-blur-md shadow-lg',
           description: '!text-muted-foreground',
         },
       }

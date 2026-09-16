@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import { getName } from '@tauri-apps/api/app';
 import { House, PanelLeftClose, PanelLeftOpen, Settings } from '@lucide/vue';
@@ -10,6 +10,27 @@ import { useSettingsStore } from '@/stores/settings';
 
 const settings = useSettingsStore();
 
+/** 窄窗自动折叠（容器变窄时自动隐藏；仅自动折叠过才在加宽时恢复） */
+const AUTO_COLLAPSE_WIDTH = 900;
+const autoCollapseApplied = ref(false);
+
+function syncAutoCollapse(): void {
+  const narrow = window.innerWidth < AUTO_COLLAPSE_WIDTH;
+  if (narrow && !settings.sidebarCollapsed) {
+    settings.sidebarCollapsed = true;
+    autoCollapseApplied.value = true;
+  } else if (!narrow && autoCollapseApplied.value && settings.sidebarCollapsed) {
+    settings.sidebarCollapsed = false;
+    autoCollapseApplied.value = false;
+  }
+}
+
+/** 手动切换写回 store（collapsed 是 computed，不能直接赋值） */
+function toggleSidebar(): void {
+  settings.sidebarCollapsed = !settings.sidebarCollapsed;
+  if (!settings.sidebarCollapsed) autoCollapseApplied.value = false;
+}
+
 /** 应用显示名：动态读取 tauri.conf 的 productName，改名无需改前端代码 */
 const appName = ref('ArkDesk');
 onMounted(async () => {
@@ -18,10 +39,14 @@ onMounted(async () => {
   } catch {
     // 读取失败回退默认名，不影响使用
   }
+  syncAutoCollapse();
+  window.addEventListener('resize', syncAutoCollapse);
 });
+onUnmounted(() => window.removeEventListener('resize', syncAutoCollapse));
 
 /** 收起态：图标 rail（macOS 红绿灯已由 trafficLightPosition 左移收紧，68px 可完整容纳；
  *  其余平台 56px。宽度用固定 px，不随字号漂移） */
+// design-lint-ignore：rail 宽度必须固定 px —— macOS 红绿灯留位（68px）不能随三档字号缩放
 const railWidthClass = computed(() => (isMac ? 'w-[68px]' : 'w-14'));
 
 interface ToolGroup {
@@ -41,11 +66,8 @@ const groups = computed<ToolGroup[]>(() => {
   return [...map.entries()].map(([name, tools]) => ({ name, tools }));
 });
 
-/** 激活态：accent 左指示条 + 主色图标 + 提亮文字（RouterLink active-class 注入） */
-const activeClasses =
-  'bg-primary/10 text-foreground font-medium [&>svg]:text-primary ' +
-  'before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 ' +
-  'before:h-4 before:w-0.5 before:rounded-full before:bg-primary';
+/** 激活态：accent 低饱和填充 + 主色图标 + 提亮文字（DESIGN-macos.md §7：不用强调线/边框） */
+const activeClasses = 'bg-primary/10 text-foreground font-medium [&>svg]:text-primary';
 </script>
 
 <template>
@@ -53,7 +75,7 @@ const activeClasses =
        （macOS 红绿灯悬浮于拖拽区上方，不放任何文字） -->
   <TooltipProvider :delay-duration="200">
     <aside
-      class="flex shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground transition-[width]"
+      class="flex shrink-0 flex-col border-r bg-material-sidebar text-sidebar-foreground backdrop-blur-xl transition-[width]"
       :class="settings.sidebarCollapsed ? railWidthClass : 'w-52'"
     >
       <!-- 拖拽区（deep）：macOS 红绿灯旁不放文字；Windows/Linux 顶部显示应用名（收起态放不下） -->
@@ -99,7 +121,7 @@ const activeClasses =
           <!-- 分组标题：展开显示 uppercase 微标签，收起用分隔线代替 -->
           <p
             v-if="!settings.sidebarCollapsed"
-            class="px-2 pb-1 text-[0.769rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70"
+            class="px-2 pb-1 text-xs font-medium text-muted-foreground"
           >
             {{ group.name }}
           </p>
@@ -155,7 +177,7 @@ const activeClasses =
                   : 'items-center gap-2.5 px-2 py-1.5 text-sm'
               "
               :aria-label="settings.sidebarCollapsed ? '展开侧栏' : '收起侧栏'"
-              @click="settings.sidebarCollapsed = !settings.sidebarCollapsed"
+              @click="toggleSidebar"
             >
               <PanelLeftOpen v-if="settings.sidebarCollapsed" class="size-4" />
               <PanelLeftClose v-else class="size-4" />

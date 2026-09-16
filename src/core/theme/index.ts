@@ -20,10 +20,18 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 /** 默认主题（暗色指挥台基调）：脚手架脚本精确替换此行以切换默认档 */
 const DEFAULT_THEME: ThemeMode = 'dark';
 
-const THEME_KEY = 'pocketark.theme';
-const ACCENT_KEY = 'pocketark.accent';
-const ACCENT_CUSTOM_KEY = 'pocketark.accentCustom';
-const FONT_SIZE_KEY = 'pocketark.fontSize';
+/** localStorage 键（单一事实源；index.html 内联脚本与 preview-bridge 需保持一致） */
+export const STORAGE_KEYS = {
+  theme: 'pocketark.theme',
+  accent: 'pocketark.accent',
+  accentCustom: 'pocketark.accentCustom',
+  fontSize: 'pocketark.fontSize',
+} as const;
+
+const THEME_KEY = STORAGE_KEYS.theme;
+const ACCENT_KEY = STORAGE_KEYS.accent;
+const ACCENT_CUSTOM_KEY = STORAGE_KEYS.accentCustom;
+const FONT_SIZE_KEY = STORAGE_KEYS.fontSize;
 
 /** 自定义主色的 accent id（hex 另存于 ACCENT_CUSTOM_KEY） */
 export const CUSTOM_ACCENT_ID = 'custom';

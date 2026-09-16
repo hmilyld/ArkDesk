@@ -1,21 +1,31 @@
-<!-- 表清单：搜索过滤 + 行数徽标，点击选中 -->
+<!--
+  表清单：搜索过滤 + 行数尾部标记，点击选中。
+  模块外框由 Panel 提供；行列表用 ListRow（选中态 / hover / 键盘 Enter·Space 就地可用），
+  空 / 加载 / 错误三态齐全，错误可重试。
+-->
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { Badge } from '@/components/ui/badge';
 import { Table2 } from '@lucide/vue';
 import Panel from '@/components/tool/Panel.vue';
 import EmptyState from '@/components/native/EmptyState.vue';
+import ErrorState from '@/components/native/ErrorState.vue';
+import ListRow from '@/components/native/ListRow.vue';
 import LoadingState from '@/components/native/LoadingState.vue';
 import SearchField from '@/components/native/SearchField.vue';
 import type { TableInfo } from '../shared';
 
-const props = defineProps<{
-  tables: TableInfo[];
-  selected: string | null;
-  loading: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    tables: TableInfo[];
+    selected: string | null;
+    loading: boolean;
+    /** 加载失败信息（非空时显示错误态与重试） */
+    error?: string;
+  }>(),
+  { error: undefined }
+);
 
-const emit = defineEmits<{ select: [name: string] }>();
+const emit = defineEmits<{ select: [name: string]; retry: [] }>();
 
 const search = ref('');
 
@@ -27,42 +37,38 @@ const filtered = computed(() => {
 </script>
 
 <template>
-  <Panel title="表" :hint="`${filtered.length} 张`" body-class="p-1.5 space-y-1.5">
-    <template #actions>
-      <SearchField v-model="search" class="w-44" placeholder="搜索表名" />
-    </template>
+  <Panel title="表" :hint="`${filtered.length} 张`" body-class="space-y-2 p-2">
+    <SearchField v-model="search" placeholder="搜索表名" />
 
-    <LoadingState v-if="loading" variant="spinner" label="读取表结构…" />
+    <ErrorState v-if="error" :message="error" :on-retry="() => emit('retry')" compact />
+    <LoadingState v-if="loading" variant="spinner" label="读取表清单…" />
     <EmptyState
-      v-else-if="filtered.length === 0"
+      v-else-if="filtered.length === 0 && !error"
       :icon="Table2"
       :title="tables.length === 0 ? '数据库暂无表' : '未匹配到表'"
       :description="tables.length === 0 ? '应用首次启动会自动创建所需表' : '换一个关键词试试'"
     />
-    <div v-else class="max-h-[36rem] overflow-y-auto md:max-h-[calc(100dvh-14rem)]">
-      <button
+    <div
+      v-else-if="filtered.length > 0"
+      class="max-h-[36rem] space-y-0.5 overflow-y-auto md:max-h-[calc(100dvh-14rem)]"
+      role="listbox"
+      aria-label="表清单"
+    >
+      <ListRow
         v-for="table in filtered"
         :key="table.name"
-        type="button"
-        class="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent"
-        :class="
-          table.name === selected
-            ? 'bg-primary/10 font-medium text-foreground'
-            : 'text-foreground/90'
-        "
-        @click="emit('select', table.name)"
+        interactive
+        :selected="table.name === selected"
+        :title="table.name"
+        class="[&_p]:font-mono"
+        @select="emit('select', table.name)"
       >
-        <span class="min-w-0 truncate font-mono text-xs" :title="table.name">
-          {{ table.name }}
-        </span>
-        <Badge
-          v-if="table.rowCount > 0"
-          variant="outline"
-          class="shrink-0 font-mono text-[10px] text-muted-foreground"
-        >
-          {{ table.rowCount }}
-        </Badge>
-      </button>
+        <template #trailing>
+          <span v-if="table.rowCount > 0" class="text-xs tabular-nums text-muted-foreground">
+            {{ table.rowCount }}
+          </span>
+        </template>
+      </ListRow>
     </div>
   </Panel>
 </template>

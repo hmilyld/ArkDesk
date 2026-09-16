@@ -2,6 +2,7 @@
   行查看/编辑弹窗：长内容场景替代行内编辑。
   控件按列类型选择：数值类（INT/REAL/…）用 Input，其余（TEXT/空类型）用 Textarea，
   BLOB 与主键（rowid 别名）列一律只读；NULL 勾选优先。
+  标签 / 说明 / 行内校验统一交给 FormRow；字段多时正文内部滚动，父级错误就地展示。
   编辑模式仅提交相对原值发生变更的列，UPDATE 由父组件执行。
 -->
 <script setup lang="ts">
@@ -20,6 +21,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import ErrorState from '@/components/native/ErrorState.vue';
+import FormRow from '@/components/native/FormRow.vue';
 import {
   isBlobColumn,
   isRowidAlias,
@@ -29,13 +32,18 @@ import {
   type InsertEntry,
 } from '../shared';
 
-const props = defineProps<{
-  open: boolean;
-  mode: 'view' | 'edit';
-  table: string;
-  columns: ColumnInfo[];
-  row: DataRow | null;
-}>();
+const props = withDefaults(
+  defineProps<{
+    open: boolean;
+    mode: 'view' | 'edit';
+    table: string;
+    columns: ColumnInfo[];
+    row: DataRow | null;
+    /** 父级保存失败信息（就地展示，不用 toast） */
+    error?: string;
+  }>(),
+  { error: undefined }
+);
 
 const emit = defineEmits<{
   'update:open': [open: boolean];
@@ -60,10 +68,16 @@ watch(
   }
 );
 
-const NUMERIC_TYPE_RE = /INT|REAL|FLOA|DOUB|DEC|NUM|BOOL/i;
-
 function isNumeric(column: ColumnInfo): boolean {
-  return NUMERIC_TYPE_RE.test(column.type);
+  return /INT|REAL|FLOA|DOUB|DEC|NUM|BOOL/i.test(column.type);
+}
+
+/** 字段标签下方的类型 / 约束说明 */
+function metaText(column: ColumnInfo): string {
+  const parts = [column.type || 'ANY'];
+  if (column.notnull === 1) parts.push('NOT NULL');
+  if (column.pk > 0) parts.push('PK');
+  return parts.join(' · ');
 }
 
 /** 控件选择：数值类 Input，其余（TEXT/空声明类型）Textarea */
@@ -110,7 +124,7 @@ const changedEntries = computed<InsertEntry[]>(() => {
       <DialogHeader>
         <DialogTitle>
           {{ mode === 'view' ? '查看行' : '编辑行' }}
-          <span class="ml-1 font-mono text-sm font-normal text-muted-foreground">
+          <span class="ml-1 font-mono text-sm font-normal text-muted-foreground tabular-nums">
             #{{ row?.__rid }}
           </span>
         </DialogTitle>
@@ -119,23 +133,23 @@ const changedEntries = computed<InsertEntry[]>(() => {
         </DialogDescription>
       </DialogHeader>
 
-      <div class="max-h-[28rem] space-y-4 overflow-y-auto py-2 pr-1">
-        <div v-for="column in columns" :key="column.name" class="space-y-1">
-          <div class="flex items-center justify-between gap-2">
-            <Label :for="`rowdlg-${column.name}`" class="font-mono text-xs">
-              {{ column.name }}
-              <span class="ml-1 font-sans text-[10px] font-normal text-muted-foreground">
-                {{ column.type || 'ANY' }}
-                {{ column.notnull === 1 ? '· NOT NULL' : '' }}
-                {{ column.pk > 0 ? '· PK' : '' }}
-              </span>
-            </Label>
+      <ErrorState v-if="error" :message="error" compact />
+
+      <div class="max-h-[55vh] space-y-3 overflow-y-auto px-1 py-1">
+        <FormRow
+          v-for="column in columns"
+          :key="column.name"
+          :label="column.name"
+          :description="metaText(column)"
+        >
+          <template #label-action>
             <Label
               v-if="mode === 'edit' && !isRowidAlias(column) && !isBlobColumn(column)"
-              class="flex items-center gap-1 text-[10px] text-muted-foreground"
+              class="flex items-center gap-1 text-xs text-muted-foreground"
             >
               <Checkbox
                 :model-value="fields[column.name]?.isNull ?? false"
+                aria-label="该列写入 NULL"
                 @update:model-value="
                   fields[column.name] && (fields[column.name]!.isNull = $event === true)
                 "
@@ -145,35 +159,36 @@ const changedEntries = computed<InsertEntry[]>(() => {
             <Badge
               v-else-if="fields[column.name]?.isNull"
               variant="outline"
-              class="text-[10px] text-muted-foreground"
+              class="text-muted-foreground"
             >
               NULL
             </Badge>
-            <Badge
-              v-else-if="isBlobColumn(column)"
-              variant="outline"
-              class="text-[10px] text-muted-foreground"
-            >
+            <Badge v-else-if="isBlobColumn(column)" variant="outline" class="text-muted-foreground">
               BLOB
             </Badge>
-          </div>
+          </template>
 
-          <Textarea
-            v-if="controlKind(column) === 'textarea'"
-            :id="`rowdlg-${column.name}`"
-            v-model="fields[column.name]!.raw"
-            rows="3"
-            class="font-mono text-xs"
-            :disabled="disabled(column)"
-          />
-          <Input
-            v-else
-            :id="`rowdlg-${column.name}`"
-            v-model="fields[column.name]!.raw"
-            class="h-8 font-mono text-xs"
-            :disabled="disabled(column)"
-          />
-        </div>
+          <template #default="{ id, invalid, describedBy }">
+            <Textarea
+              v-if="controlKind(column) === 'textarea'"
+              :id="id"
+              v-model="fields[column.name]!.raw"
+              class="field-sizing-fixed h-20 resize-none font-mono text-xs"
+              :aria-invalid="invalid"
+              :aria-describedby="describedBy"
+              :disabled="disabled(column)"
+            />
+            <Input
+              v-else
+              :id="id"
+              v-model="fields[column.name]!.raw"
+              class="h-8 text-right font-mono text-xs tabular-nums"
+              :aria-invalid="invalid"
+              :aria-describedby="describedBy"
+              :disabled="disabled(column)"
+            />
+          </template>
+        </FormRow>
       </div>
 
       <DialogFooter>
@@ -186,7 +201,7 @@ const changedEntries = computed<InsertEntry[]>(() => {
           :disabled="changedEntries.length === 0"
           @click="emit('save', changedEntries)"
         >
-          保存（{{ changedEntries.length }} 列变更）
+          保存（<span class="tabular-nums">{{ changedEntries.length }}</span> 列变更）
         </Button>
       </DialogFooter>
     </DialogContent>

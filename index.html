@@ -15,6 +15,12 @@
         } catch (e) {}
         if (m !== 'light' && m !== 'dark') m = 'dark';
         if (m === 'dark') document.documentElement.classList.add('dark');
+        // 平台层：Windows 覆盖圆角/动效/焦点视觉（见 DESIGN-windows.md）
+        try {
+          if (/Win/i.test(navigator.platform || navigator.userAgent)) {
+            document.documentElement.setAttribute('data-platform', 'win');
+          }
+        } catch (e) {}
         try {
           var a = localStorage.getItem('pocketark.accent');
           if (a === 'custom') {

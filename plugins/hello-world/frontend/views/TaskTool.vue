@@ -120,7 +120,7 @@ async function sendIfBackground(): Promise<void> {
             </p>
           </div>
 
-          <div class="space-y-3 rounded-lg border border-border bg-card p-4">
+          <div class="space-y-3 rounded-lg border bg-card p-4">
             <div class="flex items-end gap-2">
               <div class="space-y-1">
                 <Label for="task-steps" class="text-xs text-muted-foreground">总步数</Label>
@@ -174,7 +174,7 @@ async function sendIfBackground(): Promise<void> {
               onEvent(TaskEvent.*) 订阅 task:// 事件；core/tasks 亦在消费，互不影响
             </p>
           </div>
-          <div class="rounded-lg border border-border bg-card px-4 py-3 font-mono text-xs">
+          <div class="rounded-lg border bg-card px-4 py-3 font-mono text-xs">
             <p>
               <span class="text-muted-foreground">已接收 progress 事件：</span>{{ progressEvents }}
             </p>

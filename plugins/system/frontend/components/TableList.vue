@@ -2,7 +2,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Table2 } from '@lucide/vue';
+import Panel from '@/components/tool/Panel.vue';
+import EmptyState from '@/components/native/EmptyState.vue';
+import LoadingState from '@/components/native/LoadingState.vue';
+import SearchField from '@/components/native/SearchField.vue';
 import type { TableInfo } from '../shared';
 
 const props = defineProps<{
@@ -23,27 +27,29 @@ const filtered = computed(() => {
 </script>
 
 <template>
-  <div class="rounded-lg border border-border bg-card">
-    <div class="border-b border-border p-2.5">
-      <Input v-model="search" placeholder="搜索表名…" class="h-8 bg-background text-xs" />
-    </div>
+  <Panel title="表" :hint="`${filtered.length} 张`" body-class="p-1.5 space-y-1.5">
+    <template #actions>
+      <SearchField v-model="search" class="w-44" placeholder="搜索表名" />
+    </template>
 
-    <p v-if="loading" class="py-10 text-center text-xs text-muted-foreground">加载中…</p>
-    <p v-else-if="filtered.length === 0" class="py-10 text-center text-xs text-muted-foreground">
-      {{ tables.length === 0 ? '数据库暂无表' : '未匹配到表' }}
-    </p>
-
-    <!-- md+ 悬浮固定：列表高度跟随视口，保证 sticky 卡片完整可见 -->
-    <div v-else class="max-h-[36rem] overflow-y-auto p-1.5 md:max-h-[calc(100dvh-14rem)]">
-      <p class="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        表（{{ filtered.length }}）
-      </p>
+    <LoadingState v-if="loading" variant="spinner" label="读取表结构…" />
+    <EmptyState
+      v-else-if="filtered.length === 0"
+      :icon="Table2"
+      :title="tables.length === 0 ? '数据库暂无表' : '未匹配到表'"
+      :description="tables.length === 0 ? '应用首次启动会自动创建所需表' : '换一个关键词试试'"
+    />
+    <div v-else class="max-h-[36rem] overflow-y-auto md:max-h-[calc(100dvh-14rem)]">
       <button
         v-for="table in filtered"
         :key="table.name"
         type="button"
-        class="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent/50"
-        :class="table.name === selected ? 'bg-primary/10 text-primary' : 'text-foreground/90'"
+        class="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent"
+        :class="
+          table.name === selected
+            ? 'bg-primary/10 font-medium text-foreground'
+            : 'text-foreground/90'
+        "
         @click="emit('select', table.name)"
       >
         <span class="min-w-0 truncate font-mono text-xs" :title="table.name">
@@ -58,5 +64,5 @@ const filtered = computed(() => {
         </Badge>
       </button>
     </div>
-  </div>
+  </Panel>
 </template>

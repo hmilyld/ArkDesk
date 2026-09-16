@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { SettingsField, SettingsRow } from '@/components/settings';
 import { Textarea } from '@/components/ui/textarea';
 import Panel from '@/components/tool/Panel.vue';
 import ToolShell from '@/components/tool/ToolShell.vue';
@@ -390,8 +391,7 @@ onUnmounted(offOpenFiles);
         </template>
 
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div class="space-y-1.5">
-            <Label>源格式</Label>
+          <SettingsField label="源格式">
             <Select v-model="sourceFormat">
               <SelectTrigger class="h-9 w-full"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -400,9 +400,8 @@ onUnmounted(offOpenFiles);
                 </SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div class="space-y-1.5">
-            <Label>目标格式</Label>
+          </SettingsField>
+          <SettingsField label="目标格式">
             <Select v-model="targetFormat">
               <SelectTrigger class="h-9 w-full"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -411,65 +410,77 @@ onUnmounted(offOpenFiles);
                 </SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </SettingsField>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div v-if="showJsonPath" class="col-span-2 space-y-1.5">
-            <Label>数据路径</Label>
+        <!-- 选项：左标题 / 右控件，逐行分隔，一眼看出是开关而不是说明文字 -->
+        <div class="divide-y rounded-md border">
+          <SettingsRow
+            v-if="showJsonPath"
+            title="数据路径"
+            description="根节点就是数组时留空，否则填数组所在的点路径"
+          >
             <Input
               v-model="jsonPath"
-              class="font-mono"
-              placeholder="根节点是数组时留空，如 data.list / items[0].rows"
+              class="w-72 font-mono"
+              placeholder="data.list / items[0].rows"
             />
-          </div>
+          </SettingsRow>
 
-          <div
+          <SettingsRow
             v-if="sourceFormat === 'csv' || sourceFormat === 'xlsx'"
-            class="flex items-center justify-between gap-2"
+            title="首行是表头"
+            description="关闭时用 column1、column2 … 作为列名"
           >
-            <Label>首行是表头</Label>
             <Switch v-model="hasHeader" />
-          </div>
+          </SettingsRow>
 
-          <div v-if="showInferTypes" class="flex items-center justify-between gap-2">
-            <Label>类型推断</Label>
+          <SettingsRow
+            v-if="showInferTypes"
+            title="类型推断"
+            description="把纯数字、true / false 识别为数字与布尔（默认全为文本）"
+          >
             <Switch v-model="inferTypes" />
-          </div>
+          </SettingsRow>
 
-          <div v-if="sourceFormat === 'markdown'" class="flex items-center justify-between gap-2">
-            <Label>还原 &lt;br&gt;</Label>
+          <SettingsRow v-if="sourceFormat === 'markdown'" title="还原 &lt;br&gt;">
             <Switch v-model="restoreBreaks" />
-          </div>
+          </SettingsRow>
 
-          <div v-if="sourceFormat === 'xlsx'" class="flex items-center justify-between gap-2">
-            <Label>合并单元格填充</Label>
+          <SettingsRow v-if="sourceFormat === 'xlsx'" title="合并单元格填充">
             <Switch v-model="fillMerged" />
-          </div>
+          </SettingsRow>
 
-          <div v-if="sourceFormat === 'xlsx'" class="flex items-center justify-between gap-2">
-            <Label>裁除空行列</Label>
+          <SettingsRow
+            v-if="sourceFormat === 'xlsx'"
+            title="裁除空行列"
+            description="去掉尾部的全空行与全空列"
+          >
             <Switch v-model="trimEmpty" />
-          </div>
+          </SettingsRow>
 
-          <div v-if="targetFormat === 'markdown'" class="flex items-center justify-between gap-2">
-            <Label>换行转 &lt;br&gt;</Label>
+          <SettingsRow v-if="targetFormat === 'markdown'" title="换行转 &lt;br&gt;">
             <Switch v-model="escapeNewlines" />
-          </div>
+          </SettingsRow>
 
-          <div v-if="targetFormat === 'csv'" class="flex items-center justify-between gap-2">
-            <Label>防公式注入</Label>
+          <SettingsRow
+            v-if="targetFormat === 'csv'"
+            title="防公式注入"
+            description="以 = + - @ 开头的文本前置 ' 前缀（会改变字面文本）"
+          >
             <Switch v-model="preventInjection" />
-          </div>
+          </SettingsRow>
 
-          <div v-if="targetFormat === 'xlsx'" class="flex items-center justify-between gap-2">
-            <Label>表头样式</Label>
+          <SettingsRow
+            v-if="targetFormat === 'xlsx'"
+            title="表头样式"
+            description="表头加粗、冻结首行、自动列宽"
+          >
             <Switch v-model="styleWorkbook" />
-          </div>
+          </SettingsRow>
 
-          <div v-if="showTargetTextOptions" class="space-y-1.5">
-            <Label>日期输出</Label>
-            <Select v-model="dateMode">
+          <SettingsRow v-if="showTargetTextOptions" title="日期输出">
+            <Select v-model="dateMode" class="w-56">
               <SelectTrigger class="h-9 w-full"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem v-for="item in DATE_MODES" :key="item.value" :value="item.value">
@@ -477,20 +488,19 @@ onUnmounted(offOpenFiles);
                 </SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </SettingsRow>
 
-          <div v-if="showTargetTextOptions && dateMode === 'custom'" class="space-y-1.5">
-            <Label>日期格式</Label>
-            <Input v-model="dateFormat" class="font-mono" placeholder="yyyy-MM-dd HH:mm:ss" />
-          </div>
+          <SettingsRow v-if="showTargetTextOptions && dateMode === 'custom'" title="日期格式">
+            <Input v-model="dateFormat" class="w-56 font-mono" placeholder="yyyy-MM-dd HH:mm:ss" />
+          </SettingsRow>
         </div>
 
         <p
           v-if="!showTargetTextOptions"
-          class="flex items-center gap-1.5 text-xs text-muted-foreground"
+          class="flex items-start gap-1.5 rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground"
         >
-          <Info class="size-3.5" />
-          Excel 目标会写入原生日期单元格，因此不适用「日期输出」选项。
+          <Info class="mt-0.5 size-3.5 shrink-0" />
+          Excel 目标写入的是原生日期单元格，因此不需要「日期输出」选项。
         </p>
       </Panel>
 

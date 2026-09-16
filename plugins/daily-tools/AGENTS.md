@@ -80,6 +80,11 @@
   非 UTF-8 输入格式会在选择非「文本 (UTF-8)」时给出黄色提示。
 - 选项常量集中在 `frontend/crypto-shared.ts`；不在组件里重复定义。
 - 输入框固定高度 + 超出滚动（`field-sizing: fixed` 覆盖 shadcn Textarea 的自动增高）。
+- 选项区统一用 `@/components/settings` 的 `SettingsField`（标题在上、控件在下，栅格里的密集字段）与
+  `SettingsRow`（左标题+说明、右控件，放进 `divide-y rounded-md border` 容器）。**开关不要把 Label 与
+  Switch 用 `justify-between` 拉到一行两端**——看起来像两段游离文字；要么 `gap-2` 紧邻，要么用 SettingsRow。
+- 说明性文字（如「Excel 目标不需要该选项」）单独用带 `Info` 图标的提示块呈现
+  （`rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground`），不要和选项行混在同一栅格里。
 
 ### 模块面板（Panel）
 

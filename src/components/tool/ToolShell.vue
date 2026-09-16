@@ -26,7 +26,7 @@ withDefaults(
   <div class="flex min-h-full flex-col">
     <header
       v-if="title || $slots.actions"
-      class="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-4 border-b bg-background/90 px-5 py-3 backdrop-blur-sm"
+      class="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-4 border-b bg-material-toolbar px-5 py-3 backdrop-blur-xl"
     >
       <div class="min-w-0">
         <h2 v-if="title" class="truncate text-base font-semibold tracking-tight">

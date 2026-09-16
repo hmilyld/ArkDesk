@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import Segmented from '@/components/native/Segmented.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'vue-sonner';
@@ -233,23 +234,7 @@ function toggleExpanded(id: string): void {
     <!-- 外观 -->
     <SettingsSection title="外观">
       <SettingsRow title="主题">
-        <div class="flex gap-0.5 rounded-[7px] border border-border p-0.5">
-          <Button
-            v-for="option in themeOptions"
-            :key="option.value"
-            variant="ghost"
-            size="sm"
-            class="h-7 px-2.5 text-xs"
-            :class="
-              settings.themeMode === option.value
-                ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            "
-            @click="settings.themeMode = option.value"
-          >
-            {{ option.label }}
-          </Button>
-        </div>
+        <Segmented v-model="settings.themeMode" size="sm" :segments="themeOptions" />
       </SettingsRow>
 
       <SettingsRow title="主题色">

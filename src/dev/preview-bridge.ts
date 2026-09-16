@@ -107,6 +107,20 @@ if (import.meta.env.DEV && !globalWindow.__TAURI_INTERNALS__) {
       };
     }
     if (/SELECT rowid FROM/.test(sql)) return { columns: ['rowid'], rows: [[1]] };
+
+    // 示例插件的任务表（hello-world「数据表格」）：kdb 的 select 形态，给几行便于核对表格规范
+    if (/FROM\s+"?hello_tasks"?/i.test(sql)) {
+      return {
+        columns: ['id', 'title', 'status', 'priority', 'created_at'],
+        rows: [
+          [1, '整理设计规范', 'done', 'high', '2026-09-10 09:12'],
+          [2, '补齐 P2 组件', 'in_progress', 'medium', '2026-09-11 14:03'],
+          [3, '插件层迁移', 'pending', 'medium', '2026-09-12 20:41'],
+          [4, '走查与截图', 'pending', 'low', '2026-09-13 10:05'],
+          [5, '真机材质确认', 'pending', 'high', '2026-09-14 08:30'],
+        ],
+      };
+    }
     if (/SELECT rowid AS __rid, \* FROM/.test(sql)) {
       return {
         columns: ['__rid', 'id', 'title', 'status', 'created_at'],

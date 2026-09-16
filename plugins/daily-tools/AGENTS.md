@@ -80,11 +80,21 @@
   非 UTF-8 输入格式会在选择非「文本 (UTF-8)」时给出黄色提示。
 - 选项常量集中在 `frontend/crypto-shared.ts`；不在组件里重复定义。
 - 输入框固定高度 + 超出滚动（`field-sizing: fixed` 覆盖 shadcn Textarea 的自动增高）。
-- 选项区统一用 `@/components/settings` 的 `SettingsField`（标题在上、控件在下，栅格里的密集字段）与
-  `SettingsRow`（左标题+说明、右控件，放进 `divide-y rounded-md border` 容器）。**开关不要把 Label 与
-  Switch 用 `justify-between` 拉到一行两端**——看起来像两段游离文字；要么 `gap-2` 紧邻，要么用 SettingsRow。
-- 说明性文字（如「Excel 目标不需要该选项」）单独用带 `Info` 图标的提示块呈现
-  （`rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground`），不要和选项行混在同一栅格里。
+
+### 选项区（按 Apple HIG 的 grouped form）
+
+选项统一用 `@/components/settings` 的 `SettingsSection`（分组小标题 + 分隔行）与 `SettingsRow`
+（左标题 + 第二行灰色说明 / 右控件）；放进 Panel 内时给 `SettingsSection` 传
+`class="rounded-md bg-transparent"`，避免卡片套卡片。
+
+- **一行一个设置，标题与控件必须在同一行内**：开关用 `Switch size="sm"`（HIG：分组表单用 mini
+  switch，行高与按钮一致）。禁止用 `justify-between` 把 Label 与 Switch 拉到一行两端——在宽面板里
+  看起来就是「一段没有控件的文字」（HIG 明确：switch 只放在列表行里，由行内容提供语境）。
+- **组内说明**写成行的 `description`（第二行小字）；**组级说明**放 `SettingsSection` 的 `#footer`
+  （灰色说明文字），不要做成填充色块、也不要混进选项行。
+- 互斥多选（如「日期输出」三选一）用 `Select`（即平台的 pop-up button），不要用一排开关；
+  需要分组嵌套/依赖关系时才考虑 checkbox 缩进（HIG：开关不要替代 checkbox）。
+- 每个开关的标题要说清它控制什么；`hint`/说明只补充语境，不代替标题。
 
 ### 模块面板（Panel）
 

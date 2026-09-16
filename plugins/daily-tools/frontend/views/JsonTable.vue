@@ -8,7 +8,7 @@
 import { computed, onUnmounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { open as openFileDialog, save as saveFileDialog } from '@tauri-apps/plugin-dialog';
-import { ArrowLeftRight, FileDown, FileUp, Info, RotateCcw } from '@lucide/vue';
+import { ArrowLeftRight, FileDown, FileUp, RotateCcw } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { SettingsField, SettingsRow } from '@/components/settings';
+import { SettingsRow, SettingsSection } from '@/components/settings';
 import { Textarea } from '@/components/ui/textarea';
 import Panel from '@/components/tool/Panel.vue';
 import ToolShell from '@/components/tool/ToolShell.vue';
@@ -390,36 +390,34 @@ onUnmounted(offOpenFiles);
           </Button>
         </template>
 
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <SettingsField label="源格式">
+        <!-- 格式 -->
+        <SettingsSection title="格式" class="rounded-md bg-transparent">
+          <SettingsRow title="源格式">
             <Select v-model="sourceFormat">
-              <SelectTrigger class="h-9 w-full"><SelectValue /></SelectTrigger>
+              <SelectTrigger class="h-9 w-56"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem v-for="item in TABLE_FORMATS" :key="item" :value="item">
                   {{ FORMAT_LABELS[item] }}
                 </SelectItem>
               </SelectContent>
             </Select>
-          </SettingsField>
-          <SettingsField label="目标格式">
-            <Select v-model="targetFormat">
-              <SelectTrigger class="h-9 w-full"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="item in TABLE_FORMATS" :key="item" :value="item">
-                  {{ FORMAT_LABELS[item] }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </SettingsField>
-        </div>
+          </SettingsRow>
 
-        <!-- 选项：左标题 / 右控件，逐行分隔，一眼看出是开关而不是说明文字 -->
-        <div class="divide-y rounded-md border">
-          <SettingsRow
-            v-if="showJsonPath"
-            title="数据路径"
-            description="根节点就是数组时留空，否则填数组所在的点路径"
-          >
+          <SettingsRow title="目标格式">
+            <Select v-model="targetFormat">
+              <SelectTrigger class="h-9 w-56"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="item in TABLE_FORMATS" :key="item" :value="item">
+                  {{ FORMAT_LABELS[item] }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </SettingsRow>
+        </SettingsSection>
+
+        <!-- 输入选项：一行一个设置，标题在左、控件在右（HIG：开关只放在列表行里） -->
+        <SettingsSection title="输入选项" class="rounded-md bg-transparent">
+          <SettingsRow v-if="showJsonPath" title="数据路径" description="根节点就是数组时留空">
             <Input
               v-model="jsonPath"
               class="w-72 font-mono"
@@ -430,58 +428,53 @@ onUnmounted(offOpenFiles);
           <SettingsRow
             v-if="sourceFormat === 'csv' || sourceFormat === 'xlsx'"
             title="首行是表头"
-            description="关闭时用 column1、column2 … 作为列名"
+            description="关闭时列名为 column1、column2 …"
           >
-            <Switch v-model="hasHeader" />
+            <Switch v-model="hasHeader" size="sm" />
           </SettingsRow>
 
           <SettingsRow
             v-if="showInferTypes"
             title="类型推断"
-            description="把纯数字、true / false 识别为数字与布尔（默认全为文本）"
+            description="识别数字与 true / false，默认按文本处理"
           >
-            <Switch v-model="inferTypes" />
+            <Switch v-model="inferTypes" size="sm" />
           </SettingsRow>
 
           <SettingsRow v-if="sourceFormat === 'markdown'" title="还原 &lt;br&gt;">
-            <Switch v-model="restoreBreaks" />
+            <Switch v-model="restoreBreaks" size="sm" />
           </SettingsRow>
 
           <SettingsRow v-if="sourceFormat === 'xlsx'" title="合并单元格填充">
-            <Switch v-model="fillMerged" />
+            <Switch v-model="fillMerged" size="sm" />
           </SettingsRow>
 
-          <SettingsRow
-            v-if="sourceFormat === 'xlsx'"
-            title="裁除空行列"
-            description="去掉尾部的全空行与全空列"
-          >
-            <Switch v-model="trimEmpty" />
+          <SettingsRow v-if="sourceFormat === 'xlsx'" title="裁除空行列">
+            <Switch v-model="trimEmpty" size="sm" />
           </SettingsRow>
+        </SettingsSection>
 
+        <!-- 输出选项 -->
+        <SettingsSection title="输出选项" class="rounded-md bg-transparent">
           <SettingsRow v-if="targetFormat === 'markdown'" title="换行转 &lt;br&gt;">
-            <Switch v-model="escapeNewlines" />
+            <Switch v-model="escapeNewlines" size="sm" />
           </SettingsRow>
 
           <SettingsRow
             v-if="targetFormat === 'csv'"
             title="防公式注入"
-            description="以 = + - @ 开头的文本前置 ' 前缀（会改变字面文本）"
+            description="以 = + - @ 开头的文本前置 ' 前缀"
           >
-            <Switch v-model="preventInjection" />
+            <Switch v-model="preventInjection" size="sm" />
           </SettingsRow>
 
-          <SettingsRow
-            v-if="targetFormat === 'xlsx'"
-            title="表头样式"
-            description="表头加粗、冻结首行、自动列宽"
-          >
-            <Switch v-model="styleWorkbook" />
+          <SettingsRow v-if="targetFormat === 'xlsx'" title="表头样式">
+            <Switch v-model="styleWorkbook" size="sm" />
           </SettingsRow>
 
           <SettingsRow v-if="showTargetTextOptions" title="日期输出">
-            <Select v-model="dateMode" class="w-56">
-              <SelectTrigger class="h-9 w-full"><SelectValue /></SelectTrigger>
+            <Select v-model="dateMode">
+              <SelectTrigger class="h-9 w-56"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem v-for="item in DATE_MODES" :key="item.value" :value="item.value">
                   {{ item.label }}
@@ -493,15 +486,12 @@ onUnmounted(offOpenFiles);
           <SettingsRow v-if="showTargetTextOptions && dateMode === 'custom'" title="日期格式">
             <Input v-model="dateFormat" class="w-56 font-mono" placeholder="yyyy-MM-dd HH:mm:ss" />
           </SettingsRow>
-        </div>
 
-        <p
-          v-if="!showTargetTextOptions"
-          class="flex items-start gap-1.5 rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground"
-        >
-          <Info class="mt-0.5 size-3.5 shrink-0" />
-          Excel 目标写入的是原生日期单元格，因此不需要「日期输出」选项。
-        </p>
+          <!-- 说明走分组页脚（灰色说明文字），不占设置行、也不做成填充色块 -->
+          <template v-if="!showTargetTextOptions" #footer>
+            Excel 目标写入的是原生日期单元格，因此不需要「日期输出」选项。
+          </template>
+        </SettingsSection>
       </Panel>
 
       <!-- 输入 -->

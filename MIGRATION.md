@@ -16,14 +16,15 @@ fork 的 `main` = **上游框架 + 本地层 + 插件层（全部批次）**，�
 
 ## 1. 上游（PocketArk）状态（全部已合并）
 
-| PR  | squash    | 内容                                                                                                                                                                                                                     |
-| --- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| #5  | `a8a792e` | 4 份 `DESIGN*.md` + `AGENTS.md` 约定；token 层（`src/assets/index.css`）+ `scripts/lint-design.mjs`；`src/components/native/*` 门面组件 + `ui/*` 焦点环/浮层圆角；`preview-bridge.ts` + `design-shot.mjs`                |
-| #6  | `04e64fb` | 走查工具修复：`main.ts` 接入预览桥（此前是死代码）、`design-shot` 参数移到 hash 之前、主题键改从 `core/theme` 的 `STORAGE_KEYS` 读取                                                                                     |
-| #7  | `8421592` | 框架层设计 lint 存量清零（R1/R2/R3/R4/R6；SideNav rail 固定 px 登记 `design-lint-ignore`）                                                                                                                               |
-| #8  | `de687e2` | 壳层材质与设置页 pane：ToolShell/TitleBar 材质底、设置页横向 pane 条、主题三态改 `Segmented`、Toaster 位置、ToolErrorBoundary 走 `normalizeError`                                                                        |
-| #9  | `8021585` | 应用窗口材质（Rust）：macOS `underWindowBackground` / Windows Mica Alt + `VIBRANCY_ACTIVE` 防实色打底                                                                                                                    |
-| #10 | `eb1b9ba` | 清理 base 里的 fork 残留：UA 品牌硬编码改 `CARGO_PKG_NAME` 派生；预览桥移除 fork 插件夹具、改为**插件自带夹具扩展点**；`DESIGN-appendix` 文档纠偏；补齐 P4-1/P4-2（hello-world / system），**base lint 严格模式 0 违规** |
+| PR  | squash    | 内容                                                                                                                                                                                                                         |
+| --- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #5  | `a8a792e` | 4 份 `DESIGN*.md` + `AGENTS.md` 约定；token 层（`src/assets/index.css`）+ `scripts/lint-design.mjs`；`src/components/native/*` 门面组件 + `ui/*` 焦点环/浮层圆角；`preview-bridge.ts` + `design-shot.mjs`                    |
+| #6  | `04e64fb` | 走查工具修复：`main.ts` 接入预览桥（此前是死代码）、`design-shot` 参数移到 hash 之前、主题键改从 `core/theme` 的 `STORAGE_KEYS` 读取                                                                                         |
+| #7  | `8421592` | 框架层设计 lint 存量清零（R1/R2/R3/R4/R6；SideNav rail 固定 px 登记 `design-lint-ignore`）                                                                                                                                   |
+| #8  | `de687e2` | 壳层材质与设置页 pane：ToolShell/TitleBar 材质底、设置页横向 pane 条、主题三态改 `Segmented`、Toaster 位置、ToolErrorBoundary 走 `normalizeError`                                                                            |
+| #9  | `8021585` | 应用窗口材质（Rust）：macOS `underWindowBackground` / Windows Mica Alt + `VIBRANCY_ACTIVE` 防实色打底                                                                                                                        |
+| #11 | `4d2ef45` | 示例工具整体规范化：`hello-world`（8 视图 Panel 化/三态/FormRow/Segmented/ListRow/控制台前景/粘性表头）与 `system`（SearchField+ListRow、数据网格、DDL inset、对话框 FormRow、平台化删除确认）、`_template` 重写为可复制样板 |
+| #10 | `eb1b9ba` | 清理 base 里的 fork 残留：UA 品牌硬编码改 `CARGO_PKG_NAME` 派生；预览桥移除 fork 插件夹具、改为**插件自带夹具扩展点**；`DESIGN-appendix` 文档纠偏；补齐 P4-1/P4-2（hello-world / system），**base lint 严格模式 0 违规**     |
 
 > #5 的 P3 层实际只上游了 `SideNav` 的一部分；其余壳层与 Rust 材质由 #8 / #9 补齐（这是本轮新增的三个 PR 的原因）。
 

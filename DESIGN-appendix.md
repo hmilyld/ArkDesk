@@ -23,6 +23,12 @@
 | `AlertDialog` 语义封装                                       | `ui/alert-dialog`                   | 危险操作确认（按钮顺序按平台）                                    | `ui/dialog` 使用面需审                       |
 | `ProgressBar.vue`                                            | `ui/slider` 之外新写                | 确定/不确定进度 + 取消                                            | `TaskProgress.vue`                           |
 
+> **实现状态**：已随本规范落地的是 `Panel.vue`（`src/components/tool/`）、
+> `SettingSection/Row/Field`（`src/components/settings/`）与 `EmptyState` / `LoadingState` / `ErrorState` /
+> `FormRow` / `ListRow` / `SearchField` / `Segmented`（`src/components/native/`）。
+> `Toolbar` / `SidebarList` / `PopUp` / `ToggleRow` / `StatusBar` / `ProgressBar` / `AlertDialog` 封装
+> 为**规划项**，用到时按下表约定实现并回填本节。
+
 ## 1.5 已知陷阱（reka-ui 2.10 + shadcn-vue）
 
 - **`data-active:` / `data-inactive:` 变体是死规则**：reka 的 `TabsTrigger` 只输出 `data-state="active|inactive"`，
@@ -122,23 +128,23 @@ node scripts/design-shot.mjs \
 ```
 
 - 预览桥 `src/dev/preview-bridge.ts`：仅 `import.meta.env.DEV` 且非 Tauri 环境生效；
-  实现 `__TAURI_INTERNALS__` 协议 + localStorage 版 `plugin-store` + 业务命令夹具（含 `db_query_values`）。
+  实现 `__TAURI_INTERNALS__` 协议 + localStorage 版 `plugin-store` + 框架命令夹具（含 `db_query_values`）。
+  插件自己的业务命令夹具放 `plugins/<id>/frontend/preview.ts`（**默认导出** `Record<命令名, 返回值>`），
+  dev 预览时自动并入；**base 不含任何插件业务命令**，fork 的插件夹具随插件一起留 own 仓库。
 - URL 参数：`?theme=light|dark`、`?font=13|14|15`、`?accent=<name>`、`?platform=win`。
 - 用途：逐屏核对规范条款、验证浮层/焦点/三态；**原生窗口壳与材质仍需真机确认**。
 
 ## 4. 迁移对照表（改造批次）
 
-| 批次 | 范围                                                                     | 文件数 | 风险 | 说明                                  |
-| ---- | ------------------------------------------------------------------------ | ------ | ---- | ------------------------------------- |
-| P3-1 | 壳：`TitleBar` `SideNav` `MainLayout` `Settings` `Home` `CommandPalette` | 6      | 高   | 含材质/窗口契约改造，需先原型确认     |
-| P3-2 | `ui/` 样式覆盖 18 个 shadcn 组件（只改样式）                             | 18     | 中   | 圆角/焦点/高度 token 化               |
-| P4-1 | `hello-world`（上游活样板）                                              | 9      | 低   | 作为规范示范全面重写                  |
-| P4-2 | `daily-tools`                                                            | 16     | 中   | 含 crypto 四面板手搓分段替换          |
-| P4-3 | `system`                                                                 | 6      | 低   | 表格/数据维护页                       |
-| P4-4 | `text2video`                                                             | 5      | 高   | 13 处卡片、日志区、运行态             |
-| P4-5 | `network-tools`                                                          | 15     | 高   | sticky 分栏、控制台输出框，需单独评估 |
-| P4-6 | `tender-optimizer`                                                       | 2      | 中   | 大表单 + 结果表格                     |
-| P4-7 | `_template`                                                              | 2      | 低   | 与上游保持一致                        |
+| 批次 | 范围                                                                     | 文件数 | 风险 | 状态 | 说明                    |
+| ---- | ------------------------------------------------------------------------ | ------ | ---- | ---- | ----------------------- |
+| P3-1 | 壳：`TitleBar` `SideNav` `MainLayout` `Settings` `Home` `CommandPalette` | 6      | 高   | ✅   | 含材质/窗口契约改造     |
+| P3-2 | `ui/` 样式覆盖 18 个 shadcn 组件（只改样式）                             | 18     | 中   | ✅   | 圆角/焦点/高度 token 化 |
+| P4-1 | `hello-world`（base 活样板）                                             | 9      | 低   | ✅   | 作为规范示范全面重写    |
+| P4-2 | `system`                                                                 | 6      | 低   | ✅   | 表格/数据维护页         |
+| P4-3 | `_template`                                                              | 2      | 低   | ✅   | 与 base 保持一致        |
 
+> base 只含 `_template` / `hello-world` / `system` 三个插件，上表即全部批次；
+> **fork 的个人插件按同一清单逐批整改，进度由各 fork 自行维护**（框架层不需要知道 fork 的插件名）。
 > 每批完成后：`pnpm lint && pnpm build && pnpm test`，并按 `DESIGN.md` §7 评审清单逐条自检；
 > 涉及 Rust 的批次额外跑 `pnpm fmt:rs && pnpm lint:rs && pnpm test:rs`。

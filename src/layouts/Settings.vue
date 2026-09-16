@@ -23,69 +23,65 @@ const asyncPanels = computed<Record<string, ReturnType<typeof defineAsyncCompone
   )
 );
 
-/** 当前标签页：切换时把外层页面滚动容器回到顶部，避免沿用上一页的滚动位置 */
+/** pane 列表（工具栏式切换：Safari / Xcode 偏好设置的用法，见 DESIGN-macos.md §5） */
+const panes = computed(() => [
+  { value: 'system', label: '系统设置' },
+  ...toolSettings.value.map((tool) => ({
+    value: tool.meta.id,
+    label: tool.settings?.label ?? tool.meta.name,
+  })),
+  { value: 'changelog', label: '更新日志' },
+  { value: 'about', label: '关于' },
+]);
+
+/** 当前面板：切换时把外层页面滚动容器回到顶部，避免沿用上一页的滚动位置 */
 const activeTab = ref('system');
 const rootEl = ref<HTMLElement | null>(null);
 watch(activeTab, () => rootEl.value?.closest('main')?.scrollTo({ top: 0 }));
 </script>
 
 <template>
-  <!-- 竖向设置导航：Tailwind 栅格居中 8 列（lg 以下满幅），惯用法同 ToolShell 页面。
-       整页随 MainLayout 的 main 滚动；左侧导航 sticky 吸附在滚动容器顶部，始终可见。 -->
-  <div ref="rootEl" class="mx-auto grid w-full grid-cols-12">
-    <Tabs
-      v-model="activeTab"
-      orientation="vertical"
-      class="col-span-12 lg:col-start-3 lg:col-span-8 items-start w-full gap-6 p-5"
-    >
-      <!-- self-start 阻止列表被内容区高度拉伸（flex 默认 stretch）；top-5 抵消 Tabs 的 p-5 -->
+  <!-- 设置页：pane 切换做成工具栏式的横向 tab 条（粘在覆盖式工具栏之下），
+       内容单列居中 8 列（与工具页栅格用法一致）。 -->
+  <div ref="rootEl" class="w-full">
+    <Tabs v-model="activeTab" class="w-full gap-0">
+      <!-- 高度用内联样式覆盖：shadcn TabsList 对横向有 group 变体 h-9（36px），普通 class 覆盖不掉，
+           与 py-2 叠加会让 28px 的 tab 溢出压到下边框；此处显式 = 工具栏高度 + py-0，垂直居中由 items-center 保证 -->
+      <!-- 高度用内联样式置为 auto：shadcn TabsList 对横向有 group 变体 h-9（36px），普通 class 覆盖不掉。
+           上下用等值 py-1.5 由构造保证对称（此前固定高度 + 容器边框会让下间距看起来偏小）。 -->
       <TabsList
-        class="sticky top-5 w-36 shrink-0 self-start flex-col items-stretch gap-1 bg-transparent p-0"
+        class="sticky top-0 z-10 flex w-full flex-wrap items-center justify-center gap-1 rounded-none border-b bg-material-toolbar px-5 py-1.5 backdrop-blur-xl"
+        :style="{ height: 'auto' }"
       >
+        <!-- 选中态用 accent 实心填充：与同页「主题」分段控件一致；
+             低饱和 tint 铺在毛玻璃材质上会被冲淡（DESIGN.md §2.5） -->
         <TabsTrigger
-          value="system"
-          class="h-auto flex-none justify-start px-3 py-1.5 text-sm font-normal"
+          v-for="pane in panes"
+          :key="pane.value"
+          :value="pane.value"
+          class="h-7 flex-none rounded-md px-2.5 text-sm font-normal data-[state=active]:bg-primary data-[state=active]:font-medium data-[state=active]:text-primary-foreground"
         >
-          系统设置
-        </TabsTrigger>
-        <TabsTrigger
-          v-for="tool in toolSettings"
-          :key="tool.meta.id"
-          :value="tool.meta.id"
-          class="h-auto flex-none justify-start px-3 py-1.5 text-sm font-normal"
-        >
-          {{ tool.settings?.label ?? tool.meta.name }}
-        </TabsTrigger>
-        <!-- 固定尾部：更新日志 / 关于（Markdown 驱动，永远排在所有工具设置之后） -->
-        <TabsTrigger
-          value="changelog"
-          class="h-auto flex-none justify-start px-3 py-1.5 text-sm font-normal"
-        >
-          更新日志
-        </TabsTrigger>
-        <TabsTrigger
-          value="about"
-          class="h-auto flex-none justify-start px-3 py-1.5 text-sm font-normal"
-        >
-          关于
+          {{ pane.label }}
         </TabsTrigger>
       </TabsList>
 
-      <div class="min-w-0 flex-1">
-        <TabsContent value="system">
-          <SystemSettings />
-        </TabsContent>
+      <div class="mx-auto grid w-full grid-cols-12 gap-4 p-5">
+        <div class="col-span-12 lg:col-start-3 lg:col-span-8">
+          <TabsContent value="system">
+            <SystemSettings />
+          </TabsContent>
 
-        <TabsContent v-for="tool in toolSettings" :key="tool.meta.id" :value="tool.meta.id">
-          <component :is="asyncPanels[tool.meta.id]" />
-        </TabsContent>
+          <TabsContent v-for="tool in toolSettings" :key="tool.meta.id" :value="tool.meta.id">
+            <component :is="asyncPanels[tool.meta.id]" />
+          </TabsContent>
 
-        <TabsContent value="changelog">
-          <MarkdownView :source="changelogMd" />
-        </TabsContent>
-        <TabsContent value="about">
-          <AboutSettings />
-        </TabsContent>
+          <TabsContent value="changelog">
+            <MarkdownView :source="changelogMd" />
+          </TabsContent>
+          <TabsContent value="about">
+            <AboutSettings />
+          </TabsContent>
+        </div>
       </div>
     </Tabs>
   </div>

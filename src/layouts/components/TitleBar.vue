@@ -39,7 +39,7 @@ onMounted(() => {
        面包屑 = 应用名（仅 macOS，Windows 下应用名在侧栏顶部）+ 当前工具名 -->
   <header
     data-tauri-drag-region="deep"
-    class="flex h-10 shrink-0 items-center justify-between gap-3 border-b bg-background pl-4 pr-0"
+    class="flex h-[var(--toolbar-h)] shrink-0 items-center justify-between gap-3 border-b bg-material-toolbar pl-4 pr-0 backdrop-blur-xl"
   >
     <nav class="flex min-w-0 items-center gap-1.5" aria-label="面包屑">
       <span

@@ -1,4 +1,5 @@
-//! daily-tools 常用工具插件：文件转换（anytomd + lopdf）、图片 OCR（PaddleOCR）与加解密。
+//! daily-tools 常用工具插件：文件转换（anytomd + lopdf）、图片 OCR（PaddleOCR）、
+//! 加解密与 JSON 表格（xlsx 读写）。
 
 use crate::error::{code, AppError};
 use serde::Serialize;
@@ -7,6 +8,7 @@ use std::sync::OnceLock;
 use tauri::Manager;
 
 pub mod crypto;
+pub mod xlsx;
 
 use self::crypto::dto::{
     AsymRequest, KdfRequest, KeyPair, SymmetricFileRequest, SymmetricKey, SymmetricRequest,
@@ -189,6 +191,42 @@ pub async fn daily_tools_save_markdown(path: String, content: String) -> Result<
     std::fs::write(&path, content)?;
     log::info!("Markdown 已保存: {path}");
     Ok(())
+}
+
+// ── JSON 表格（xlsx 读写） ────────────────────────────────────────
+
+/// 列出 .xlsx 工作簿中的工作表名
+#[tauri::command]
+pub fn daily_tools_xlsx_list_sheets(path: String) -> Result<Vec<String>, AppError> {
+    xlsx::list_sheets(&path)
+}
+
+/// 读取单个工作表为表格（列 + 类型化单元格）
+#[tauri::command]
+pub fn daily_tools_xlsx_read(
+    path: String,
+    sheet: Option<String>,
+    has_header: Option<bool>,
+    fill_merged: Option<bool>,
+    trim_empty: Option<bool>,
+) -> Result<xlsx::SheetData, AppError> {
+    xlsx::read_sheet(
+        &path,
+        sheet.as_deref(),
+        has_header.unwrap_or(true),
+        fill_merged.unwrap_or(false),
+        trim_empty.unwrap_or(true),
+    )
+}
+
+/// 写出工作簿（每个表一个工作表）
+#[tauri::command]
+pub fn daily_tools_xlsx_write(
+    path: String,
+    sheets: Vec<xlsx::SheetData>,
+    style: Option<bool>,
+) -> Result<(), AppError> {
+    xlsx::write_workbook(&path, &sheets, style.unwrap_or(true))
 }
 
 // ── 加解密（P0：哈希 / 编码 / 文本编码） ────────────────────────────

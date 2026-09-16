@@ -4,11 +4,37 @@
 
 ## 工具
 
-`plugin.json` 声明三个工具（同一插件、前后端同处）：
+`plugin.json` 声明四个工具（同一插件、前后端同处）：
 
 - `file-converter` → `frontend/views/FileConverter.vue`
 - `image-ocr` → `frontend/views/ImageOcr.vue`
 - `crypto` → `frontend/views/CryptoTool.vue`（加解密，见下）
+- `json-table` → `frontend/views/JsonTable.vue`（JSON 表格，见下）
+
+## JSON 表格（json-table）
+
+统一中间表示 `Table` / `Cell` 定义在 `frontend/table/model.ts`：四种格式各自实现解析与
+序列化，任意两两互转。**文本类格式全部在前端**，Rust 只做 xlsx 读写。
+
+| 文件                                         | 职责                                                             |
+| -------------------------------------------- | ---------------------------------------------------------------- |
+| `frontend/table/model.ts`                    | `Table`/`Cell`/`TableError`、列并集与列名规范化、行补齐          |
+| `frontend/table/options.ts`                  | 格式枚举、日期模式、预览行数、上限等常量（前后端上限需人工对齐） |
+| `frontend/table/path.ts`                     | 数据路径解析（`$.a.b`、`items[0]`、`[*]`）与候选数组路径扫描     |
+| `frontend/table/json-convert.ts`             | JSON ↔ Table（键并集、嵌套 JSON 序列化、类型还原）               |
+| `frontend/table/markdown.ts`                 | Table ↔ GFM 管道表（`marked` 解析；`\|` 与 `<br>` 转义）         |
+| `frontend/table/csv.ts`                      | Table ↔ CSV（RFC 4180 状态机、防公式注入）                       |
+| `frontend/table/cell-text.ts`                | 文本 ↔ 单元格（保守类型推断、按日期模式渲染）                    |
+| `frontend/table/convert.ts`                  | 文本源解析 / 文本目标序列化的统一入口 + 预览截断                 |
+| `frontend/table/xlsx.ts`                     | 前端侧 IPC 包装（列名规范化在后端读回后补齐）                    |
+| `frontend/components/table/TablePreview.vue` | Excel 目标的网格预览                                             |
+| `backend/xlsx/{dto,read,write}.rs`           | calamine 读 / rust_xlsxwriter 写；命令薄函数在 `backend/mod.rs`  |
+| `backend/xlsx/tests.rs`                      | 临时文件回环测试（类型、日期、表头、裁剪、注入、非法输入）       |
+
+约定：`t` 取值 `s|n|b|d|e`；`v === null` 表示空单元格；日期 `v` 为 ISO 8601、`n` 为
+原始序列号（仅用于「序列号」输出模式）。写出 xlsx 一律 `write_string`/`write_number`/
+`write_boolean`/`write_datetime_with_format`，**不得使用 `write_formula`**（天然免注入）。
+前端纯逻辑测试在仓库根 `tests/daily-tools-json-table.spec.ts`。
 
 ## 加解密后端布局
 
@@ -73,6 +99,9 @@
 - 文件「编码预览」会把结果整段返回，超大文件请用「编码并保存为文件」。
 - 非对称仅文本；RSA 密钥生成与 Argon2 为同步命令（已有 loading，不冻结 webview）。
 - 输入框中的密钥/口令为普通字符串（仅派生材料 `zeroize`）。
+- JSON 表格：类型推断默认关；日期格式仅影响文本输出；xlsx 读取上限 20 万行 / 2048 列
+  （前后端上限分别在 `frontend/table/options.ts` 与 `backend/xlsx/read.rs`，修改需同步）；
+  CSV 防注入的 `'` 前缀会改变字面文本（需无损往返时关闭）。
 
 ## 校验
 

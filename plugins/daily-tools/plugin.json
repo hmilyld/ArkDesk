@@ -25,6 +25,13 @@
       "description": "哈希、编码、对称/非对称与国密加解密",
       "icon": "ShieldCheck",
       "entry": "frontend/views/CryptoTool.vue"
+    },
+    {
+      "id": "json-table",
+      "name": "JSON 表格",
+      "description": "JSON 与 Markdown / CSV / Excel 表格互转",
+      "icon": "Table",
+      "entry": "frontend/views/JsonTable.vue"
     }
   ]
 }

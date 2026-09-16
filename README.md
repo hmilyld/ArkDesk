@@ -9,6 +9,7 @@
 | 常用工具 | `daily-tools`      | 文件转换（→ Markdown）、图片 OCR（PaddleOCR MNN）、**加解密** |
 | 投标     | `tender-optimizer` | 招标二轮报价蒙特卡洛测算、测算历史                            |
 | 内容创作 | `text2video`       | 文章 → 竖屏滚动短视频（含草稿箱、处理记录）                   |
+| 网络工具 | `network-tools`    | 接口测试（HTTP 调试）、请求拦截（本地 MITM 代理）             |
 | 系统工具 | `system`           | 数据维护（浏览表结构、编辑数据）                              |
 
 > 各插件的功能说明见 `plugins/<id>/README.md`，开发约定见 `plugins/<id>/AGENTS.md`（项目级文档只做索引）。
@@ -118,6 +119,7 @@ plugins/               # ★ 你的工具都在这里（每个目录一个插件
 ├── system/            #   系统工具（数据维护，前端-only）
 ├── daily-tools/       #   常用工具（文件转换 + 图片 OCR + 加解密；README.md + AGENTS.md）
 ├── tender-optimizer/  #   投标报价测算（README.md + AGENTS.md）
+├── network-tools/     #   网络工具（接口测试 + 本地 MITM 请求拦截；README.md + AGENTS.md）
 └── text2video/        #   图文视频工具（README.md + AGENTS.md）
 
 src-tauri/

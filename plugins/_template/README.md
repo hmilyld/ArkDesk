@@ -23,8 +23,13 @@
 ```vue
 <ToolShell title="标题">
   <div class="mx-auto grid w-full grid-cols-12">
-    <div class="col-span-12 lg:col-start-3 lg:col-span-8">
-      <!-- 居中 8 列，lg 以下自动满幅 -->
+    <div class="col-span-12 space-y-4 lg:col-start-3 lg:col-span-8">
+      <!-- 居中 8 列，lg 以下自动满幅；每个模块用一个 Panel -->
+      <Panel title="输入">
+        <template #actions><Button variant="secondary" size="sm">选择文件</Button></template>
+        …
+      </Panel>
+      <Panel title="输出">…</Panel>
     </div>
   </div>
 </ToolShell>
@@ -33,6 +38,11 @@
 常用档位：表格满幅（不加类）、宽内容 `lg:col-start-3 lg:col-span-8`、
 表单/设置 `lg:col-start-3 lg:col-span-8` 或 `md:col-start-4 md:col-span-6`。
 居中列必须用偶数跨距（12 − 跨距需为偶数）才能精确居中。
+
+**模块面板**：页面里每个功能模块（设置 / 输入 / 输出 / 结果）都用
+`@/components/tool/Panel.vue` 包裹（props：`title` / `hint` / `bodyClass`，插槽：
+`actions` / `title` / 默认插槽）——外框与头部条视觉由 Panel 统一，不要再手写
+`rounded-lg border bg-card` 卡片，也不要在 Panel 内嵌套卡片（预览、表格等组件自身不带外框）。
 空态 / 加载态 / 错误态的标准写法参考 hello-world 的「页面模板」工具。
 
 ## 3. 可选能力

@@ -115,6 +115,7 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 - **日志**：用 `@/core/logger` 的 `logger` 或插件 `ctx.logger`，禁止裸 `println!`。
 - **图标**：只允许 `@lucide/vue`（`lucide-vue-next` 已弃用，勿再引入）。
 - **样式**：shadcn-vue 语义色（`bg-primary` 等），禁止硬编码色值；已有 `text-success/warning/info`、`bg-console` 等 token。
+- **工具页模块**：页面里每个功能模块（设置 / 输入 / 输出 / 结果 / 列表）一律用 `@/components/tool/Panel` 包裹（外框 + 头部条标题 + 右上角动作 + 正文），不要在页面上裸露模块，也不要在 Panel 内嵌套卡片——预览、表格等组件自身不带外框，外框交给 Panel。头部标题用 `text-xs font-medium text-muted-foreground`，动作按钮 `size="sm"`、图标 `size-3.5`；正文默认 `space-y-3 p-4`（满幅场景用 `body-class` 覆盖）；错误条用 `rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive`。
 - **设置页 UI**：系统设置页与所有插件设置面板统一用 `@/components/settings` 的 `SettingsSection` / `SettingsRow` / `SettingsField`（单一事实源，视觉随系统设置页），勿自造小节标题与卡片样式；密集数值字段在 `SettingsSection` 内用 grid + `SettingsField`。
 - **代码风格**：prettier 单引号、100 列、尾逗号 es5；提交前跑 `pnpm format`。
 - **主题**：主题色/亮暗在 `core/theme` + `assets/index.css` 的 accent class，新增主题色需同步三处（CSS / ACCENTS / index.html 内联防闪白脚本）。
@@ -154,7 +155,7 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 
 ```
 src/core/            # 框架核心（logger/errors/ipc/db/http/theme/plugins），扩展只引用
-src/components/tool/ # ToolShell 工具页壳（页头+全幅容器）
+src/components/tool/ # ToolShell 工具页壳（页头+全幅容器）+ Panel 模块面板
 src/components/ui/   # shadcn-vue 生成组件（CLI 管理）
 src/content/         # 关于/更新日志 Markdown（设置页读取）
 scripts/             # scaffold / create-plugin / gen-icons / gen-commands / prepare / bump-version / release

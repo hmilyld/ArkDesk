@@ -3,11 +3,12 @@
 -->
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { toast } from 'vue-sonner';
-import { Send } from '@lucide/vue';
+import { MousePointerClick, Send } from '@lucide/vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import EmptyState from '@/components/native/EmptyState.vue';
+import ErrorState from '@/components/native/ErrorState.vue';
 import RequestTabs from '../RequestTabs.vue';
 import ResponsePanel from '../ResponsePanel.vue';
 import { useSend } from '../../composables/useSend';
@@ -35,6 +36,7 @@ const props = defineProps<{
 const spec = ref<HttpRequestSpec>(createRequestSpec());
 const activeTab = ref('request');
 const replayWarnings = ref<string[]>([]);
+const detailError = ref('');
 const { loading, response, error, run, cancel } = useSend();
 
 const capturedResponse = computed(() => (props.flow ? flowToResponseView(props.flow) : null));
@@ -46,6 +48,7 @@ watch(
     const token = ++loadToken;
     activeTab.value = 'request';
     replayWarnings.value = [];
+    detailError.value = '';
     if (!flow) {
       spec.value = createRequestSpec();
       return;
@@ -58,7 +61,7 @@ watch(
         next.body.binaryPath = path;
         next.body.binaryContentType = flow.reqBody?.contentType ?? '';
       } catch (err) {
-        if (token === loadToken) toast.error(`二进制请求体准备失败：${errorMessage(err)}`);
+        if (token === loadToken) detailError.value = `二进制请求体准备失败：${errorMessage(err)}`;
       }
     }
     if (token === loadToken) spec.value = next;
@@ -68,9 +71,10 @@ watch(
 
 async function replay(): Promise<void> {
   if (!spec.value.url.trim()) {
-    toast.error('URL 不能为空');
+    detailError.value = '请填写请求 URL';
     return;
   }
+  detailError.value = '';
   const taskId = uid();
   const built = buildSendOptions(spec.value, settings.value, taskId);
   replayWarnings.value = built.warnings;
@@ -80,9 +84,13 @@ async function replay(): Promise<void> {
 </script>
 
 <template>
-  <div v-if="!flow" class="flex h-full items-center justify-center text-xs text-muted-foreground">
-    选择左侧一条流量查看详情
-  </div>
+  <EmptyState
+    v-if="!flow"
+    class="h-full"
+    :icon="MousePointerClick"
+    title="未选择流量"
+    description="从左侧选择一条流量查看详情"
+  />
 
   <div v-else class="flex h-full min-h-0 flex-col gap-3">
     <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -93,7 +101,7 @@ async function replay(): Promise<void> {
       <span class="truncate font-mono text-xs text-muted-foreground">{{ flow.summary.url }}</span>
       <span
         v-if="flow.summary.contentType"
-        class="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
+        class="shrink-0 rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground"
       >
         {{ flow.summary.contentType }}
       </span>
@@ -106,6 +114,8 @@ async function replay(): Promise<void> {
       }}</span>
     </div>
 
+    <ErrorState v-if="detailError" :message="detailError" />
+
     <Tabs v-model="activeTab" class="flex min-h-0 flex-1 flex-col gap-2">
       <div class="flex items-center justify-between gap-2">
         <TabsList>
@@ -114,7 +124,7 @@ async function replay(): Promise<void> {
           <TabsTrigger value="replay">重放响应</TabsTrigger>
         </TabsList>
         <Button v-if="!loading" size="sm" @click="replay">
-          <Send class="size-4" />
+          <Send class="mr-1 size-3.5" />
           重放
         </Button>
         <Button v-else variant="destructive" size="sm" @click="cancel">停止</Button>

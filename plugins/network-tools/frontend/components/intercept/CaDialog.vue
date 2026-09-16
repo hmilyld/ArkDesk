@@ -1,7 +1,6 @@
 <!-- 根证书信息 / 导出 / 平台安装指引 -->
 <script setup lang="ts">
-import { computed } from 'vue';
-import { toast } from 'vue-sonner';
+import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -11,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import ErrorState from '@/components/native/ErrorState.vue';
 import type { CaInfo } from '../../intercept-shared';
 import { copyToClipboard } from '../../shared';
 
@@ -27,6 +27,8 @@ const open = computed({
 });
 
 const certPath = computed(() => props.ca?.certPath ?? '');
+const copiedKey = ref('');
+const error = ref('');
 
 const macCommand = computed(
   () =>
@@ -34,13 +36,17 @@ const macCommand = computed(
 );
 const winCommand = computed(() => `certutil -addstore -f Root "${certPath.value}"`);
 
-async function copy(text: string): Promise<void> {
+async function copy(text: string, key: string): Promise<void> {
   if (!text) return;
   try {
     await copyToClipboard(text);
-    toast.success('已复制命令');
+    error.value = '';
+    copiedKey.value = key;
+    setTimeout(() => {
+      if (copiedKey.value === key) copiedKey.value = '';
+    }, 1500);
   } catch {
-    toast.error('复制失败');
+    error.value = '复制到剪贴板失败，请检查系统剪贴板权限';
   }
 }
 </script>
@@ -56,7 +62,9 @@ async function copy(text: string): Promise<void> {
       </DialogHeader>
 
       <div class="min-w-0 space-y-3 text-xs">
-        <div class="rounded-md border border-border bg-sunken p-3 font-mono">
+        <ErrorState v-if="error" :message="error" />
+
+        <div class="rounded-md border bg-sunken p-3 font-mono">
           <p><span class="text-muted-foreground">存在：</span>{{ ca?.exists ? '是' : '否' }}</p>
           <p class="break-all">
             <span class="text-muted-foreground">指纹：</span>{{ ca?.fingerprint || '—' }}
@@ -73,11 +81,16 @@ async function copy(text: string): Promise<void> {
             <p class="text-muted-foreground">macOS</p>
             <div class="flex items-stretch gap-2">
               <code
-                class="min-w-0 flex-1 overflow-x-auto whitespace-pre rounded-md bg-console px-2 py-1.5 font-mono text-console-foreground"
+                class="min-w-0 flex-1 overflow-x-auto rounded-md bg-console px-2 py-1.5 font-mono whitespace-pre text-console-foreground"
                 >{{ macCommand }}</code
               >
-              <Button variant="outline" size="sm" class="h-auto shrink-0" @click="copy(macCommand)">
-                复制
+              <Button
+                variant="outline"
+                size="sm"
+                class="h-auto shrink-0"
+                @click="copy(macCommand, 'mac')"
+              >
+                {{ copiedKey === 'mac' ? '已复制' : '复制' }}
               </Button>
             </div>
           </div>
@@ -85,15 +98,20 @@ async function copy(text: string): Promise<void> {
             <p class="text-muted-foreground">Windows（管理员 PowerShell / CMD）</p>
             <div class="flex items-stretch gap-2">
               <code
-                class="min-w-0 flex-1 overflow-x-auto whitespace-pre rounded-md bg-console px-2 py-1.5 font-mono text-console-foreground"
+                class="min-w-0 flex-1 overflow-x-auto rounded-md bg-console px-2 py-1.5 font-mono whitespace-pre text-console-foreground"
                 >{{ winCommand }}</code
               >
-              <Button variant="outline" size="sm" class="h-auto shrink-0" @click="copy(winCommand)">
-                复制
+              <Button
+                variant="outline"
+                size="sm"
+                class="h-auto shrink-0"
+                @click="copy(winCommand, 'win')"
+              >
+                {{ copiedKey === 'win' ? '已复制' : '复制' }}
               </Button>
             </div>
           </div>
-          <p class="text-muted-foreground leading-5">
+          <p class="leading-5 text-muted-foreground">
             Firefox 需在「设置 → 隐私与安全 → 证书 → 查看证书 → 导入」中单独信任该证书。 证书固定的
             App 无法被拦截。
           </p>

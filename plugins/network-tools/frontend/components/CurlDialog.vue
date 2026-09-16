@@ -3,7 +3,6 @@
 -->
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import ErrorState from '@/components/native/ErrorState.vue';
 import { parseCurl } from '../curl';
 import { copyToClipboard, type HttpRequestSpec } from '../shared';
 
@@ -25,6 +25,8 @@ const emit = defineEmits<{
 }>();
 
 const input = ref('');
+const error = ref('');
+const copied = ref(false);
 
 const open = computed({
   get: () => props.open,
@@ -35,9 +37,11 @@ async function copyExport(): Promise<void> {
   if (!props.exportText) return;
   try {
     await copyToClipboard(props.exportText);
-    toast.success('已复制 curl');
+    error.value = '';
+    copied.value = true;
+    setTimeout(() => (copied.value = false), 1500);
   } catch {
-    toast.error('复制失败');
+    error.value = '复制到剪贴板失败，请检查系统剪贴板权限';
   }
 }
 
@@ -45,11 +49,11 @@ function doImport(): void {
   if (!input.value.trim()) return;
   try {
     emit('import', parseCurl(input.value));
-    toast.success('已解析并填入请求');
+    error.value = '';
     open.value = false;
     input.value = '';
   } catch {
-    toast.error('curl 解析失败');
+    error.value = 'curl 解析失败，请检查粘贴内容是否为完整的 curl 命令';
   }
 }
 </script>
@@ -64,6 +68,8 @@ function doImport(): void {
         >
       </DialogHeader>
 
+      <ErrorState v-if="error" :message="error" />
+
       <Tabs default-value="import" class="gap-3">
         <TabsList>
           <TabsTrigger value="import">导入</TabsTrigger>
@@ -76,6 +82,7 @@ function doImport(): void {
             placeholder="curl 'https://...' -H '...' -d '...'"
             spellcheck="false"
             class="min-h-48 font-mono text-xs"
+            @input="error = ''"
           />
           <DialogFooter>
             <Button size="sm" :disabled="!input.trim()" @click="doImport">解析并填入</Button>
@@ -91,7 +98,7 @@ function doImport(): void {
           />
           <DialogFooter>
             <Button size="sm" variant="outline" :disabled="!exportText" @click="copyExport">
-              复制 curl
+              {{ copied ? '已复制' : '复制 curl' }}
             </Button>
           </DialogFooter>
         </TabsContent>

@@ -4,15 +4,11 @@
 -->
 <script setup lang="ts">
 import { computed } from 'vue';
+import { ShieldOff } from '@lucide/vue';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import EmptyState from '@/components/native/EmptyState.vue';
+import Segmented from '@/components/native/Segmented.vue';
 import type { HttpAuth, HttpAuthLocation, HttpAuthType } from '../shared';
 
 const props = defineProps<{ modelValue: HttpAuth }>();
@@ -23,6 +19,11 @@ const AUTH_TYPES: { value: HttpAuthType; label: string }[] = [
   { value: 'basic', label: 'Basic Auth' },
   { value: 'bearer', label: 'Bearer Token' },
   { value: 'apikey', label: 'API Key' },
+];
+
+const AUTH_LOCATIONS: { value: HttpAuthLocation; label: string }[] = [
+  { value: 'header', label: 'Header' },
+  { value: 'query', label: 'Query' },
 ];
 
 const auth = computed(() => props.modelValue);
@@ -40,19 +41,7 @@ function setLocation(value: unknown): void {
 
 <template>
   <div class="space-y-3">
-    <div class="flex items-center gap-2">
-      <Label class="text-xs text-muted-foreground">类型</Label>
-      <Select :model-value="auth.type" @update:model-value="setType">
-        <SelectTrigger class="w-56">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="item in AUTH_TYPES" :key="item.value" :value="item.value">
-            {{ item.label }}
-          </SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
+    <Segmented :model-value="auth.type" :segments="AUTH_TYPES" @update:model-value="setType" />
 
     <div v-if="auth.type === 'basic'" class="grid grid-cols-2 gap-2">
       <Input
@@ -99,19 +88,21 @@ function setLocation(value: unknown): void {
       </div>
       <div class="flex items-center gap-2">
         <Label class="text-xs text-muted-foreground">添加到</Label>
-        <Select :model-value="auth.apiKeyIn" @update:model-value="setLocation">
-          <SelectTrigger class="w-36">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="header">Header</SelectItem>
-            <SelectItem value="query">Query</SelectItem>
-          </SelectContent>
-        </Select>
+        <Segmented
+          :model-value="auth.apiKeyIn"
+          size="sm"
+          :segments="AUTH_LOCATIONS"
+          @update:model-value="setLocation"
+        />
       </div>
     </div>
 
-    <p v-else class="py-6 text-center text-xs text-muted-foreground">未启用认证</p>
+    <EmptyState
+      v-else
+      :icon="ShieldOff"
+      title="未启用认证"
+      description="选择上方的认证类型以添加凭据"
+    />
 
     <p class="text-xs text-muted-foreground">
       认证信息以明文保存于本地数据库，请勿在共享设备上存放敏感凭据。

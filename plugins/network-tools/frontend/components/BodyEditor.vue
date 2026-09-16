@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import Segmented from '@/components/native/Segmented.vue';
 import KeyValueEditor from './KeyValueEditor.vue';
 import {
   multipartRow,
@@ -93,16 +94,12 @@ async function pickBinary(): Promise<void> {
         </SelectContent>
       </Select>
       <template v-if="body.type === 'raw'">
-        <Select :model-value="body.rawLang" @update:model-value="setRawLang">
-          <SelectTrigger class="w-28">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem v-for="item in RAW_LANGS" :key="item.value" :value="item.value">
-              {{ item.label }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <Segmented
+          :model-value="body.rawLang"
+          size="sm"
+          :segments="RAW_LANGS"
+          @update:model-value="setRawLang"
+        />
       </template>
     </div>
 
@@ -165,16 +162,23 @@ async function pickBinary(): Promise<void> {
             {{ row.filePath || '未选择文件' }}
           </span>
           <Button variant="outline" size="sm" type="button" @click="pickFile(row)">
-            <FilePlus2 class="size-4" />
+            <FilePlus2 class="mr-1 size-3.5" />
             选择
           </Button>
         </template>
-        <Button variant="ghost" size="icon-sm" type="button" @click="removeMultipart(row.id)">
-          <Trash2 class="size-4" />
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          type="button"
+          title="删除"
+          aria-label="删除"
+          @click="removeMultipart(row.id)"
+        >
+          <Trash2 class="size-3.5" />
         </Button>
       </div>
       <Button variant="outline" size="sm" type="button" class="w-full" @click="addMultipart">
-        <Plus class="size-4" />
+        <Plus class="mr-1 size-3.5" />
         添加字段
       </Button>
     </div>
@@ -182,7 +186,7 @@ async function pickBinary(): Promise<void> {
     <div v-else-if="body.type === 'binary'" class="space-y-2">
       <div class="flex items-center gap-2">
         <Button variant="outline" size="sm" type="button" @click="pickBinary">
-          <FilePlus2 class="size-4" />
+          <FilePlus2 class="mr-1 size-3.5" />
           选择文件
         </Button>
         <span class="truncate font-mono text-xs text-muted-foreground">

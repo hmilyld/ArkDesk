@@ -116,7 +116,7 @@ Web 层可在普通浏览器里渲染（预览桥模拟 Tauri API），因此可
 ```bash
 npx vite                                    # 起前端（1420）
 node scripts/design-shot.mjs \
-  --url "/tool/json-table" --out /tmp/a.png \
+  --url "/tool/hello-table" --out /tmp/a.png \
   --theme dark --font 14 [--platform win] \
   [--eval "document.querySelector('button').click()"]   # 可先点击/输入再截图
 ```

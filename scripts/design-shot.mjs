@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 设计走查截图（本地层工具，fork-owned）。
+ * 设计走查截图（开发期工具）。
  *
  * 用无头 Chromium（Edge/Chrome）+ CDP 打开 vite dev 的页面，可选执行一段 JS
  * （点击、输入、聚焦等）后再截图，供设计走查与规范核对使用。
@@ -8,8 +8,8 @@
  * 前置：`npx vite` 已在 1420 端口运行（浏览器预览桥会自动模拟 Tauri API）。
  *
  * 用法：
- *   node scripts/local/design-shot.mjs --url "#/tool/json-table" --out /tmp/a.png
- *   node scripts/local/design-shot.mjs --url "#/settings" --out b.png \
+ *   node scripts/design-shot.mjs --url "#/tool/hello-table" --out /tmp/a.png
+ *   node scripts/design-shot.mjs --url "#/settings" --out b.png \
  *     --eval "document.querySelectorAll('[role=tab]')[2].click()"
  *   --width 1512 --height 982 --wait 900 --theme dark --font 14 --platform win
  */
@@ -52,7 +52,8 @@ for (const key of ['theme', 'font', 'accent', 'platform']) {
   const value = arg(key);
   if (value) query.set(key, value);
 }
-const target = `${base}/${hash}${query.toString() ? `?${query}` : ''}`;
+// 参数必须放在 hash 之前：路由是 hash 模式，`#/x?theme=…` 会让 location.search 为空
+const target = `${base}/${query.toString() ? `?${query}` : ''}${hash}`;
 
 const cdpPort = 9200 + (process.pid % 400);
 const child = spawn(

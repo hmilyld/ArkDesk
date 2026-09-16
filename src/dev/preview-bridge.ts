@@ -10,6 +10,8 @@
  *
  * 生产构建与本机 Tauri 运行时都不会进入此模块分支（`import.meta.env.DEV` + 无 internals）。
  */
+import { STORAGE_KEYS } from '@/core/theme';
+
 const globalWindow = window as unknown as Record<string, unknown>;
 
 if (import.meta.env.DEV && !globalWindow.__TAURI_INTERNALS__) {
@@ -19,9 +21,9 @@ if (import.meta.env.DEV && !globalWindow.__TAURI_INTERNALS__) {
   const accent = params.get('accent');
   const platform = params.get('platform');
 
-  if (theme) localStorage.setItem('arkdesk.theme', theme);
-  if (font) localStorage.setItem('arkdesk.fontSize', font);
-  if (accent) localStorage.setItem('arkdesk.accent', accent);
+  if (theme) localStorage.setItem(STORAGE_KEYS.theme, theme);
+  if (font) localStorage.setItem(STORAGE_KEYS.fontSize, font);
+  if (accent) localStorage.setItem(STORAGE_KEYS.accent, accent);
   if (platform === 'win') document.documentElement.setAttribute('data-platform', 'win');
 
   type Callback = (payload: unknown) => void;
@@ -32,7 +34,7 @@ if (import.meta.env.DEV && !globalWindow.__TAURI_INTERNALS__) {
   let nextResourceId = 1;
 
   function storeKey(path: string): string {
-    return `arkdesk.preview.store:${path}`;
+    return `preview.store:${path}`;
   }
 
   function loadStore(rid: number): { path: string; data: Record<string, unknown> } {

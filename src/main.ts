@@ -2,6 +2,8 @@
  * 应用启动引导，固定顺序：
  * 日志 → 异常处理 → Pinia → 设置加载 → 主题 → 插件注册 → 路由 → 挂载
  */
+// 浏览器预览桥必须在其余模块之前安装（仅 dev + 非 Tauri 环境生效，见 src/dev/preview-bridge.ts）
+import '@/dev/preview-bridge';
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import { getCurrentWindow } from '@tauri-apps/api/window';

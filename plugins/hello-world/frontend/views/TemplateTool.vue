@@ -8,7 +8,9 @@ import { ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { PackageOpen } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import EmptyState from '@/components/native/EmptyState.vue';
+import ErrorState from '@/components/native/ErrorState.vue';
+import LoadingState from '@/components/native/LoadingState.vue';
 import Panel from '@/components/tool/Panel.vue';
 import ToolShell from '@/components/tool/ToolShell.vue';
 
@@ -77,25 +79,21 @@ function reload(): void {
         <!-- 空态：图标 + 主文案 + 动作（Panel 内不再套虚线卡片；满幅页面可用 border-dashed 框住） -->
         <Panel title="空态">
           <p class="text-xs text-muted-foreground">无数据时给出下一步动作，禁止留白</p>
-          <div class="flex flex-col items-center gap-2 py-8">
-            <PackageOpen class="size-8 text-muted-foreground/60" />
-            <p class="text-sm font-medium">还没有任何记录</p>
-            <p class="text-xs text-muted-foreground">从动作区开始你的第一步</p>
-            <Button variant="outline" size="sm" class="mt-1" @click="toast.info('演示：新建记录')">
+          <EmptyState
+            :icon="PackageOpen"
+            title="还没有任何记录"
+            description="从动作区开始你的第一步"
+          >
+            <Button variant="outline" size="sm" @click="toast.info('演示：新建记录')">
               新建记录
             </Button>
-          </div>
+          </EmptyState>
         </Panel>
 
         <!-- 加载态：Skeleton 骨架屏（结构仿真实列表） -->
         <Panel title="加载态">
           <p class="text-xs text-muted-foreground">骨架屏占位，结构与真实内容一致</p>
-          <div class="space-y-2">
-            <Skeleton class="h-4 w-1/3" />
-            <Skeleton class="h-4 w-2/3" />
-            <Skeleton class="h-4 w-1/2" />
-            <Skeleton class="h-4 w-3/4" />
-          </div>
+          <LoadingState :rows="4" />
         </Panel>
 
         <!-- 错误态：描述 + 重试动作（真实场景由 ToolErrorBoundary 兜底，此处为业务级错误示范） -->
@@ -103,18 +101,11 @@ function reload(): void {
           <p class="text-xs text-muted-foreground">
             业务级错误就地展示（组件级异常由 ToolErrorBoundary 统一兜底）
           </p>
-          <div
+          <ErrorState
             v-if="simulateError"
-            class="flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2"
-          >
-            <div>
-              <p class="text-xs font-medium text-destructive">数据加载失败</p>
-              <p class="text-xs text-muted-foreground">[DB_ERROR] 查询超时，请检查数据库文件</p>
-            </div>
-            <Button variant="outline" size="sm" :disabled="reloading" @click="reload">
-              {{ reloading ? '重试中…' : '重试' }}
-            </Button>
-          </div>
+            :message="reloading ? '重试中…' : '查询超时，请检查数据库文件（DB_ERROR）'"
+            :on-retry="reloading ? undefined : reload"
+          />
           <Button v-else variant="outline" size="sm" @click="simulateError = true">
             显示错误态示例
           </Button>

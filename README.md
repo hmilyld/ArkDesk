@@ -1,13 +1,20 @@
-# PocketArk
+# ArkDesk
 
-可复用的**桌面应用基础框架**（Tauri 2 + Vue 3 + TypeScript + Tailwind 4）。
-核心设计目标：**新增一个工具的成本尽可能低**——复制模板或 `pnpm create-plugin` 生成骨架，
-即可获得完整的导航、路由、启停管理、设置面板、数据库、日志、错误处理、系统集成与在线更新能力；
-框架代码（`src/core`、`src-tauri/src`）只引用、不修改。
+自用桌面工具箱（Mac / Windows），基于 **PocketArk 基础框架**（Tauri 2 + Vue 3 + TypeScript + Tailwind 4）。
 
-仓库本身是「框架 + 示例」：`_template`（脚手架）、`hello-world`（教学示例）、`system`（数据维护）。
-想用它做你自己的软件：clone 后执行 `pnpm scaffold`，按 [START.md](START.md) 走完即可；
-叠加个人工具时把内容放进「本地层」（见 [LOCAL.md](LOCAL.md)），以便随上游 base 同步更新。
+## 内置工具
+
+| 分组     | 插件               | 工具                                                          |
+| -------- | ------------------ | ------------------------------------------------------------- |
+| 常用工具 | `daily-tools`      | 文件转换（→ Markdown）、图片 OCR（PaddleOCR MNN）、**加解密** |
+| 投标     | `tender-optimizer` | 招标二轮报价蒙特卡洛测算、测算历史                            |
+| 内容创作 | `text2video`       | 文章 → 竖屏滚动短视频（含草稿箱、处理记录）                   |
+| 系统工具 | `system`           | 数据维护（浏览表结构、编辑数据）                              |
+
+> 各插件的功能说明见 `plugins/<id>/README.md`，开发约定见 `plugins/<id>/AGENTS.md`（项目级文档只做索引）。
+
+> 本仓库派生自上游 [PocketArk](https://github.com/hmilyld/PocketArk)：框架代码通过 `git remote` 的
+> `upstream` 同步更新，个人内容（插件、依赖、资源、密钥）集中在「本地层」——见 [LOCAL.md](LOCAL.md)。
 
 ## 技术栈
 
@@ -34,8 +41,10 @@ pnpm test           # vitest 单测
 依赖：Rust、Node 20+、pnpm。macOS 需 Xcode Command Line Tools；Linux 需
 webkit2gtk 等系统库（见 [Tauri prerequisites](https://tauri.app/start/prerequisites)）。
 
-> base 本身不包含任何内置资源；若你的 fork 叠加了需要字体/OCR 等资源的工具，
-> 参见仓库根的 `LOCAL.md`（本地层说明）。
+> 首次运行会按需下载资源（中文字体 ~32MB、OCR 模型 ~15MB）到 `src-tauri/local-resources/`；
+> 大文件不入库，仅许可（`fonts/OFL.txt`）与 charset（`ocr-models/ppocr_keys_v6_small.txt`）文本入库。
+> `pnpm assets` 可单独预取；国内网络与镜像设置，以及 OCR 依赖（macOS `CXXFLAGS` / Windows libclang）
+> 见 [LOCAL.md](LOCAL.md)。
 
 ## 应用在线更新
 
@@ -46,26 +55,26 @@ webkit2gtk 等系统库（见 [Tauri prerequisites](https://tauri.app/start/prer
 > 签名公钥固化在 `tauri.conf.json > plugins.updater.pubkey`（信任根，不可由界面修改）；
 > 界面只能填服务器地址，且仅接受 **HTTPS**。更新选择为严格 semver 比较（远端版本 >
 > 本地版本才提示），因此**版本号必须单调递增**。
->
-> base 仓库默认 `bundle.createUpdaterArtifacts: false`，因此**无需签名密钥即可 `tauri build`**。
-> 在你自己的 app 中启用更新时：生成密钥 → 将公钥填入 `pubkey` → 开启
-> `createUpdaterArtifacts`，再按 [RELEASE.md](RELEASE.md) 发布。
 
 ### 发布
 
-版本唯一事实源是 `tauri.conf.json > version`，发版流程：
+推 tag 或手动触发 `.github/workflows/release.yml`（调用 base 的可复用流程
+`release-reusable.yml`）：`macos-14`(arm64) + `windows-latest`(x64) 构建 → minisign 签名 →
+生成统一 `latest.json` → 归档 GitHub Release。
 
 ```bash
 pnpm version:bump 0.2.0        # 同步 tauri.conf.json / Cargo.toml / package.json
 # 在 src/content/changelog.md 增加一段 ## [0.2.0]
-git tag v0.2.0 && git push --tags   # 触发发布 workflow（或 Actions 手动运行）
+git tag v0.2.0 && git push --tags   # 触发发布（或 Actions 手动运行）
 ```
 
-- base 提供**可复用发布流程** `.github/workflows/release-reusable.yml`
-  （mac arm64 + win x64 → 签名 → 生成 `latest.json` → 归档 GitHub Release）。
-- fork 只需新增一个 caller 并配置密钥/变量，即可获得同样的自动发布能力。
+ArkDesk 已配置：
 
-> **完整流程、服务器要求、`latest.json` 规范、workflow 参考与故障排查见
+- 仓库变量 `UPDATE_BASE_URL`（`https://arkdesk.hmilyld.com`）
+- 仓库密钥 `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+- 发布前自动预取资源：`npm run fonts && npm run ocr-models`（CI 默认跳过下载）
+
+> **完整流程（服务器要求、`latest.json` 规范、手动发布、workflow 参考、故障排查）见
 > [RELEASE.md](RELEASE.md)。**
 
 ## 目录结构
@@ -101,16 +110,20 @@ src/
 └── stores/            # Pinia（全局设置）
 
 plugins/               # ★ 你的工具都在这里（每个目录一个插件，前后端同处）
-├── _template/         #   新插件模板（复制后按目录内 README.md 改写；_ 开头不注册）
+├── _template/         #   新插件模板（复制后按目录内 README.md / AGENTS.md 改写；_ 开头不注册）
 │   ├── plugin.json    #     清单：唯一事实源（元数据/工具项/入口声明）
 │   ├── frontend/      #     前端：views/ settings/ components/ composables/ schema.ts setup.ts shared.ts
 │   └── backend/       #     后端：mod.rs（#[tauri::command] 命令）+ migrations.rs（可选）
-├── hello-world/       #   示例插件（多功能插件样板）
-└── system/            #   系统工具（数据维护，前端-only）
+├── hello-world/       #   示例插件（多功能插件样板；README.md + AGENTS.md）
+├── system/            #   系统工具（数据维护，前端-only）
+├── daily-tools/       #   常用工具（文件转换 + 图片 OCR + 加解密；README.md + AGENTS.md）
+├── tender-optimizer/  #   投标报价测算（README.md + AGENTS.md）
+└── text2video/        #   图文视频工具（README.md + AGENTS.md）
 
 src-tauri/
 ├── build.rs           # 扫描 plugins/ 生成命令注册与迁移聚合
 ├── framework-commands.json  # 框架命令清单（单一事实源，供 build.rs 与前端命令名生成）
+├── local-resources/   # ★ 本地层资源（字体 / OCR 模型；不入库）
 └── src/
     ├── lib.rs         # 组装入口：插件注册 / 托盘 / 菜单 / 单实例 / 关窗行为
     ├── error.rs       # AppError（所有命令返回 Result<T, AppError>）
@@ -127,7 +140,8 @@ src-tauri/
     └── plugins/mod.rs # include 构建期生成的插件注册（勿手改）
 
 scripts/               # scaffold / create-plugin / gen-icons / gen-commands / prepare / bump-version / release
-LOCAL.md               # 本地层说明（fork 专属；base 为约定模板）
+  local/               # ★ 本地层脚本（资源下载；CI 跳过）
+LOCAL.md               # ★ 本地层说明（个人插件/依赖/资源/发布）
 ```
 
 ## 扩展开发指南

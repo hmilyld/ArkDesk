@@ -115,7 +115,7 @@ const pageNumbers = computed(() =>
     </div>
 
     <template v-else>
-      <div class="min-h-0 flex-1 overflow-y-auto rounded-lg border border-border bg-card">
+      <div class="min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
         <Table class="table-fixed">
           <TableHeader>
             <TableRow class="hover:bg-transparent">

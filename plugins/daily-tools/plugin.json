@@ -1,0 +1,37 @@
+{
+  "id": "daily-tools",
+  "name": "常用工具",
+  "description": "日常文件转换、图片文字识别与加解密",
+  "group": "常用工具",
+  "order": 10,
+  "tools": [
+    {
+      "id": "file-converter",
+      "name": "文件转换",
+      "description": "将常见文档格式转换为 Markdown",
+      "icon": "FileDown",
+      "entry": "frontend/views/FileConverter.vue"
+    },
+    {
+      "id": "image-ocr",
+      "name": "图片 OCR",
+      "description": "识别图片中的文字",
+      "icon": "ScanText",
+      "entry": "frontend/views/ImageOcr.vue"
+    },
+    {
+      "id": "crypto",
+      "name": "加解密",
+      "description": "哈希、编码、对称/非对称与国密加解密",
+      "icon": "ShieldCheck",
+      "entry": "frontend/views/CryptoTool.vue"
+    },
+    {
+      "id": "json-table",
+      "name": "JSON 表格",
+      "description": "JSON 与 Markdown / CSV / Excel 表格互转",
+      "icon": "Table",
+      "entry": "frontend/views/JsonTable.vue"
+    }
+  ]
+}

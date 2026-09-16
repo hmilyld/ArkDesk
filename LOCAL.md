@@ -1,41 +1,72 @@
 # 本地层（fork 专属）
 
-PocketArk 框架自身**不含任何个人工具、不下载任何资源**。当你从本仓库 fork 出自己的
-软件时，个人内容应集中在「本地层」，以便随上游 base 同步更新。base 仓库只保留本文件
-作为约定说明；你的 fork 可将其替换为实际内容。
+本仓库在 **ArkDesk base** 之上叠加了自用工具。框架文件不做改动；个人内容集中在
+「本地层」，以便从上游 base 同步更新（见文末）。base 只保留通用模板，本文件为 ArkDesk 实际内容。
 
-## 放哪里
+## 个人插件
 
-| 内容                    | 位置                                                                           |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| 个人插件（前后端同处）  | `plugins/<id>/`（构建期自动注册，无需手动登记）                                |
-| 个人 Rust 依赖          | `src-tauri/Cargo.toml` 末尾 `# ── local plugin deps（fork-owned）──` 段        |
-| 个人资产（字体/模型/…） | `src-tauri/local-resources/`                                                   |
-| 个人下载/构建脚本       | `scripts/local/`（`scripts/prepare.mjs` 自动调用 `scripts/local/prepare.mjs`） |
-| 浏览器侧额外权限        | `src-tauri/capabilities/local.json`（Tauri 自动发现；base 无此文件）           |
+- `plugins/daily-tools`：文件转换 + 图片 OCR + 加解密工具
+- `plugins/tender-optimizer`：投标报价测算（蒙特卡洛）
+- `plugins/text2video`：图文生成竖屏滚动短视频
+- `plugins/network-tools`：接口测试 + 本地 MITM 请求拦截（hudsucker）
 
-## 资源与构建
+（这些目录即全部个人内容，删除目录即彻底移除；后端命令/迁移为构建期自动注册。）
 
-- 资产放 `src-tauri/local-resources/`：`bundle.resources` 已预置 `local-resources/**/*`，
-  无需改 `tauri.conf.json`。
-- 资源下载写在 `scripts/local/prepare.mjs`：`tauri dev` / `tauri build` 前由
-  `scripts/prepare.mjs` 自动执行；CI 环境建议自行跳过下载。
-- 如需 C++ 依赖（bindgen / cc）：macOS 自行导出 `CXXFLAGS`（例如
-  `export CXXFLAGS="-std=c++14 -I$(xcrun --sdk macosx --show-sdk-path)/usr/include/c++/v1"`）；
-  Windows 需安装 LLVM（`LIBCLANG_PATH`）。
+## Rust 依赖（fork-owned）
 
-## 同步 base
+`src-tauri/Cargo.toml` 末尾的 `local plugin deps` 段与两张 `local plugin target deps`
+表：`calamine` / `rust_xlsxwriter` / `rand` / `rand_distr` / `anytomd` / `lopdf` /
+`ab_glyph` / `scraper` / `regex` / `opener` / `ocr-rs`。
+
+请求拦截（`plugins/network-tools`）另引入：`hudsucker`（MITM 代理）、`http-body-util`、
+`flate2` / `brotli` / `zstd`（捕获体解压）。注意：hudsucker 的 `tokio-rustls` 默认特性会
+**间接引入 `aws-lc-rs`/`aws-lc-sys`**（即使我们运行时显式使用 `ring` provider），其编译在
+macOS 会自动走可移植构建；Windows 构建可能需要 CMake/NASM（与 `ocr-rs` 一样属本地层
+工具链范畴，见下）。
+
+加解密工具另引入的 RustCrypto / `gmcrypto-core` 依赖同属该段，清单与取舍见
+[`plugins/daily-tools/AGENTS.md`](plugins/daily-tools/AGENTS.md#依赖fork-本地层)。
+
+## 资源（字体 / OCR 模型）
+
+个人工具使用的字体与 OCR 模型放在 `src-tauri/local-resources/`（`*.otf` / `*.mnn` 二进制不入库；
+许可 `fonts/OFL.txt` 与 charset `ocr-models/ppocr_keys_v6_small.txt` 文本入库）。
+
+- 下载：`pnpm assets`（= `scripts/local/prepare.mjs`）；也可 `pnpm fonts` / `pnpm ocr-models` 单独下载
+- `tauri dev` / `tauri build` 前由 `scripts/prepare.mjs` 自动调用（`CI` 环境默认跳过）
+- **发布构建**须显式预取（见 `.github/workflows/release.yml` 的 `pre-build`）：
+  `npm run fonts && npm run ocr-models`
+- 国内网络：默认经 `https://gh.javaing.com/` 代理；可用 `GITHUB_PROXY`（置空=直连）、
+  `FONT_SOURCE_BASE` / `OCR_MODEL_SOURCE_BASE`（镜像）覆盖
+- 来源固定：字体 `notofonts/noto-cjk@Sans2.004`；OCR `zibo-chen/rust-paddle-ocr@v2.4.1`
+- 校验值在 `scripts/local/fetch-*.mjs`；**升级版本必须同步 SHA-256**
+
+## 编译系统依赖（ocr-rs）
+
+- **macOS**：`cc-rs` 找不到 SDK 中的 C++ 头文件时，在 `~/.zshrc` 设置
+  `export CXXFLAGS="-std=c++14 -I$(xcrun --sdk macosx --show-sdk-path)/usr/include/c++/v1"`
+  （等价 `pnpm env:cpp`）
+- **Windows**：`bindgen` 需要 libclang → `winget install LLVM.LLVM` 后重启终端
+  （`LIBCLANG_PATH` 自动设置；或 `set LIBCLANG_PATH=C:\Program Files\LLVM\bin`）
+- CI 与发布 workflow 已内置相应步骤（发布时经 `native-cpp: true` 触发），无需改 CI
+
+## 从 base 同步更新
 
 ```bash
-git remote add upstream <base 地址>
+git remote add upstream <base 仓库地址>   # 首次
 git fetch upstream
 git merge upstream/main
 ```
 
-个人内容集中在上述位置，合并一般无冲突；`Cargo.lock` 冲突时执行 `cargo build` 重建。
+个人内容集中在上述位置；合并一般无冲突。`Cargo.lock`（含个人依赖）如冲突，执行
+`cargo build` 重新生成即可。
 
-## 发布
+## 发布（自用）
 
-若启用在线更新：生成自己的密钥（`pnpm tauri signer generate`），将公钥填入
-`tauri.conf.json > plugins.updater.pubkey`，开启 `bundle.createUpdaterArtifacts: true`，
-带签名构建，并用 `pnpm release` 生成清单（详见 [RELEASE.md](RELEASE.md)）。
+完整流程见 [RELEASE.md](RELEASE.md)。要点：
+
+- **自动（推荐）**：推送 `vX.Y.Z` tag 或手动运行 `.github/workflows/release.yml`；需配仓库
+  Variable `UPDATE_BASE_URL` 与 Secrets `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。
+- **手动**：生成密钥 → 填 `plugins.updater.pubkey`（ArkDesk 已开启 `createUpdaterArtifacts`）→
+  `pnpm assets && TAURI_SIGNING_PRIVATE_KEY_PATH=~/.tauri/arkdesk.key pnpm tauri build` →
+  `pnpm release -- --base-url <更新服务器地址> --changelog src/content/changelog.md`。

@@ -285,7 +285,7 @@ onActivated(loadTasks);
         点右上角「填充演示数据」快速造一批，或手动新增
       </p>
     </div>
-    <div v-else class="overflow-hidden rounded-lg border border-border bg-card">
+    <div v-else class="overflow-hidden rounded-lg border bg-card">
       <Table>
         <TableHeader>
           <TableRow class="hover:bg-transparent">

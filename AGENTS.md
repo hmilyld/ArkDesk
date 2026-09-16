@@ -1,4 +1,4 @@
-# PocketArk — AGENTS.md
+# ArkDesk — AGENTS.md
 
 Tauri 2 + Vue 3 + TypeScript + Tailwind 4 的桌面工具集合（Mac / Windows）。
 定位为**基础项目**：新增一个工具的成本尽量低，扩展走插件约定，框架代码（`src/core`、`src-tauri/src` 的 db/http/tray/updater/menu/tasks/open/…）只引用、不修改。
@@ -16,6 +16,7 @@ pnpm lint           # eslint（改前端后必须跑）
 pnpm lint:fix
 pnpm format         # prettier --write .（全量）
 pnpm format:check
+pnpm env:cpp        # 导出 macOS CXXFLAGS（本地层 ocr-rs 编译用，见 LOCAL.md）
 pnpm lint:rs        # cargo clippy -D warnings（改 Rust 后必须跑）
 pnpm fmt:rs         # cargo fmt
 pnpm test:rs        # cargo test（http 冒烟测试默认 ignore，需网络）
@@ -29,6 +30,31 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 
 约定：改前端跑 `pnpm lint && pnpm build`；改 Rust 跑 `pnpm lint:rs && pnpm fmt:rs && pnpm test:rs`。
 
+## 双仓库协作（上游优先）
+
+本仓库（ArkDesk）是上游框架仓库 **PocketArk** 的 fork，两个仓库所有权同一人：
+
+- `upstream` = `git@github.com:hmilyld/PocketArk.git`（框架 base）
+- `origin` = `git@github.com:hmilyld/ArkDesk.git`（本项目）
+
+**改动归属判定**：框架代码（`src/core`、`src-tauri/src` 的 db/http/tray/updater/menu/tasks/open/…、
+`scripts/`、CI、框架能力文档等）属**上游**；`plugins/<id>/`、本地层（`LOCAL.md` 所述）属**项目**。
+
+**若需改动上游框架代码，一律走「上游优先」流程，禁止在 ArkDesk 直接提交框架改动**（会产生分叉、后续
+merge 冲突）：
+
+1. 在 PocketArk 本地仓库新建分支（如 `fix/xxx`）→ 提交 → push。
+2. `gh pr create` 提 PR（base `main`）；CI（前端 lint/test/build）必须通过。
+3. 合并 PR 到 PocketArk `main`。
+4. 回到 ArkDesk：`git fetch upstream && git merge upstream/main`（或 rebase），使框架改动随上游流入。
+
+前提：ArkDesk 工作区必须先 clean（框架改动不要以「未提交状态」与 merge 并存，否则 merge 被拒）。因此
+调整上游文件的正确姿势是：**先在 PocketArk 改并合并，再在 ArkDesk merge 拿下来**，而不是在 ArkDesk
+就地改。
+
+本地 PocketArk 副本默认位于 `../PocketArk`。若涉及需要同时改框架与插件的功能，拆成两类提交：框架部分
+走上述上游 PR，插件部分留在 ArkDesk。
+
 ## 本地层（fork 专属）
 
 框架自身**不下载任何资源、不含个人工具**。若你的 fork 叠加了个人工具（字体/OCR 等
@@ -37,6 +63,9 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 `Cargo.toml` 的 `local plugin deps` 段、`capabilities/local.json`（如有）。
 
 ## 插件扩展（最常见任务）
+
+> 每个插件的**本地约定**放在 `plugins/<id>/AGENTS.md`，**功能说明**放在 `plugins/<id>/README.md`；
+> 本文档只保留框架级约定与索引，插件细节请查阅对应插件目录，避免项目级文档膨胀。
 
 新增工具 = `pnpm create-plugin`（交互式生成骨架，推荐），或复制 `plugins/_template/` → `plugins/<plugin-id>/`，改写 `plugin.json`（唯一事实源），实现 `frontend/views/*.vue`。**前端与后端均构建期自动注册**，无需任何手动登记。
 
@@ -69,7 +98,7 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 - 设置 key：`updateEnabled` / `updateServerUrl` / `updateAutoCheck` / `updateLastCheckAt`。
 - 版本唯一事实源 = `tauri.conf.json > version`；发版前 `pnpm version:bump x.y.z` 同步三处。
 - 更新选择为严格 semver（远端 > 本地），**版本号必须单调递增**；清单 `version` 须与构建版本一致。
-- 私钥（`~/.tauri/pocketark.key`）不入库；本地构建用 `TAURI_SIGNING_PRIVATE_KEY_PATH`，CI 用 Secrets `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。
+- 私钥（`~/.tauri/arkdesk.key`）不入库；本地构建用 `TAURI_SIGNING_PRIVATE_KEY_PATH`，CI 用 Secrets `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。
 - 自动发布：base 提供 `.github/workflows/release-reusable.yml`（可复用），fork 加一个 caller；完整流程见 [RELEASE.md](RELEASE.md)。
 
 ## 框架能力索引
@@ -114,14 +143,18 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 - **HTTP**：走 `@/core/http`（Rust reqwest，无 CORS），禁止 webview 内 `fetch` 采集。简单/采集请求用 `getJson/postJson/request`；需要自定义重定向、SSL 校验、超时、cookie 模式、multipart 上传、二进制响应或取消时用 `http.send()`（Rust `http_send`，与采集用全局 Client 隔离）。
 - **日志**：用 `@/core/logger` 的 `logger` 或插件 `ctx.logger`，禁止裸 `println!`。
 - **图标**：只允许 `@lucide/vue`（`lucide-vue-next` 已弃用，勿再引入）。
+- **样式**：shadcn-vue 语义色（`bg-primary` 等），禁止硬编码色值；已有 `text-success/warning/info`、`bg-console` 等 token。
 - **设计规范（唯一事实源）**：所有 UI 视觉与交互遵循 `DESIGN.md`（共享核心：token、组件语义、三态与反馈、文案、反例清单）+
-  `DESIGN-macos.md` / `DESIGN-windows.md`（平台层）+ `DESIGN-appendix.md`（逐控件 Do/Don't）。视觉取值只能来自 token；
+  `DESIGN-macos.md` / `DESIGN-windows.md`（平台层）+ `DESIGN-appendix.md`（逐控件 Do/Don't 与迁移映射）。视觉取值只能来自 token；
   机器校验由 `pnpm lint` 里的 `scripts/lint-design.mjs` 承担（R1 旧卡片配方 / R2 任意透明度表面 / R3 非浮层 rounded-xl /
-  R4 写死控件尺寸 / R5 动效压制 / R6 焦点环表达式），`pnpm lint:design` 为严格模式。**平台差异只允许落在**：
-  材质与回退、窗口壳、菜单与快捷键呈现、对话框按钮语义、焦点视觉、圆角档（由 `[data-platform]` 覆盖 token 实现）。
+  R4 写死控件尺寸 / R5 动效压制 / R6 焦点环表达式）。**当前存量已清零**，`pnpm lint` 起即为硬门禁；
+  `pnpm lint:design` 为严格模式（CI 可直接用）。
+  **平台差异只允许落在**：材质与回退、窗口壳、菜单与快捷键呈现、对话框按钮语义、焦点视觉、圆角档（由 `[data-platform]` 覆盖 token 实现）。
+- **设计改造推进计划**：进行中的改造状态、上游同步步骤与剩余批次见 `MIGRATION.md`（fork 专属交接文件）。
+- **设计迁移风险登记**：Windows 平台层（`DESIGN-windows.md`）**尚未做视觉验证**（开发机为 macOS）——
+  首次在 Windows 验证前，涉及 Windows 的改动属"静态正确"，需按该文件 §11 待办逐项确认并回填。
 - **设计走查**：`src/dev/preview-bridge.ts`（仅 dev + 非 Tauri 生效）让 Web 层可在浏览器渲染，
   配合 `scripts/design-shot.mjs` 可脚本化截图核对规范（用法见 `DESIGN-appendix.md §3.5`）。
-- **样式**：shadcn-vue 语义色（`bg-primary` 等），禁止硬编码色值；已有 `text-success/warning/info`、`bg-console` 等 token。
 - **工具页模块**：页面里每个功能模块（设置 / 输入 / 输出 / 结果 / 列表）一律用 `@/components/tool/Panel` 包裹（外框 + 头部条标题 + 右上角动作 + 正文），不要在页面上裸露模块，也不要在 Panel 内嵌套卡片——预览、表格等组件自身不带外框，外框交给 Panel。头部标题用 `text-xs font-medium text-muted-foreground`，动作按钮 `size="sm"`、图标 `size-3.5`；正文默认 `space-y-3 p-4`（满幅场景用 `body-class` 覆盖）；错误条用 `rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive`。
 - **设置页 UI**：系统设置页与所有插件设置面板统一用 `@/components/settings` 的 `SettingsSection` / `SettingsRow` / `SettingsField`（单一事实源，视觉随系统设置页），勿自造小节标题与卡片样式；密集数值字段在 `SettingsSection` 内用 grid + `SettingsField`。
 - **代码风格**：prettier 单引号、100 列、尾逗号 es5；提交前跑 `pnpm format`。
@@ -167,7 +200,7 @@ src/components/ui/   # shadcn-vue 生成组件（CLI 管理）
 src/content/         # 关于/更新日志 Markdown（设置页读取）
 scripts/             # scaffold / create-plugin / gen-icons / gen-commands / prepare / bump-version / release
   local/             # ★本地层脚本（fork-owned；base 无）：资源下载、CI 跳过
-plugins/<id>/        # ★工具插件（前后端同处）：plugin.json + README.md
+plugins/<id>/        # ★工具插件（前后端同处）：plugin.json + README.md + AGENTS.md
   frontend/          #   views/ settings/ components/ composables/ schema.ts setup.ts shared.ts
   backend/           #   mod.rs（#[tauri::command] 命令）+ migrations.rs + 其余 .rs / 资源
 src/layouts/         # 布局壳（标题栏/侧栏/错误边界/设置页）

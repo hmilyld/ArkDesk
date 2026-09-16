@@ -238,10 +238,7 @@ onMounted(load);
           >
             暂无数据
           </p>
-          <div
-            v-else
-            class="divide-y divide-border/60 overflow-hidden rounded-lg border border-border bg-card"
-          >
+          <div v-else class="divide-y divide-border/60 overflow-hidden rounded-lg border bg-card">
             <div v-for="item in items" :key="item.id" class="flex items-center gap-3 px-3 py-2">
               <span class="w-10 shrink-0 font-mono text-xs text-muted-foreground">{{
                 item.id
@@ -299,7 +296,7 @@ onMounted(load);
               {{ pickedSize }} 字节
             </span>
           </div>
-          <div v-if="pickedPath" class="space-y-2 rounded-lg border border-border bg-card p-3">
+          <div v-if="pickedPath" class="space-y-2 rounded-lg border bg-card p-3">
             <p class="break-all font-mono text-xs text-muted-foreground">{{ pickedPath }}</p>
             <img
               v-if="pickedPreview"

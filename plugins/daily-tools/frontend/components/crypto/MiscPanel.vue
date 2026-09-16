@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import Panel from '@/components/tool/Panel.vue';
 import {
   Select,
   SelectContent,
@@ -90,8 +91,7 @@ async function unescapeUnicode(): Promise<void> {
   <div class="grid w-full grid-cols-12 gap-4">
     <div class="col-span-12 space-y-4 lg:col-span-8 lg:col-start-3">
       <!-- UUID -->
-      <div class="space-y-3 rounded-lg border bg-card p-4">
-        <p class="text-sm font-medium">UUID 生成</p>
+      <Panel title="UUID 生成">
         <div class="flex flex-wrap items-end gap-3">
           <div class="space-y-1.5">
             <Label>版本</Label>
@@ -114,11 +114,10 @@ async function unescapeUnicode(): Promise<void> {
         </div>
         <ResultBox :value="uuidResult" label="UUID" max-height="180px" />
         <p v-if="uuidError" class="text-sm text-destructive">{{ uuidError }}</p>
-      </div>
+      </Panel>
 
       <!-- 时间戳 -->
-      <div class="space-y-3 rounded-lg border bg-card p-4">
-        <p class="text-sm font-medium">时间戳转换</p>
+      <Panel title="时间戳转换">
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
           <div class="space-y-1.5 sm:col-span-3">
             <Label>输入</Label>
@@ -147,11 +146,10 @@ async function unescapeUnicode(): Promise<void> {
         </Button>
         <ResultBox :value="tsResult" label="结果" />
         <p v-if="tsError" class="text-sm text-destructive">{{ tsError }}</p>
-      </div>
+      </Panel>
 
       <!-- Unicode -->
-      <div class="space-y-3 rounded-lg border bg-card p-4">
-        <p class="text-sm font-medium">Unicode 转义</p>
+      <Panel title="Unicode 转义">
         <div class="flex items-end gap-3">
           <div class="space-y-1.5">
             <Label>风格</Label>
@@ -181,7 +179,7 @@ async function unescapeUnicode(): Promise<void> {
         </div>
         <ResultBox :value="uniResult" label="结果" />
         <p v-if="uniError" class="text-sm text-destructive">{{ uniError }}</p>
-      </div>
+      </Panel>
     </div>
   </div>
 </template>

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import Panel from '@/components/tool/Panel.vue';
 import {
   Select,
   SelectContent,
@@ -220,7 +221,7 @@ async function run(): Promise<void> {
 <template>
   <div class="grid w-full grid-cols-12 gap-4">
     <div class="col-span-12 space-y-4 lg:col-span-8 lg:col-start-3">
-      <div class="space-y-4 rounded-lg border bg-card p-4">
+      <Panel body-class="space-y-4">
         <div class="flex flex-wrap items-center gap-3">
           <div class="inline-flex rounded-lg bg-muted p-0.5 text-sm">
             <button
@@ -349,7 +350,7 @@ async function run(): Promise<void> {
         <p v-else-if="operation === 'generate' && result" class="text-sm text-success">
           {{ result }}（密钥见下方，可直接复制）
         </p>
-      </div>
+      </Panel>
 
       <!-- 密钥输入（生成后也可直接复制） -->
       <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -366,7 +367,7 @@ async function run(): Promise<void> {
       </div>
 
       <!-- 数据与签名 -->
-      <div v-if="operation !== 'generate'" class="space-y-3 rounded-lg border bg-card p-4">
+      <Panel v-if="operation !== 'generate'" body-class="space-y-3">
         <Textarea
           v-model="data"
           class="h-40 resize-y overflow-y-auto font-mono text-sm"
@@ -423,7 +424,7 @@ async function run(): Promise<void> {
           :tone="resultTone"
         />
         <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
-      </div>
+      </Panel>
     </div>
   </div>
 </template>

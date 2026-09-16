@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Play } from '@lucide/vue';
+import Panel from '@/components/tool/Panel.vue';
 import { useCryptoCall } from '../../composables/useCryptoCall';
 import { BYTE_FORMATS, type ByteFormat } from '../../crypto-shared';
 import ResultBox from './ResultBox.vue';
@@ -60,7 +61,7 @@ async function run(): Promise<void> {
 <template>
   <div class="grid w-full grid-cols-12 gap-4">
     <div class="col-span-12 space-y-4 lg:col-span-8 lg:col-start-3">
-      <div class="space-y-4 rounded-lg border bg-card p-4">
+      <Panel body-class="space-y-4">
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div class="space-y-1.5">
             <Label>算法</Label>
@@ -164,7 +165,7 @@ async function run(): Promise<void> {
           label="派生结果"
         />
         <p v-if="call.error.value" class="text-sm text-destructive">{{ call.error.value }}</p>
-      </div>
+      </Panel>
     </div>
   </div>
 </template>

@@ -81,6 +81,30 @@
 - 选项常量集中在 `frontend/crypto-shared.ts`；不在组件里重复定义。
 - 输入框固定高度 + 超出滚动（`field-sizing: fixed` 覆盖 shadcn Textarea 的自动增高）。
 
+### 模块面板（Panel）
+
+工具页里**每一个功能模块（设置 / 输入 / 输出 / 结果）都用 `@/components/tool/Panel` 包裹**，
+不在页面上裸露模块。Panel 是框架级单一事实源（外框 + 头部条 + 正文），约定见根 `AGENTS.md`：
+
+```vue
+<Panel title="输入" :hint="格式名" body-class="space-y-4">
+  <template #actions>
+    <Button variant="secondary" size="sm">选择文件</Button>
+  </template>
+  <!-- 正文：默认 space-y-3 p-4，满幅场景用 body-class 覆盖 -->
+</Panel>
+```
+
+- props：`title` / `hint`（标题后的补充信息，如格式名或行列统计）/ `body-class` / `header-class`；
+  插槽：`default` / `title` / `actions`。
+- **Panel 内不再嵌套卡片**：`ResultBox` / `CopyableTextarea` / `MarkdownPreview` / `TablePreview`
+  自身要么已用 Panel、要么不带外框（`TablePreview` 为满幅网格），外框一律由所在 Panel 提供。
+- 动作按钮放 `#actions`（`size="sm"`、图标 `size-3.5` + `mr-1`）；说明文案用
+  `text-xs text-muted-foreground`；错误条用
+  `rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive`。
+- 全插件已按此收敛：`views/{FileConverter,ImageOcr,JsonTable}.vue`、`components/crypto/*`（含
+  `ResultBox` / `CopyableTextarea`）、`components/MarkdownPreview.vue`。
+
 ## 依赖（fork 本地层）
 
 加解密相关 Rust 依赖（`src-tauri/Cargo.toml` 的 `local plugin deps` 段）：

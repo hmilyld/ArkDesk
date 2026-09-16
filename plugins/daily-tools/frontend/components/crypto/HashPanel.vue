@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import Panel from '@/components/tool/Panel.vue';
 import {
   Select,
   SelectContent,
@@ -139,7 +140,7 @@ async function pickFile(): Promise<void> {
   <div class="grid w-full grid-cols-12 gap-4">
     <div class="col-span-12 space-y-4 lg:col-span-8 lg:col-start-3">
       <!-- 哈希 / HMAC -->
-      <div class="space-y-4 rounded-lg border bg-card p-4">
+      <Panel body-class="space-y-4">
         <!-- 模式切换 -->
         <div class="inline-flex rounded-lg bg-muted p-0.5 text-sm">
           <button
@@ -247,15 +248,11 @@ async function pickFile(): Promise<void> {
           placeholder="输入文本后自动计算"
         />
         <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
-      </div>
+      </Panel>
 
       <!-- 文件哈希 -->
-      <div class="space-y-3 rounded-lg border bg-card p-4">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <p class="text-sm font-medium">对文件计算哈希</p>
-            <p class="text-xs text-muted-foreground">流式读取，支持大文件</p>
-          </div>
+      <Panel title="对文件计算哈希" hint="流式读取，支持大文件">
+        <template #actions>
           <Button
             variant="secondary"
             size="sm"
@@ -265,7 +262,7 @@ async function pickFile(): Promise<void> {
             <FileUp class="mr-1 size-3.5" />
             选择文件
           </Button>
-        </div>
+        </template>
         <div v-if="fileName" class="flex items-center gap-2 text-xs text-muted-foreground">
           <Fingerprint class="size-3.5 shrink-0" />
           <span class="truncate">{{ fileName }}</span>
@@ -280,7 +277,7 @@ async function pickFile(): Promise<void> {
         <p v-if="fileCall.error.value" class="text-sm text-destructive">
           {{ fileCall.error.value }}
         </p>
-      </div>
+      </Panel>
     </div>
   </div>
 </template>

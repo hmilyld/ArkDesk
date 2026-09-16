@@ -1,12 +1,13 @@
 <!--
-  Markdown 源码展示组件。
-  纯文本展示 Markdown 源码，支持一键复制。
+  Markdown 源码展示组件：纯文本展示 Markdown 源码，支持一键复制。
+  外框与头部由 Panel 统一；调用方可用 #actions 追加动作（如「导出 .md」）。
 -->
 <script setup lang="ts">
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { Copy } from '@lucide/vue';
+import Panel from '@/components/tool/Panel.vue';
 
 defineProps<{
   /** Markdown 内容 */
@@ -28,16 +29,17 @@ async function copyToClipboard(text: string): Promise<void> {
 </script>
 
 <template>
-  <div class="relative rounded-lg border bg-card">
-    <div class="flex items-center justify-between border-b px-4 py-2">
-      <span class="text-xs font-medium text-muted-foreground">Markdown</span>
+  <Panel title="Markdown">
+    <template #actions>
+      <slot name="actions" />
       <Button variant="ghost" size="sm" @click="copyToClipboard(content)">
         <Copy class="mr-1.5 size-3.5" />
         {{ copied ? '已复制' : '复制' }}
       </Button>
-    </div>
+    </template>
+
     <pre
-      class="max-h-[500px] overflow-auto p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words"
+      class="max-h-[500px] overflow-auto whitespace-pre-wrap break-words font-mono text-sm leading-relaxed"
       >{{ content }}</pre>
-  </div>
+  </Panel>
 </template>

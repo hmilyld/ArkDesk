@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { open as openFileDialog, save as saveFileDialog } from '@tauri-apps/plugin-dialog';
 import { AlertTriangle, Dices, FileUp, Play, Save } from '@lucide/vue';
+import Panel from '@/components/tool/Panel.vue';
 import { ipc } from '@/core/ipc';
 import { useCryptoCall } from '../../composables/useCryptoCall';
 import { errorMessage } from '../../shared';
@@ -183,7 +184,7 @@ async function runFile(): Promise<void> {
   <div class="grid w-full grid-cols-12 gap-4">
     <div class="col-span-12 space-y-4 lg:col-span-8 lg:col-start-3">
       <!-- 操作与参数 -->
-      <div class="space-y-4 rounded-lg border bg-card p-4">
+      <Panel body-class="space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="inline-flex rounded-lg bg-muted p-0.5 text-sm">
             <button
@@ -385,10 +386,10 @@ async function runFile(): Promise<void> {
           <AlertTriangle class="size-3.5" />
           DES/3DES 已不安全，仅用于兼容旧系统。
         </p>
-      </div>
+      </Panel>
 
       <!-- 文本 -->
-      <div class="space-y-3 rounded-lg border bg-card p-4">
+      <Panel title="文本加解密">
         <Textarea
           v-model="data"
           class="h-40 resize-y overflow-y-auto font-mono text-sm"
@@ -407,19 +408,18 @@ async function runFile(): Promise<void> {
           :label="operation === 'encrypt' ? '密文' : '明文'"
         />
         <p v-if="call.error.value" class="text-sm text-destructive">{{ call.error.value }}</p>
-      </div>
+      </Panel>
 
       <!-- 文件 -->
-      <div class="space-y-3 rounded-lg border bg-card p-4">
-        <div>
-          <p class="text-sm font-medium">文件加解密（流式）</p>
-          <p class="text-xs text-muted-foreground">使用上方算法/密钥参数；GCM 不支持文件。</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-3">
+      <Panel title="文件加解密（流式）">
+        <template #actions>
           <Button variant="secondary" size="sm" @click="pickInput">
             <FileUp class="mr-1 size-3.5" />
             选择文件
           </Button>
+        </template>
+        <p class="text-xs text-muted-foreground">使用上方算法/密钥参数；GCM 不支持文件。</p>
+        <div class="flex flex-wrap items-center gap-3">
           <span v-if="inputName" class="truncate text-xs text-muted-foreground">{{
             inputName
           }}</span>
@@ -439,7 +439,7 @@ async function runFile(): Promise<void> {
         <p v-if="fileCall.error.value" class="text-sm text-destructive">
           {{ fileCall.error.value }}
         </p>
-      </div>
+      </Panel>
     </div>
   </div>
 </template>

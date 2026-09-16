@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ipc } from '@/core/ipc';
 import { open as openFileDialog, save as saveFileDialog } from '@tauri-apps/plugin-dialog';
 import { FileDown, FileText, RotateCcw, Upload } from '@lucide/vue';
+import Panel from '@/components/tool/Panel.vue';
 import ToolShell from '@/components/tool/ToolShell.vue';
 import MarkdownPreview from '../components/MarkdownPreview.vue';
 import { CONVERT_EXTENSIONS, errorMessage } from '../shared';
@@ -77,32 +78,32 @@ function handleReset(): void {
     <div class="mx-auto grid w-full grid-cols-12">
       <div class="col-span-12 space-y-4 lg:col-span-8 lg:col-start-3">
         <!-- 无文件时显示选择区域 -->
-        <button
-          v-if="!filePath"
-          type="button"
-          class="flex min-h-[180px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 px-6 py-8 text-center transition-colors hover:border-muted-foreground/40 hover:bg-muted/50"
-          @click="handleOpenFile"
-        >
-          <Upload class="size-8 text-muted-foreground" />
-          <p class="text-sm text-muted-foreground">点击选择文件</p>
-          <p class="text-xs text-muted-foreground">
-            支持格式：{{ CONVERT_EXTENSIONS.map((e) => `.${e}`).join('、') }}
-          </p>
-        </button>
+        <Panel v-if="!filePath" title="输入">
+          <template #actions>
+            <Button variant="secondary" size="sm" @click="handleOpenFile">
+              <Upload class="mr-1 size-3.5" />
+              选择文件
+            </Button>
+          </template>
+
+          <button
+            type="button"
+            class="flex min-h-[180px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md bg-muted/30 px-6 py-8 text-center transition-colors hover:bg-muted/50"
+            @click="handleOpenFile"
+          >
+            <Upload class="size-8 text-muted-foreground" />
+            <p class="text-sm text-muted-foreground">点击选择文件</p>
+            <p class="text-xs text-muted-foreground">
+              支持格式：{{ CONVERT_EXTENSIONS.map((e) => `.${e}`).join('、') }}
+            </p>
+          </button>
+        </Panel>
 
         <!-- 有文件时显示状态和结果 -->
         <template v-else>
-          <!-- 文件信息栏 -->
-          <div class="flex items-center justify-between rounded-lg border bg-card px-4 py-3">
-            <div class="flex min-w-0 items-center gap-3">
-              <FileText class="size-5 shrink-0 text-muted-foreground" />
-              <div class="min-w-0">
-                <p class="truncate text-sm font-medium">{{ fileName }}</p>
-                <p v-if="loading" class="text-xs text-muted-foreground">转换中…</p>
-                <p v-else-if="markdown" class="text-xs text-success">转换完成</p>
-              </div>
-            </div>
-            <div class="flex shrink-0 gap-2">
+          <!-- 文件信息 -->
+          <Panel title="文件" :hint="fileName">
+            <template #actions>
               <Button variant="ghost" size="sm" @click="handleReset">
                 <RotateCcw class="mr-1 size-3.5" />
                 重新选择
@@ -111,29 +112,37 @@ function handleReset(): void {
                 <FileDown class="mr-1 size-3.5" />
                 打开文件
               </Button>
+            </template>
+
+            <div class="flex items-center gap-3 text-xs">
+              <FileText class="size-4 shrink-0 text-muted-foreground" />
+              <span v-if="loading" class="text-muted-foreground">转换中…</span>
+              <span v-else-if="markdown" class="text-success">转换完成</span>
+              <span v-else class="text-muted-foreground">等待转换</span>
             </div>
-          </div>
+          </Panel>
 
           <!-- 加载提示 -->
-          <div v-if="loading" class="flex items-center justify-center py-12">
-            <div class="flex items-center gap-2 text-muted-foreground">
-              <div
-                class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
-              />
-              <span class="text-sm">正在转换…</span>
+          <Panel v-if="loading" title="Markdown">
+            <div class="flex items-center justify-center py-10">
+              <div class="flex items-center gap-2 text-muted-foreground">
+                <div
+                  class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+                />
+                <span class="text-sm">正在转换…</span>
+              </div>
             </div>
-          </div>
+          </Panel>
 
           <!-- Markdown 结果 -->
-          <MarkdownPreview v-if="markdown && !loading" :content="markdown" />
-
-          <!-- 导出按钮 -->
-          <div v-if="markdown && !loading" class="flex justify-end">
-            <Button @click="handleSave">
-              <FileDown class="mr-1.5 size-4" />
-              导出 .md 文件
-            </Button>
-          </div>
+          <MarkdownPreview v-else-if="markdown" :content="markdown">
+            <template #actions>
+              <Button variant="secondary" size="sm" @click="handleSave">
+                <FileDown class="mr-1 size-3.5" />
+                导出 .md
+              </Button>
+            </template>
+          </MarkdownPreview>
         </template>
       </div>
     </div>

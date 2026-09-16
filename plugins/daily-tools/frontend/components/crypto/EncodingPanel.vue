@@ -17,6 +17,7 @@ import {
 import { open as openFileDialog, save as saveFileDialog } from '@tauri-apps/plugin-dialog';
 import { toast } from 'vue-sonner';
 import { ArrowLeftRight, FileUp, Save } from '@lucide/vue';
+import Panel from '@/components/tool/Panel.vue';
 import { useCryptoCall } from '../../composables/useCryptoCall';
 import {
   BYTE_FORMATS,
@@ -221,7 +222,7 @@ async function saveEncodedFile(): Promise<void> {
   <div class="grid w-full grid-cols-12 gap-4">
     <div class="col-span-12 space-y-4 lg:col-span-8 lg:col-start-3">
       <!-- 编解码 -->
-      <div class="space-y-4 rounded-lg border bg-card p-4">
+      <Panel body-class="space-y-4">
         <div class="flex items-center justify-between">
           <div class="inline-flex rounded-lg bg-muted p-0.5 text-sm">
             <button
@@ -315,22 +316,19 @@ async function saveEncodedFile(): Promise<void> {
           :label="mode === 'encode' ? '编码结果' : '解码结果'"
         />
         <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
-      </div>
+      </Panel>
 
       <!-- 文件编码 -->
-      <div class="space-y-3 rounded-lg border bg-card p-4">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <p class="text-sm font-medium">文件编码</p>
-            <p class="text-xs text-muted-foreground">
-              以当前「方式」流式编码整个文件（URL 不支持文件）
-            </p>
-          </div>
+      <Panel title="文件编码">
+        <template #actions>
           <Button variant="secondary" size="sm" :disabled="isUrl" @click="pickFile">
             <FileUp class="mr-1 size-3.5" />
             选择文件
           </Button>
-        </div>
+        </template>
+        <p class="text-xs text-muted-foreground">
+          以当前「方式」流式编码整个文件（URL 不支持文件）
+        </p>
         <p v-if="fileName" class="text-xs text-muted-foreground">{{ fileName }}</p>
         <div v-if="fileName" class="flex flex-wrap gap-2">
           <Button
@@ -369,16 +367,13 @@ async function saveEncodedFile(): Promise<void> {
         <p v-if="saveCall.error.value" class="text-sm text-destructive">
           {{ saveCall.error.value }}
         </p>
-      </div>
+      </Panel>
 
       <!-- 文本字符集转换 -->
-      <div class="space-y-4 rounded-lg border bg-card p-4">
-        <div>
-          <p class="text-sm font-medium">文本字符集转换</p>
-          <p class="text-xs text-muted-foreground">
-            源/目标非 UTF-8 时，请用 Hex 提供或查看原始字节。
-          </p>
-        </div>
+      <Panel title="文本字符集转换" body-class="space-y-4">
+        <p class="text-xs text-muted-foreground">
+          源/目标非 UTF-8 时，请用 Hex 提供或查看原始字节。
+        </p>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div class="space-y-1.5">
             <Label>源字符集</Label>
@@ -443,7 +438,7 @@ async function saveEncodedFile(): Promise<void> {
         <p v-if="tcCall.error.value" class="text-sm text-destructive">
           {{ tcCall.error.value }}
         </p>
-      </div>
+      </Panel>
     </div>
   </div>
 </template>

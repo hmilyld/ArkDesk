@@ -4,15 +4,25 @@
   结果对比表（最优行高亮）、测算历史自动归档。
 -->
 <script setup lang="ts">
-import { computed, onActivated, onMounted, ref } from 'vue';
+import { computed, onActivated, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { save as saveFileDialog, open as openFileDialog } from '@tauri-apps/plugin-dialog';
-import { Download, FileText, Pencil, Play, Plus, RotateCcw, Trash2, Upload } from '@lucide/vue';
+import {
+  Building2,
+  Download,
+  FlaskConical,
+  Pencil,
+  Play,
+  Plus,
+  RotateCcw,
+  Trash2,
+  Upload,
+  X,
+} from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,13 +41,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -62,6 +65,7 @@ import {
 } from '../schema';
 import {
   BEHAVIOR_OPTIONS,
+  COMPANY_TYPE_LABELS,
   COMPANY_TYPE_OPTIONS,
   DEFAULT_NUM_SIMULATIONS,
   DEFAULT_PARAMS,
@@ -78,6 +82,12 @@ import {
   type ReductionType,
 } from '../shared';
 import ToolShell from '@/components/tool/ToolShell.vue';
+import Panel from '@/components/tool/Panel.vue';
+import FormRow from '@/components/native/FormRow.vue';
+import Segmented from '@/components/native/Segmented.vue';
+import EmptyState from '@/components/native/EmptyState.vue';
+import LoadingState from '@/components/native/LoadingState.vue';
+import ErrorState from '@/components/native/ErrorState.vue';
 
 // ── 工作集加载 ─────────────────────────────────────────────────
 const loading = ref(false);
@@ -87,6 +97,22 @@ const paramsRow = ref<TenderParams | null>(null);
 
 const activeScenarioCount = computed(() => scenarios.value.filter((s) => s.isActive).length);
 const targetCount = computed(() => companies.value.filter((c) => c.companyType === 'T').length);
+
+// ── 就地错误 / 提示（DESIGN.md §4：校验错误就地呈现，不用 toast） ──
+const formError = ref('');
+const calcError = ref('');
+const importNotice = ref<{ kind: 'info' | 'warning' | 'error'; text: string } | null>(null);
+const noticeClass = computed(() => {
+  const kind = importNotice.value?.kind;
+  if (kind === 'error') return 'border-destructive/30 bg-destructive/10 text-destructive';
+  if (kind === 'warning') return 'border-warning/30 bg-warning/10 text-warning';
+  return 'border-info/30 bg-info/10 text-info';
+});
+
+// 数据变化后校验通过即清除顶部错误条
+watch([() => companies.value.length, targetCount, activeScenarioCount], () => {
+  if (formError.value && !validateLocal()) formError.value = '';
+});
 
 async function loadAll(): Promise<void> {
   loading.value = true;
@@ -106,6 +132,17 @@ async function loadAll(): Promise<void> {
   }
 }
 
+// ── 枚举控件的分段选项（DESIGN.md §3：2–5 项互斥用 Segmented） ──
+const COMPANY_TYPE_SEGMENTS = COMPANY_TYPE_OPTIONS.map((option) => ({
+  value: option.value,
+  label: COMPANY_TYPE_LABELS[option.value],
+}));
+const BEHAVIOR_SEGMENTS = [{ value: '', label: '未设置' }, ...BEHAVIOR_OPTIONS];
+const REDUCTION_TYPE_SEGMENTS = REDUCTION_TYPE_OPTIONS.map((option) => ({
+  value: option.value,
+  label: option.label,
+}));
+
 // ── 公司工作集：行内编辑 + 即时落库 ────────────────────────────
 async function persistCompany(row: TenderCompany): Promise<void> {
   if (row.id === null || row.id === undefined) return;
@@ -119,6 +156,16 @@ async function persistCompany(row: TenderCompany): Promise<void> {
       behavior: row.behavior,
     })
     .where(eq(tenderCompanies.id, row.id));
+}
+
+function setCompanyType(row: TenderCompany, value: string): void {
+  row.companyType = value;
+  void persistCompany(row);
+}
+
+function setBehavior(row: TenderCompany, value: string): void {
+  row.behavior = value === '' ? null : value;
+  void persistCompany(row);
 }
 
 async function addCompany(): Promise<void> {
@@ -161,6 +208,16 @@ async function persistScenario(row: TenderScenario): Promise<void> {
     .where(eq(tenderScenarios.id, row.id));
 }
 
+function setReductionType(row: TenderScenario, value: string): void {
+  row.reductionType = value;
+  void persistScenario(row);
+}
+
+function setScenarioActive(row: TenderScenario, value: boolean | 'indeterminate'): void {
+  row.isActive = value === true;
+  void persistScenario(row);
+}
+
 async function addScenario(): Promise<void> {
   // 新行插到表格第一行：sort_order 取现有最小值减 1（升序展示）
   const topOrder =
@@ -200,7 +257,6 @@ async function clearWorkset(): Promise<void> {
     paramsRow.value.planName = '';
     await persistParams();
   }
-  toast.success('已清空公司与场景数据', { description: '评分参数保持不变' });
 }
 
 // ── 评分参数 ───────────────────────────────────────────────────
@@ -239,7 +295,6 @@ async function resetParams(): Promise<void> {
   row.conservativeFactor = d.conservative_factor;
   row.minAuxPriceDiff = d.min_aux_price_diff;
   await persistParams();
-  toast.success('评分参数已恢复默认值');
 }
 
 // ── 模板导入 / 下载 ────────────────────────────────────────────
@@ -267,6 +322,7 @@ async function pickImportFile(): Promise<void> {
 async function runImport(): Promise<void> {
   importDialogOpen.value = false;
   importing.value = true;
+  importNotice.value = null;
   try {
     const result = await ipc<ImportResult>('tender_optimizer_import_template', {
       path: importPath.value,
@@ -274,22 +330,19 @@ async function runImport(): Promise<void> {
       planName: importPlanName.value.trim(),
     });
     await loadAll();
-    toast.success(
-      `导入成功：公司 ${result.companies.length} 家、场景 ${result.scenarios.length} 个`,
-      {
-        description:
-          result.warnings.length > 0
-            ? `警告 ${result.warnings.length} 条：${result.warnings[0]}`
-            : result.plan_name || undefined,
-        duration: 6000,
-      }
-    );
-    if (result.warnings.length > 1) {
+    const summary = `导入完成：公司 ${result.companies.length} 家、场景 ${result.scenarios.length} 个`;
+    if (result.warnings.length > 0) {
+      importNotice.value = {
+        kind: 'warning',
+        text: `${summary}；另有 ${result.warnings.length} 条告警：${result.warnings[0]}`,
+      };
       logger.warn(`模板导入警告: ${result.warnings.join('；')}`);
+    } else {
+      importNotice.value = { kind: 'info', text: summary };
     }
   } catch (err) {
     const error = normalizeError(err);
-    toast.error(`导入失败：${error.message}`, { description: error.code, duration: 6000 });
+    importNotice.value = { kind: 'error', text: `导入失败：${error.message}` };
     logger.error(`模板导入失败: [${error.code}] ${error.message}`);
   } finally {
     importing.value = false;
@@ -330,7 +383,6 @@ async function savePlanName(): Promise<void> {
   paramsRow.value.planName = planNameDraft.value.trim();
   await persistParams();
   editingPlanName.value = false;
-  toast.success('方案名称已更新', { description: '后续测算将以此名称归档' });
 }
 
 // ── 运行测算 ───────────────────────────────────────────────────
@@ -358,10 +410,12 @@ function validateLocal(): string | null {
 async function runCalculate(): Promise<void> {
   const problem = validateLocal();
   if (problem) {
-    toast.error(problem);
+    formError.value = problem;
     return;
   }
 
+  formError.value = '';
+  calcError.value = '';
   calculating.value = true;
   try {
     const params = paramsRow.value ? paramsToWire(paramsRow.value) : { ...DEFAULT_PARAMS };
@@ -396,13 +450,10 @@ async function runCalculate(): Promise<void> {
       paramsJson: JSON.stringify(params),
       resultsJson: JSON.stringify(response.results),
     });
-
-    toast.success('测算完成', {
-      description: `最优场景「${bestResult.scenario_name}」，预期得分 ${bestResult.target_score.toFixed(2)}`,
-    });
   } catch (err) {
     const error = normalizeError(err);
-    toast.error(`测算失败：${error.message}`, { description: error.code, duration: 6000 });
+    // 当前操作失败但有明确重试入口 → 就地错误条（DESIGN.md §4）
+    calcError.value = `测算失败：${error.message}`;
     logger.error(`测算失败: [${error.code}] ${error.message}`);
   } finally {
     calculating.value = false;
@@ -420,349 +471,356 @@ onActivated(loadAll);
     description="导入「招标报价模板.xlsx」或直接编辑，蒙特卡洛模拟 100 次取中位数推荐报价"
   >
     <template #actions>
-      <Badge v-if="paramsRow?.planName" variant="outline" class="mr-1 max-w-48 truncate">
-        {{ paramsRow.planName }}
-      </Badge>
       <Button variant="outline" size="sm" :disabled="downloading" @click="downloadTemplate">
-        <Download class="size-4" />
+        <Download class="size-3.5" />
         下载模板
       </Button>
-      <Button variant="secondary" size="sm" :disabled="importing" @click="importConfirmOpen = true">
-        <Upload class="size-4" />
+      <Button variant="outline" size="sm" :disabled="importing" @click="importConfirmOpen = true">
+        <Upload class="size-3.5" />
         {{ importing ? '导入中…' : '导入模板' }}
       </Button>
       <Button variant="outline" size="sm" :disabled="loading" @click="clearConfirmOpen = true">
-        <Trash2 class="size-4" />
-        清空
+        <Trash2 class="size-3.5" />
+        清空工作集
       </Button>
       <Button size="sm" :disabled="calculating || loading" @click="runCalculate">
-        <Play class="size-4" />
+        <Play class="size-3.5" />
         {{ calculating ? '测算中…' : '运行测算' }}
       </Button>
     </template>
 
-    <div v-if="loading" class="py-10 text-center text-xs text-muted-foreground">加载中…</div>
+    <LoadingState v-if="loading" :rows="6" />
 
-    <template v-else>
-      <!-- 当前方案：导入时命名，可就地修改，名称随测算归档到历史 -->
-      <section
-        v-if="paramsRow"
-        class="mb-5 flex items-center gap-2.5 rounded-lg border bg-card px-4 py-3"
+    <div v-else class="space-y-4">
+      <!-- 就地错误条（校验 / 测算失败可重试） -->
+      <ErrorState v-if="formError" :message="formError" />
+      <ErrorState v-if="calcError" :message="calcError" :on-retry="runCalculate" />
+
+      <!-- 导入结果 / 告警条 -->
+      <div
+        v-if="importNotice"
+        class="flex items-start justify-between gap-3 rounded-md border px-3 py-2 text-xs"
+        :class="noticeClass"
+        role="status"
       >
-        <FileText class="size-4 shrink-0 text-muted-foreground" />
-        <span class="shrink-0 text-xs text-muted-foreground">当前方案</span>
-        <template v-if="editingPlanName">
-          <Input
-            v-model="planNameDraft"
-            class="h-8 max-w-xs"
-            placeholder="例如：XX 项目二轮报价"
-            @keydown.enter="savePlanName"
-          />
-          <Button variant="outline" size="sm" @click="savePlanName">保存</Button>
-          <Button variant="ghost" size="sm" @click="editingPlanName = false">取消</Button>
-        </template>
-        <template v-else>
-          <span class="truncate text-sm font-medium">
-            {{ paramsRow.planName || '未命名方案' }}
-          </span>
-          <Button variant="ghost" size="icon-sm" aria-label="重命名方案" @click="startEditPlanName">
+        <span class="min-w-0">{{ importNotice.text }}</span>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          aria-label="关闭提示"
+          title="关闭提示"
+          @click="importNotice = null"
+        >
+          <X class="size-3.5" />
+        </Button>
+      </div>
+
+      <!-- 当前方案：导入时命名，可就地修改，名称随测算归档到历史 -->
+      <Panel v-if="paramsRow" title="方案">
+        <template #actions>
+          <Button v-if="!editingPlanName" variant="ghost" size="sm" @click="startEditPlanName">
             <Pencil class="size-3.5" />
+            重命名
           </Button>
-          <span class="ml-auto shrink-0 text-xs text-muted-foreground">
-            名称会随每次测算归档到历史
-          </span>
         </template>
-      </section>
+
+        <FormRow label="方案名称" description="名称会显示在页头，并随每次测算归档到历史">
+          <div class="flex items-center gap-2">
+            <Input
+              v-if="editingPlanName"
+              v-model="planNameDraft"
+              class="h-8 max-w-xs"
+              placeholder="例如：XX 项目二轮报价"
+              @keydown.enter="savePlanName"
+            />
+            <span v-else class="text-sm">{{ paramsRow.planName || '未命名方案' }}</span>
+            <Button v-if="editingPlanName" variant="secondary" size="sm" @click="savePlanName">
+              保存
+            </Button>
+            <Button
+              v-if="editingPlanName"
+              variant="ghost"
+              size="sm"
+              @click="editingPlanName = false"
+            >
+              取消
+            </Button>
+          </div>
+        </FormRow>
+      </Panel>
 
       <!-- 公司数据 -->
-      <section class="mb-5">
-        <div class="mb-2 flex items-center justify-between">
-          <h3 class="text-sm font-medium">
-            公司数据
-            <span class="ml-1.5 text-xs text-muted-foreground">
-              {{ companies.length }} 家 · 目标 {{ targetCount }} 家 · 需有且仅有 1 家目标公司
-            </span>
-          </h3>
+      <Panel
+        title="公司数据"
+        :hint="`${companies.length} 家 · 目标 ${targetCount} 家 · 需有且仅有 1 家目标公司`"
+        body-class="space-y-0 p-0"
+      >
+        <template #actions>
           <Button variant="outline" size="sm" @click="addCompany">
-            <Plus class="size-4" />
+            <Plus class="size-3.5" />
             添加公司
           </Button>
-        </div>
-        <div class="overflow-hidden rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow class="hover:bg-transparent">
-                <TableHead class="min-w-36 pl-3">公司名称</TableHead>
-                <TableHead class="w-32">第一轮报价(万)</TableHead>
-                <TableHead class="w-32">含税限价(万)</TableHead>
-                <TableHead class="w-28">类型</TableHead>
-                <TableHead class="w-28">公司行为</TableHead>
-                <template v-if="results">
-                  <TableHead class="w-28">推荐报价(万)</TableHead>
-                  <TableHead class="w-24">变化(万)</TableHead>
-                </template>
-                <TableHead class="w-14 pr-3 text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-if="companies.length === 0">
-                <TableCell colspan="100" class="py-8 text-center text-xs text-muted-foreground">
-                  暂无公司数据，点右上角「导入模板」或「添加公司」
+        </template>
+
+        <EmptyState
+          v-if="companies.length === 0"
+          :icon="Building2"
+          title="暂无公司数据"
+          description="导入「招标报价模板.xlsx」，或手动添加公司；需有且仅有 1 家目标公司（T）"
+        >
+          <Button variant="outline" size="sm" @click="addCompany">
+            <Plus class="size-3.5" />
+            添加公司
+          </Button>
+        </EmptyState>
+
+        <Table v-else>
+          <TableHeader>
+            <TableRow class="hover:bg-transparent">
+              <TableHead class="min-w-36 pl-3">公司名称</TableHead>
+              <TableHead class="w-32 text-right">第一轮报价 (万)</TableHead>
+              <TableHead class="w-32 text-right">含税限价 (万)</TableHead>
+              <TableHead class="w-44">类型</TableHead>
+              <TableHead class="w-56">公司行为</TableHead>
+              <template v-if="results">
+                <TableHead class="w-32 text-right">推荐报价 (万)</TableHead>
+                <TableHead class="w-24 text-right">变化 (万)</TableHead>
+              </template>
+              <TableHead class="w-14 pr-3 text-right">操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="(row, index) in companies" :key="row.id" class="hover:bg-accent/40">
+              <TableCell class="pl-3">
+                <Input
+                  v-model="row.name"
+                  class="h-8"
+                  placeholder="公司名称"
+                  @change="persistCompany(row)"
+                />
+              </TableCell>
+              <TableCell>
+                <Input
+                  v-model.number="row.round1Price"
+                  class="h-8 text-right font-mono tabular-nums"
+                  type="number"
+                  step="any"
+                  @change="persistCompany(row)"
+                />
+              </TableCell>
+              <TableCell>
+                <Input
+                  v-model.number="row.priceLimit"
+                  class="h-8 text-right font-mono tabular-nums"
+                  type="number"
+                  step="any"
+                  @change="persistCompany(row)"
+                />
+              </TableCell>
+              <TableCell>
+                <Segmented
+                  size="sm"
+                  :model-value="row.companyType"
+                  :segments="COMPANY_TYPE_SEGMENTS"
+                  @update:model-value="(value) => setCompanyType(row, value)"
+                />
+              </TableCell>
+              <TableCell>
+                <Segmented
+                  size="sm"
+                  :model-value="row.behavior ?? ''"
+                  :segments="BEHAVIOR_SEGMENTS"
+                  @update:model-value="(value) => setBehavior(row, value)"
+                />
+              </TableCell>
+              <template v-if="results">
+                <TableCell class="text-right font-mono text-xs tabular-nums">
+                  {{
+                    recommendedOf(index).price === null
+                      ? '-'
+                      : recommendedOf(index).price?.toFixed(4)
+                  }}
                 </TableCell>
-              </TableRow>
-              <TableRow
-                v-for="(row, index) in companies"
-                :key="row.id"
-                class="hover:bg-transparent"
-              >
-                <TableCell class="pl-3">
-                  <Input
-                    v-model="row.name"
-                    class="h-8"
-                    placeholder="公司名称"
-                    @change="persistCompany(row)"
-                  />
+                <TableCell
+                  class="text-right font-mono text-xs tabular-nums"
+                  :class="
+                    (recommendedOf(index).change ?? 0) < 0
+                      ? 'text-success'
+                      : 'text-muted-foreground'
+                  "
+                >
+                  {{
+                    recommendedOf(index).change === null
+                      ? '-'
+                      : recommendedOf(index).change?.toFixed(4)
+                  }}
                 </TableCell>
-                <TableCell>
-                  <Input
-                    v-model.number="row.round1Price"
-                    class="h-8 font-mono"
-                    type="number"
-                    step="any"
-                    @change="persistCompany(row)"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    v-model.number="row.priceLimit"
-                    class="h-8 font-mono"
-                    type="number"
-                    step="any"
-                    @change="persistCompany(row)"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Select v-model="row.companyType" @update:model-value="persistCompany(row)">
-                    <SelectTrigger class="h-8 w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem
-                        v-for="option in COMPANY_TYPE_OPTIONS"
-                        :key="option.value"
-                        :value="option.value"
-                      >
-                        {{ option.label }}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Select v-model="row.behavior" @update:model-value="persistCompany(row)">
-                    <SelectTrigger class="h-8 w-full">
-                      <SelectValue placeholder="未设置（按正常型）" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem
-                        v-for="option in BEHAVIOR_OPTIONS"
-                        :key="option.value"
-                        :value="option.value"
-                      >
-                        {{ option.label }}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <template v-if="results">
-                  <TableCell class="font-mono text-xs">
-                    {{
-                      recommendedOf(index).price === null
-                        ? '-'
-                        : recommendedOf(index).price?.toFixed(4)
-                    }}
-                  </TableCell>
-                  <TableCell
-                    class="font-mono text-xs"
-                    :class="
-                      (recommendedOf(index).change ?? 0) < 0
-                        ? 'text-success'
-                        : 'text-muted-foreground'
-                    "
-                  >
-                    {{
-                      recommendedOf(index).change === null
-                        ? '-'
-                        : recommendedOf(index).change?.toFixed(4)
-                    }}
-                  </TableCell>
-                </template>
-                <TableCell class="pr-3 text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="删除公司"
-                    @click="removeCompany(row)"
-                  >
-                    <Trash2 class="size-4 text-muted-foreground" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-      </section>
+              </template>
+              <TableCell class="pr-3 text-right">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="删除公司"
+                  title="删除公司"
+                  @click="removeCompany(row)"
+                >
+                  <Trash2 class="size-4 text-muted-foreground" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </Panel>
 
       <!-- 测算场景 -->
-      <section class="mb-5">
-        <div class="mb-2 flex items-center justify-between">
-          <h3 class="text-sm font-medium">
-            测算场景
-            <span class="ml-1.5 text-xs text-muted-foreground">
-              {{ scenarios.length }} 个 · 启用 {{ activeScenarioCount }} 个
-            </span>
-          </h3>
+      <Panel
+        title="测算场景"
+        :hint="`${scenarios.length} 个 · 启用 ${activeScenarioCount} 个`"
+        body-class="space-y-0 p-0"
+      >
+        <template #actions>
           <Button variant="outline" size="sm" @click="addScenario">
-            <Plus class="size-4" />
+            <Plus class="size-3.5" />
             添加场景
           </Button>
-        </div>
-        <div class="overflow-hidden rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow class="hover:bg-transparent">
-                <TableHead class="min-w-32 pl-3">场景名称</TableHead>
-                <TableHead class="w-28">降价方式</TableHead>
-                <TableHead class="w-32">降价数值</TableHead>
-                <TableHead class="w-28">参与率(0-1)</TableHead>
-                <TableHead class="w-28">标准差</TableHead>
-                <TableHead class="w-20">有效</TableHead>
-                <TableHead class="w-14 pr-3 text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-if="scenarios.length === 0">
-                <TableCell colspan="100" class="py-8 text-center text-xs text-muted-foreground">
-                  暂无测算场景，点「添加场景」新建（降价数值为负数表示降价）
-                </TableCell>
-              </TableRow>
-              <TableRow v-for="row in scenarios" :key="row.id" class="hover:bg-transparent">
-                <TableCell class="pl-3">
-                  <Input v-model="row.name" class="h-8" @change="persistScenario(row)" />
-                </TableCell>
-                <TableCell>
-                  <Select v-model="row.reductionType" @update:model-value="persistScenario(row)">
-                    <SelectTrigger class="h-8 w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem
-                        v-for="option in REDUCTION_TYPE_OPTIONS"
-                        :key="option.value"
-                        :value="option.value"
-                      >
-                        {{ option.label }}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Input
-                    v-model.number="row.reductionValue"
-                    class="h-8 font-mono"
-                    type="number"
-                    step="any"
-                    @change="persistScenario(row)"
+        </template>
+
+        <EmptyState
+          v-if="scenarios.length === 0"
+          :icon="FlaskConical"
+          title="暂无测算场景"
+          description="添加场景后设置降价方式与幅度；降价数值为负数表示降价"
+        >
+          <Button variant="outline" size="sm" @click="addScenario">
+            <Plus class="size-3.5" />
+            添加场景
+          </Button>
+        </EmptyState>
+
+        <Table v-else>
+          <TableHeader>
+            <TableRow class="hover:bg-transparent">
+              <TableHead class="min-w-32 pl-3">场景名称</TableHead>
+              <TableHead class="w-40">降价方式</TableHead>
+              <TableHead class="w-32 text-right">降价数值</TableHead>
+              <TableHead class="w-28 text-right">参与率 (0-1)</TableHead>
+              <TableHead class="w-28 text-right">标准差</TableHead>
+              <TableHead class="w-16 text-center">有效</TableHead>
+              <TableHead class="w-14 pr-3 text-right">操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="row in scenarios" :key="row.id" class="hover:bg-accent/40">
+              <TableCell class="pl-3">
+                <Input v-model="row.name" class="h-8" @change="persistScenario(row)" />
+              </TableCell>
+              <TableCell>
+                <Segmented
+                  size="sm"
+                  :model-value="row.reductionType"
+                  :segments="REDUCTION_TYPE_SEGMENTS"
+                  @update:model-value="(value) => setReductionType(row, value)"
+                />
+              </TableCell>
+              <TableCell>
+                <Input
+                  v-model.number="row.reductionValue"
+                  class="h-8 text-right font-mono tabular-nums"
+                  type="number"
+                  step="any"
+                  @change="persistScenario(row)"
+                />
+              </TableCell>
+              <TableCell>
+                <Input
+                  v-model.number="row.participationRate"
+                  class="h-8 text-right font-mono tabular-nums"
+                  type="number"
+                  step="any"
+                  @change="persistScenario(row)"
+                />
+              </TableCell>
+              <TableCell>
+                <Input
+                  v-model.number="row.stdDev"
+                  class="h-8 text-right font-mono tabular-nums"
+                  type="number"
+                  step="any"
+                  @change="persistScenario(row)"
+                />
+              </TableCell>
+              <TableCell>
+                <div class="flex justify-center">
+                  <Checkbox
+                    :model-value="row.isActive"
+                    aria-label="启用该场景"
+                    @update:model-value="(value) => setScenarioActive(row, value)"
                   />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    v-model.number="row.participationRate"
-                    class="h-8 font-mono"
-                    type="number"
-                    step="any"
-                    @change="persistScenario(row)"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    v-model.number="row.stdDev"
-                    class="h-8 font-mono"
-                    type="number"
-                    step="any"
-                    @change="persistScenario(row)"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Switch v-model="row.isActive" @update:model-value="persistScenario(row)" />
-                </TableCell>
-                <TableCell class="pr-3 text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="删除场景"
-                    @click="removeScenario(row)"
-                  >
-                    <Trash2 class="size-4 text-muted-foreground" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-      </section>
+                </div>
+              </TableCell>
+              <TableCell class="pr-3 text-right">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="删除场景"
+                  title="删除场景"
+                  @click="removeScenario(row)"
+                >
+                  <Trash2 class="size-4 text-muted-foreground" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </Panel>
 
       <!-- 评分参数 -->
-      <section class="mb-5">
-        <div class="mb-2 flex items-center justify-between">
-          <h3 class="text-sm font-medium">
-            评分参数
-            <span class="ml-1.5 text-xs text-muted-foreground">基准价 = 有效均价 × (1 − C)</span>
-          </h3>
-          <Button variant="outline" size="sm" @click="resetParams">
-            <RotateCcw class="size-4" />
+      <Panel title="评分参数" hint="基准价 = 有效均价 × (1 − C)">
+        <template #actions>
+          <Button variant="ghost" size="sm" @click="resetParams">
+            <RotateCcw class="size-3.5" />
             恢复默认
           </Button>
-        </div>
-        <div v-if="paramsRow" class="rounded-lg border bg-card p-4">
-          <div class="grid grid-cols-2 gap-x-6 gap-y-3 md:grid-cols-5">
-            <div v-for="field in PARAM_FIELDS" :key="field.key" class="space-y-1">
-              <Label :for="`param-${field.key}`" class="text-xs text-muted-foreground">
-                {{ field.label }}
-              </Label>
+        </template>
+
+        <div v-if="paramsRow" class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+          <FormRow v-for="field in PARAM_FIELDS" :key="field.key" :label="field.label">
+            <template #default="{ id }">
               <Input
-                :id="`param-${field.key}`"
+                :id="id"
                 v-model.number="paramsRow[field.key]"
-                class="h-8 font-mono"
+                class="h-8 text-right font-mono tabular-nums"
                 type="number"
                 step="any"
                 @change="persistParams"
               />
-            </div>
-            <div class="space-y-1">
-              <Label for="param-numSimulations" class="text-xs text-muted-foreground"
-                >模拟次数</Label
-              >
+            </template>
+          </FormRow>
+          <FormRow label="模拟次数">
+            <template #default="{ id }">
               <Input
-                id="param-numSimulations"
+                :id="id"
                 v-model.number="paramsRow.numSimulations"
-                class="h-8 font-mono"
+                class="h-8 text-right font-mono tabular-nums"
                 type="number"
                 :min="1"
                 :max="2000"
                 @change="persistParams"
               />
-            </div>
-          </div>
+            </template>
+          </FormRow>
         </div>
-      </section>
+      </Panel>
 
       <!-- 测算结果 -->
-      <section v-if="results && best" class="mb-2">
-        <h3 class="mb-2 text-sm font-medium">测算结果</h3>
-
-        <!-- 最优方案卡片 -->
-        <div class="mb-3 rounded-lg border bg-card p-4">
-          <div class="mb-3 flex items-center gap-2">
+      <Panel
+        v-if="results && best"
+        title="测算结果"
+        :hint="`${best.num_simulations} 次模拟 · 各场景取中位数`"
+        body-class="space-y-0 p-0"
+      >
+        <div class="space-y-3 p-4">
+          <div class="flex flex-wrap items-center gap-2">
             <Badge>最优方案</Badge>
             <span class="text-sm font-medium">{{ best.scenario_name }}</span>
             <span class="text-xs text-muted-foreground">
@@ -771,24 +829,29 @@ onActivated(loadAll);
               {{ formatRate(best.participation_rate) }}
             </span>
           </div>
+
           <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div>
               <p class="text-xs text-muted-foreground">推荐目标报价</p>
-              <p class="font-mono text-2xl font-semibold">{{ best.target_price.toFixed(4) }} 万</p>
+              <p class="font-mono text-lg font-semibold tabular-nums">
+                {{ best.target_price.toFixed(4) }} 万
+              </p>
             </div>
             <div>
               <p class="text-xs text-muted-foreground">预期得分</p>
-              <p class="font-mono text-2xl font-semibold text-success">
+              <p class="font-mono text-lg font-semibold tabular-nums text-success">
                 {{ best.target_score.toFixed(2) }}
               </p>
             </div>
             <div>
               <p class="text-xs text-muted-foreground">基准价</p>
-              <p class="font-mono text-2xl font-semibold">{{ best.base_price.toFixed(2) }} 万</p>
+              <p class="font-mono text-lg font-semibold tabular-nums">
+                {{ best.base_price.toFixed(2) }} 万
+              </p>
             </div>
             <div>
               <p class="text-xs text-muted-foreground">预测均价 / 搜索范围</p>
-              <p class="font-mono text-2xl font-semibold">
+              <p class="font-mono text-lg font-semibold tabular-nums">
                 {{ best.search_center.toFixed(2) }}
                 <span class="text-sm text-muted-foreground"
                   >±{{ best.search_range.toFixed(2) }}</span
@@ -798,45 +861,51 @@ onActivated(loadAll);
           </div>
         </div>
 
-        <!-- 场景对比表 -->
-        <div class="overflow-hidden rounded-lg border bg-card">
+        <!-- 场景对比表：表头粘性、行分隔走表格自带 hairline -->
+        <div class="max-h-96 overflow-y-auto border-t">
           <Table>
-            <TableHeader>
+            <TableHeader class="sticky top-0 z-10 bg-card">
               <TableRow class="hover:bg-transparent">
                 <TableHead class="pl-3">场景</TableHead>
-                <TableHead class="w-32">降幅</TableHead>
-                <TableHead class="w-28">标准差</TableHead>
-                <TableHead class="w-20">参与率</TableHead>
-                <TableHead class="w-24">预测均价</TableHead>
-                <TableHead class="w-28">目标报价(万)</TableHead>
-                <TableHead class="w-24">基准价</TableHead>
-                <TableHead class="w-20">得分</TableHead>
-                <TableHead class="w-16 pr-3"></TableHead>
+                <TableHead class="w-28">降幅</TableHead>
+                <TableHead class="w-24">标准差</TableHead>
+                <TableHead class="w-20 text-right">参与率</TableHead>
+                <TableHead class="w-28 text-right">预测均价</TableHead>
+                <TableHead class="w-32 text-right">目标报价 (万)</TableHead>
+                <TableHead class="w-24 text-right">基准价</TableHead>
+                <TableHead class="w-20 text-right">得分</TableHead>
+                <TableHead class="w-16 pr-3 text-right">结果</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               <TableRow
                 v-for="(r, index) in results.results"
                 :key="r.scenario_name"
-                :class="index === results.best_index ? 'bg-primary/5' : ''"
-                class="hover:bg-transparent"
+                :class="index === results.best_index ? 'bg-muted' : ''"
+                class="hover:bg-accent/40"
               >
                 <TableCell class="pl-3 font-medium">{{ r.scenario_name }}</TableCell>
-                <TableCell class="font-mono text-xs">
+                <TableCell class="font-mono text-xs tabular-nums">
                   {{ formatReduction(r.reduction_type, r.reduction_value) }}
                 </TableCell>
                 <TableCell class="text-xs text-muted-foreground">
                   {{ formatStd(r.reduction_type, r.std_dev) }}
                 </TableCell>
-                <TableCell class="text-xs text-muted-foreground">
+                <TableCell class="text-right text-xs text-muted-foreground tabular-nums">
                   {{ formatRate(r.participation_rate) }}
                 </TableCell>
-                <TableCell class="font-mono text-xs">{{ r.search_center.toFixed(2) }}</TableCell>
-                <TableCell class="font-mono text-xs font-semibold">
+                <TableCell class="text-right font-mono text-xs tabular-nums">
+                  {{ r.search_center.toFixed(2) }}
+                </TableCell>
+                <TableCell class="text-right font-mono text-xs font-semibold tabular-nums">
                   {{ r.target_price.toFixed(4) }}
                 </TableCell>
-                <TableCell class="font-mono text-xs">{{ r.base_price.toFixed(2) }}</TableCell>
-                <TableCell class="font-mono text-xs">{{ r.target_score.toFixed(2) }}</TableCell>
+                <TableCell class="text-right font-mono text-xs tabular-nums">
+                  {{ r.base_price.toFixed(2) }}
+                </TableCell>
+                <TableCell class="text-right font-mono text-xs tabular-nums">
+                  {{ r.target_score.toFixed(2) }}
+                </TableCell>
                 <TableCell class="pr-3 text-right">
                   <Badge v-if="index === results.best_index" variant="default">最优</Badge>
                 </TableCell>
@@ -844,12 +913,13 @@ onActivated(loadAll);
             </TableBody>
           </Table>
         </div>
-        <p class="mt-2 text-xs text-muted-foreground">
+
+        <p class="border-t px-4 py-2 text-xs text-muted-foreground">
           共 {{ best.num_simulations }} 次模拟 · 各场景取中位数推荐 · 步长
           {{ formatWan(best.search_step, 4) }} 万
         </p>
-      </section>
-    </template>
+      </Panel>
+    </div>
 
     <!-- 导入确认（导入将整体替换工作集） -->
     <AlertDialog :open="importConfirmOpen" @update:open="(v) => (importConfirmOpen = v)">
@@ -862,7 +932,10 @@ onActivated(loadAll);
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" @click="pickImportFile">
+          <AlertDialogAction
+            class="bg-destructive text-white hover:bg-destructive/90"
+            @click="pickImportFile"
+          >
             选择文件并导入
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -878,16 +951,16 @@ onActivated(loadAll);
             {{ importPath.split(/[\\/]/).pop() }} · 导入将替换当前工作集
           </DialogDescription>
         </DialogHeader>
-        <div class="space-y-1 py-2">
-          <Label for="import-plan-name">方案名称</Label>
-          <Input
-            id="import-plan-name"
-            v-model="importPlanName"
-            placeholder="例如：XX 项目二轮报价"
-            @keydown.enter="runImport"
-          />
-          <p class="text-xs text-muted-foreground">名称会显示在页头，并随每次测算记录到历史</p>
-        </div>
+        <FormRow label="方案名称" required description="名称会显示在页头，并随每次测算记录到历史">
+          <template #default="{ id }">
+            <Input
+              :id="id"
+              v-model="importPlanName"
+              placeholder="例如：XX 项目二轮报价"
+              @keydown.enter="runImport"
+            />
+          </template>
+        </FormRow>
         <DialogFooter>
           <Button variant="outline" size="sm" @click="importDialogOpen = false">取消</Button>
           <Button size="sm" :disabled="importing || !importPlanName.trim()" @click="runImport">

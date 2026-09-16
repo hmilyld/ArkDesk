@@ -194,7 +194,7 @@ onUnmounted(() => {
 
           <!-- 图片预览 + 识别结果 双栏 -->
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Panel title="图片预览" body-class="p-2">
+            <Panel class="min-w-0" title="图片预览" body-class="p-2">
               <div class="flex items-center justify-center rounded-sm bg-muted/30 p-2">
                 <img
                   :src="imagePreview"
@@ -204,7 +204,7 @@ onUnmounted(() => {
               </div>
             </Panel>
 
-            <Panel title="识别结果">
+            <Panel class="min-w-0" title="识别结果">
               <template #actions>
                 <Button variant="ghost" size="sm" :disabled="!resultText" @click="copyText">
                   复制文字

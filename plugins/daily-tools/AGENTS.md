@@ -102,6 +102,9 @@
 - 动作按钮放 `#actions`（`size="sm"`、图标 `size-3.5` + `mr-1`）；说明文案用
   `text-xs text-muted-foreground`；错误条用
   `rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive`。
+- Panel 不预设栅格跨度：作为 `grid grid-cols-12` 的**直接子项**时必须自己在 `class` 上写跨度
+  （如 `col-span-12 lg:col-span-6`），否则会塌成 1/12 宽；宽内容（表格 / 长文本）加 `min-w-0`
+  让其内部滚动而不是撑破栅格。
 - 全插件已按此收敛：`views/{FileConverter,ImageOcr,JsonTable}.vue`、`components/crypto/*`（含
   `ResultBox` / `CopyableTextarea`）、`components/MarkdownPreview.vue`。
 

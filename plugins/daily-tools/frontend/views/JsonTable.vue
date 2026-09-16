@@ -381,7 +381,7 @@ onUnmounted(offOpenFiles);
   >
     <div class="grid w-full grid-cols-12 gap-4">
       <!-- 转换设置 -->
-      <Panel title="转换设置" body-class="space-y-4">
+      <Panel class="col-span-12" title="转换设置" body-class="space-y-4">
         <template #actions>
           <Button variant="ghost" size="sm" @click="swapFormats">
             <ArrowLeftRight class="mr-1 size-3.5" />
@@ -495,7 +495,11 @@ onUnmounted(offOpenFiles);
       </Panel>
 
       <!-- 输入 -->
-      <Panel class="col-span-12 lg:col-span-6" title="输入" :hint="FORMAT_LABELS[sourceFormat]">
+      <Panel
+        class="col-span-12 min-w-0 lg:col-span-6"
+        title="输入"
+        :hint="FORMAT_LABELS[sourceFormat]"
+      >
         <template #actions>
           <Button
             v-if="sourceFormat === 'xlsx'"
@@ -565,7 +569,7 @@ onUnmounted(offOpenFiles);
       </Panel>
 
       <!-- 输出 -->
-      <Panel class="col-span-12 lg:col-span-6" title="输出" :hint="outputHint">
+      <Panel class="col-span-12 min-w-0 lg:col-span-6" title="输出" :hint="outputHint">
         <template #actions>
           <Button variant="ghost" size="sm" :disabled="tables.length === 0" @click="copyOutput">
             复制

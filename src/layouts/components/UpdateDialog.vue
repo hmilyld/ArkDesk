@@ -79,7 +79,7 @@ async function onRestart(): Promise<void> {
       <!-- eslint-disable vue/no-v-html —— 内容来自更新服务器，经 marked 渲染；CSP 严格无内联脚本 -->
       <div
         v-if="notesHtml && !updaterState.installed"
-        class="markdown-body max-h-64 overflow-y-auto rounded-md border border-border bg-muted/30 p-3"
+        class="markdown-body max-h-64 overflow-y-auto rounded-md border bg-sunken p-3"
         v-html="notesHtml"
       />
       <!-- eslint-enable vue/no-v-html -->

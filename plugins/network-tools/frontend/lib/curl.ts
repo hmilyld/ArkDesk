@@ -5,7 +5,7 @@
  * 及 `--flag=value` 形式；忽略 `--compressed -L -k -s -o` 等无关参数。
  */
 
-import type { HttpRawLang, HttpRequestSpec } from './shared';
+import type { HttpRawLang, HttpRequestSpec } from '../shared';
 import {
   RAW_LANG_CONTENT_TYPES,
   buildCookieHeader,
@@ -13,7 +13,7 @@ import {
   kv,
   multipartRow,
   parseCookieHeader,
-} from './shared';
+} from '../shared';
 
 const SAFE_SHELL_RE = /^[A-Za-z0-9_./:@%+=,-]+$/;
 

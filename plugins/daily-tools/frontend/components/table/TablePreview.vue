@@ -5,9 +5,9 @@
 -->
 <script setup lang="ts">
 import { computed } from 'vue';
-import { formatCellText } from '../../table/cell-text';
-import type { Cell, Table } from '../../table/model';
-import type { TextFormatOptions } from '../../table/options';
+import { formatCellText } from '../../lib/table/cell-text';
+import type { Cell, Table } from '../../lib/table/model';
+import type { TextFormatOptions } from '../../lib/table/options';
 
 const props = withDefaults(
   defineProps<{

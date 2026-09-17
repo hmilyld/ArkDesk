@@ -5,7 +5,7 @@
 import { ref } from 'vue';
 import { http, type HttpSendOptions } from '@/core/http';
 import { logger } from '@/core/logger';
-import { errorMessage } from '../error';
+import { errorMessage } from '../lib/error';
 import type { HttpResponseView } from '../shared';
 
 export function useSend() {

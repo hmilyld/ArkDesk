@@ -13,20 +13,20 @@
 
 ## JSON 表格（json-table）
 
-统一中间表示 `Table` / `Cell` 定义在 `frontend/table/model.ts`：四种格式各自实现解析与
+统一中间表示 `Table` / `Cell` 定义在 `frontend/lib/table/model.ts`：四种格式各自实现解析与
 序列化，任意两两互转。**文本类格式全部在前端**，Rust 只做 xlsx 读写。
 
 | 文件                                         | 职责                                                             |
 | -------------------------------------------- | ---------------------------------------------------------------- |
-| `frontend/table/model.ts`                    | `Table`/`Cell`/`TableError`、列并集与列名规范化、行补齐          |
-| `frontend/table/options.ts`                  | 格式枚举、日期模式、预览行数、上限等常量（前后端上限需人工对齐） |
-| `frontend/table/path.ts`                     | 数据路径解析（`$.a.b`、`items[0]`、`[*]`）与候选数组路径扫描     |
-| `frontend/table/json-convert.ts`             | JSON ↔ Table（键并集、嵌套 JSON 序列化、类型还原）               |
-| `frontend/table/markdown.ts`                 | Table ↔ GFM 管道表（`marked` 解析；`\|` 与 `<br>` 转义）         |
-| `frontend/table/csv.ts`                      | Table ↔ CSV（RFC 4180 状态机、防公式注入）                       |
-| `frontend/table/cell-text.ts`                | 文本 ↔ 单元格（保守类型推断、按日期模式渲染）                    |
-| `frontend/table/convert.ts`                  | 文本源解析 / 文本目标序列化的统一入口 + 预览截断                 |
-| `frontend/table/xlsx.ts`                     | 前端侧 IPC 包装（列名规范化在后端读回后补齐）                    |
+| `frontend/lib/table/model.ts`                | `Table`/`Cell`/`TableError`、列并集与列名规范化、行补齐          |
+| `frontend/lib/table/options.ts`              | 格式枚举、日期模式、预览行数、上限等常量（前后端上限需人工对齐） |
+| `frontend/lib/table/path.ts`                 | 数据路径解析（`$.a.b`、`items[0]`、`[*]`）与候选数组路径扫描     |
+| `frontend/lib/table/json-convert.ts`         | JSON ↔ Table（键并集、嵌套 JSON 序列化、类型还原）               |
+| `frontend/lib/table/markdown.ts`             | Table ↔ GFM 管道表（`marked` 解析；`\|` 与 `<br>` 转义）         |
+| `frontend/lib/table/csv.ts`                  | Table ↔ CSV（RFC 4180 状态机、防公式注入）                       |
+| `frontend/lib/table/cell-text.ts`            | 文本 ↔ 单元格（保守类型推断、按日期模式渲染）                    |
+| `frontend/lib/table/convert.ts`              | 文本源解析 / 文本目标序列化的统一入口 + 预览截断                 |
+| `frontend/lib/table/xlsx.ts`                 | 前端侧 IPC 包装（列名规范化在后端读回后补齐）                    |
 | `frontend/components/table/TablePreview.vue` | Excel 目标的网格预览                                             |
 | `backend/xlsx/{dto,read,write}.rs`           | calamine 读 / rust_xlsxwriter 写；命令薄函数在 `backend/mod.rs`  |
 | `backend/xlsx/tests.rs`                      | 临时文件回环测试（类型、日期、表头、裁剪、注入、非法输入）       |
@@ -78,7 +78,7 @@
 - 调用：一律经 `composables/useCryptoCall.ts`（`ipc` + loading/error + 请求序号防乱序）。
 - 错误提示：`frontend/shared.ts` 的 `errorMessage()`（兼容 `AppError` 对象，翻译 Tauri 参数错误）；
   非 UTF-8 输入格式会在选择非「文本 (UTF-8)」时给出黄色提示。
-- 选项常量集中在 `frontend/crypto-shared.ts`；不在组件里重复定义。
+- 选项常量集中在 `frontend/lib/crypto-shared.ts`；不在组件里重复定义。
 - 输入框固定高度 + 超出滚动（`field-sizing: fixed` 覆盖 shadcn Textarea 的自动增高）。
 
 ### 选项区（按 Apple HIG 的 grouped form）
@@ -142,7 +142,7 @@
 - 非对称仅文本；RSA 密钥生成与 Argon2 为同步命令（已有 loading，不冻结 webview）。
 - 输入框中的密钥/口令为普通字符串（仅派生材料 `zeroize`）。
 - JSON 表格：类型推断默认关；日期格式仅影响文本输出；xlsx 读取上限 20 万行 / 2048 列
-  （前后端上限分别在 `frontend/table/options.ts` 与 `backend/xlsx/read.rs`，修改需同步）；
+  （前后端上限分别在 `frontend/lib/table/options.ts` 与 `backend/xlsx/read.rs`，修改需同步）；
   CSV 防注入的 `'` 前缀会改变字面文本（需无损往返时关闭）。
 
 ## 校验

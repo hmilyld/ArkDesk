@@ -1,7 +1,7 @@
 <!--
   JSON 表格工具页：JSON / Markdown / CSV / Excel 表格互转（键为表头）。
 
-  统一中间表示见 `frontend/table/`：文本类格式在前端解析与生成，xlsx 走 Rust（calamine /
+  统一中间表示见 `frontend/lib/table/`：文本类格式在前端解析与生成，xlsx 走 Rust（calamine /
   rust_xlsxwriter）。右侧预览截断，复制与导出始终使用全量数据。
 -->
 <script setup lang="ts">
@@ -29,8 +29,8 @@ import { ipc } from '@/core/ipc';
 import { onOpenFiles } from '@/core/open-with';
 import TablePreview from '../components/table/TablePreview.vue';
 import { errorMessage } from '../shared';
-import { parseTextSource, previewTable, serializeTextTarget } from '../table/convert';
-import { TableError, type ArrayPathCandidate, type Table } from '../table/model';
+import { parseTextSource, previewTable, serializeTextTarget } from '../lib/table/convert';
+import { TableError, type ArrayPathCandidate, type Table } from '../lib/table/model';
 import {
   DATE_MODES,
   DEFAULT_DATE_FORMAT,
@@ -40,8 +40,8 @@ import {
   TABLE_FORMATS,
   type DateMode,
   type TableFormat,
-} from '../table/options';
-import { listSheets, readSheet, writeWorkbook } from '../table/xlsx';
+} from '../lib/table/options';
+import { listSheets, readSheet, writeWorkbook } from '../lib/table/xlsx';
 
 // ── 格式选择 ──────────────────────────────────────────────────────
 

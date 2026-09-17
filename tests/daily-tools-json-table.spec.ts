@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { formatCellText, parseCellText } from '../plugins/daily-tools/frontend/table/cell-text';
+import { formatCellText, parseCellText } from '../plugins/daily-tools/frontend/lib/table/cell-text';
 import {
   parseTextSource,
   previewTable,
   serializeTextTarget,
-} from '../plugins/daily-tools/frontend/table/convert';
-import { csvToTables, tablesToCsv } from '../plugins/daily-tools/frontend/table/csv';
-import { formatDateValue } from '../plugins/daily-tools/frontend/table/dates';
-import { jsonToTables, tablesToJson } from '../plugins/daily-tools/frontend/table/json-convert';
-import { markdownToTables, tablesToMarkdown } from '../plugins/daily-tools/frontend/table/markdown';
+} from '../plugins/daily-tools/frontend/lib/table/convert';
+import { csvToTables, tablesToCsv } from '../plugins/daily-tools/frontend/lib/table/csv';
+import { formatDateValue } from '../plugins/daily-tools/frontend/lib/table/dates';
+import { jsonToTables, tablesToJson } from '../plugins/daily-tools/frontend/lib/table/json-convert';
+import {
+  markdownToTables,
+  tablesToMarkdown,
+} from '../plugins/daily-tools/frontend/lib/table/markdown';
 import {
   boolCell,
   dateCell,
@@ -16,8 +19,8 @@ import {
   TableError,
   uniqueColumnNames,
   type Table,
-} from '../plugins/daily-tools/frontend/table/model';
-import { findArrayPaths, resolvePath } from '../plugins/daily-tools/frontend/table/path';
+} from '../plugins/daily-tools/frontend/lib/table/model';
+import { findArrayPaths, resolvePath } from '../plugins/daily-tools/frontend/lib/table/path';
 
 const ISO_OPTIONS = { dateMode: 'iso', dateFormat: 'yyyy-MM-dd HH:mm:ss' } as const;
 

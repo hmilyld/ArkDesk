@@ -28,7 +28,7 @@ import FlowList from '../components/intercept/FlowList.vue';
 import PortDialog from '../components/intercept/PortDialog.vue';
 import WsDetail from '../components/intercept/WsDetail.vue';
 import { useInterceptor } from '../composables/useInterceptor';
-import { errorMessage } from '../error';
+import { errorMessage } from '../lib/error';
 import {
   EMPTY_FILTER,
   STATUS_OPTIONS,
@@ -38,9 +38,9 @@ import {
   type FlowRecord,
   type ProxyConfig,
   type WsRecord,
-} from '../intercept-shared';
+} from '../lib/intercept-shared';
 import { HTTP_METHODS } from '../shared';
-import { httpSettings as settings } from '../settings-store';
+import { httpSettings as settings } from '../lib/settings-store';
 
 const {
   status,

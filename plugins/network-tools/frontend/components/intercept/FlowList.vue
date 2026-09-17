@@ -4,7 +4,12 @@ import { Activity } from '@lucide/vue';
 import { Badge } from '@/components/ui/badge';
 import EmptyState from '@/components/native/EmptyState.vue';
 import { formatBytes, httpMethodClass, statusBadgeVariant, urlPath } from '../../shared';
-import { classifyFlow, formatClock, KIND_LABELS, type FlowSummary } from '../../intercept-shared';
+import {
+  classifyFlow,
+  formatClock,
+  KIND_LABELS,
+  type FlowSummary,
+} from '../../lib/intercept-shared';
 
 defineProps<{ flows: FlowSummary[]; selectedId: number | null }>();
 const emit = defineEmits<{ select: [id: number] }>();

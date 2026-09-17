@@ -10,7 +10,7 @@ import {
   urlPath,
   type HttpRequestSpec,
   type HttpResponseView,
-} from './shared';
+} from '../shared';
 
 export interface HeaderPair {
   name: string;

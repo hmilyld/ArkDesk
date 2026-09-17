@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { collectVars, resolveSpec, substitute } from '../plugins/network-tools/frontend/variables';
+import {
+  collectVars,
+  resolveSpec,
+  substitute,
+} from '../plugins/network-tools/frontend/lib/variables';
 import { createRequestSpec, kv, prettyBody } from '../plugins/network-tools/frontend/shared';
 
 describe('substitute', () => {

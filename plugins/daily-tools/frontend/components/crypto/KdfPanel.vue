@@ -16,7 +16,7 @@ import {
 import { Play } from '@lucide/vue';
 import Panel from '@/components/tool/Panel.vue';
 import { useCryptoCall } from '../../composables/useCryptoCall';
-import { BYTE_FORMATS, type ByteFormat } from '../../crypto-shared';
+import { BYTE_FORMATS, type ByteFormat } from '../../lib/crypto-shared';
 import ResultBox from './ResultBox.vue';
 
 const algorithm = ref('pbkdf2');

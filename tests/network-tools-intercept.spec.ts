@@ -9,7 +9,7 @@ import {
   isBinaryRequest,
   type FlowRecord,
   type FlowSummary,
-} from '../plugins/network-tools/frontend/intercept-shared';
+} from '../plugins/network-tools/frontend/lib/intercept-shared';
 
 function summary(patch: Partial<FlowSummary> = {}): FlowSummary {
   return {

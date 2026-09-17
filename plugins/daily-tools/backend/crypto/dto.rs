@@ -1,6 +1,6 @@
 //! 加解密命令的请求/响应 DTO。
 //!
-//! `#[tauri::command]` 必须定义在 `backend/mod.rs`（构建期只扫描该文件），
+//! tauri 命令宏必须定义在 `backend/mod.rs`（构建期只扫描该文件），
 //! 故这里只放数据结构。字段统一 `camelCase`，与前端调用参数对齐。
 
 use serde::{Deserialize, Serialize};

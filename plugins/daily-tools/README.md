@@ -9,7 +9,7 @@
 
 ## JSON 表格工具
 
-前端 `frontend/views/JsonTable.vue` + `frontend/table/*`（转换核心，纯逻辑、可单测）；
+前端 `frontend/views/JsonTable.vue` + `frontend/lib/table/*`（转换核心，纯逻辑、可单测）；
 后端仅负责 xlsx 读写：`backend/xlsx/*`，命令薄函数在 `backend/mod.rs`。
 
 统一中间表示 `Table { name, columns, rows }`，单元格 `Cell { t: s|n|b|d|e, v, n?, f? }`

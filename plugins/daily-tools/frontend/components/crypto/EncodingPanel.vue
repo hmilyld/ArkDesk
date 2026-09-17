@@ -26,7 +26,7 @@ import {
   ENCODE_SCHEMES,
   TEXT_ENCODINGS,
   type ByteFormat,
-} from '../../crypto-shared';
+} from '../../lib/crypto-shared';
 import ResultBox from './ResultBox.vue';
 import TaskProgress from './TaskProgress.vue';
 

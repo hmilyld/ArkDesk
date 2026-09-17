@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCurl, parseCurl, tokenizeCurl } from '../plugins/network-tools/frontend/curl';
+import { buildCurl, parseCurl, tokenizeCurl } from '../plugins/network-tools/frontend/lib/curl';
 import { createRequestSpec, kv } from '../plugins/network-tools/frontend/shared';
 
 describe('tokenizeCurl', () => {

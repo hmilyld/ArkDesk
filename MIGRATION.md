@@ -5,8 +5,8 @@
 
 ## 0. 一句话现状
 
-**改造已完成并合入 `main`。** 上游框架层分 5 个 PR 全部落地（规范 → token/组件 → 壳层材质 → lint 清零 → 窗口材质），
-fork 的 `main` = **上游框架 + 本地层 + 插件层（全部批次）**，状态：
+**改造已完成并合入 `main`。** 上游框架层 PR #5~#12 全部落地（规范 → token/组件 → 壳层材质 → lint 清零 →
+窗口材质 → 示例插件规范化 → 插件目录规范），fork 的 `main` = **上游框架 + 本地层 + 插件层（全部批次 + 目录规范迁移）**，状态：
 
 - `pnpm lint`：**设计 lint 0 违规**（`src/` 与 `plugins/` 全清零）。
 - `pnpm build` / `pnpm test`：全绿（vitest 71 通过）。
@@ -25,8 +25,11 @@ fork 的 `main` = **上游框架 + 本地层 + 插件层（全部批次）**，�
 | #9  | `8021585` | 应用窗口材质（Rust）：macOS `underWindowBackground` / Windows Mica Alt + `VIBRANCY_ACTIVE` 防实色打底                                                                                                                        |
 | #11 | `4d2ef45` | 示例工具整体规范化：`hello-world`（8 视图 Panel 化/三态/FormRow/Segmented/ListRow/控制台前景/粘性表头）与 `system`（SearchField+ListRow、数据网格、DDL inset、对话框 FormRow、平台化删除确认）、`_template` 重写为可复制样板 |
 | #10 | `eb1b9ba` | 清理 base 里的 fork 残留：UA 品牌硬编码改 `CARGO_PKG_NAME` 派生；预览桥移除 fork 插件夹具、改为**插件自带夹具扩展点**；`DESIGN-appendix` 文档纠偏；补齐 P4-1/P4-2（hello-world / system），**base lint 严格模式 0 违规**     |
+| #12 | `4b378dc` | 插件目录规范 `plugins/README.md`（`frontend/` 顶层白名单）+ 结构 lint `scripts/lint-plugins.mjs`（R-P1~R-P6，接入 `pnpm lint`）+ 模板/脚手架补齐                                                                             |
 
 > #5 的 P3 层实际只上游了 `SideNav` 的一部分；其余壳层与 Rust 材质由 #8 / #9 补齐（这是本轮新增的三个 PR 的原因）。
+> #12 接入后，fork 自有插件同步迁移：纯逻辑 TS 归入 `frontend/lib/`（network-tools 6 个文件、daily-tools
+> `table/*` + `crypto-shared`），并修复一处文档注释触发 R-P4 的误报。
 
 ## 2. 已完成的插件批次（fork 层）
 
@@ -54,11 +57,16 @@ pnpm lint && pnpm build && pnpm test && cargo check --manifest-path src-tauri/Ca
 > 框架层改动**一律不在 fork 就地改**（否则与上游分叉、merge 必冲突）。
 > 冲突预案：`src/core/theme/index.ts` 保留 fork 的 `arkdesk.*` 键值，但采用上游的 `STORAGE_KEYS` 导出结构（预览桥依赖它）。
 
+最近一轮（插件目录规范 #12）的整合口径：在 `chore/plugin-lib-layout`（= `design/plugin-conformance` +
+lib/ 迁移）上一次性 `git merge upstream/main`，上游插件（`_template` / `hello-world` / `system`）整目录取
+theirs、`AGENTS.md` 手工并入、README/MIGRATION 取 fork 版；因两条线共享基线较旧，fork 插件的 `frontend/**`
+与 `tests/**` 是 add/add 冲突，一律取设计分支（含 lib/ 迁移）版本。
+
 分支现状：
 
-- `main`：**唯一长留分支**（上游框架 + 本地层 + 插件层）。
-- `design/plugin-conformance`：过渡分支（`upstream/main` + 插件层 + fork 文档），已并入 `main`，保留作对照，可删。
-- `design/desktop-proto`：旧原型分支（含已被上游吸收的框架层提交），已完成使命，可删。
+- `main`：**唯一长留分支**（上游框架 + 本地层 + 插件层 + 目录规范）。
+- `design/plugin-conformance` / `chore/plugin-lib-layout`：内容已并入 `main`，已删除。
+- `design/desktop-proto`：旧原型分支（含已被上游吸收的框架层提交），已完成使命，已删除。
 
 ## 4. 上游 PR 要点（后续提 PR 复用）
 
@@ -109,3 +117,5 @@ node scripts/design-shot.mjs --url "/tool/http-client" --out /tmp/a.png \
 - 窗口材质：启用后 `set_window_background` 不做实色打底（否则盖住材质），防白闪靠前端不透明底；
   勿删 `VIBRANCY_ACTIVE` 的提前返回（`src-tauri/src/lib.rs`）。
 - 插件预览夹具只放 `plugins/<id>/frontend/preview.ts`，**不要**再把插件命令写进 `src/dev/preview-bridge.ts`（base 不接受 fork 插件名）。
+- 插件内部结构遵循上游 `plugins/README.md`：`frontend/` 顶层白名单、纯逻辑放 `frontend/lib/`、
+  命令只写在 `backend/mod.rs`；`pnpm lint` 已含 `lint-plugins.mjs`（R-P1~R-P6）。

@@ -55,9 +55,9 @@
 - 数据层 composable（`frontend/composables/`）：`useSend` / `useCollections` / `useHistory` / `useEnvironments` / `useDraft`。
 - 共享模型：`frontend/shared.ts`（`HttpRequestSpec` / `HttpResponseView` / 设置默认值 / `buildSendOptions`）。
   发送页与未来拦截页共用同一模型与组件。
-- 纯逻辑：`frontend/curl.ts`（cURL 互转）、`frontend/variables.ts`（变量替换）、`frontend/transfer.ts`（自有 JSON 导入导出格式）；
-  **不得**引入 Tauri 依赖，以保证 vitest（node 环境）可测。格式化错误请用 `frontend/error.ts`（可依赖 `@/core/errors`）。
-- 设置单例：`frontend/settings-store.ts` 的 `httpSettings`（发送页与设置页共用，勿各自 `useToolSettings`）。
+- 纯逻辑：`frontend/lib/curl.ts`（cURL 互转）、`frontend/lib/variables.ts`（变量替换）、`frontend/lib/transfer.ts`（自有 JSON 导入导出格式）；
+  **不得**引入 Tauri 依赖，以保证 vitest（node 环境）可测。格式化错误请用 `frontend/lib/error.ts`（可依赖 `@/core/errors`）。
+- 设置单例：`frontend/lib/settings-store.ts` 的 `httpSettings`（发送页与设置页共用，勿各自 `useToolSettings`）。
 - 组件（`frontend/components/`）一律 props 驱动、无业务状态，拦截页复用：
   `KeyValueEditor` / `BodyEditor` / `AuthEditor` / `RequestTabs` / `ResponsePanel` / `CollectionsSidebar` / `CurlDialog`。
 - 请求拦截前端：`views/Interceptor.vue` + `components/intercept/`（`FlowList`/`FlowDetail`/`WsDetail`/`CaDialog`/`PortDialog`）

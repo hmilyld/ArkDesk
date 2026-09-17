@@ -19,7 +19,7 @@ import {
 import { KeyRound, Play } from '@lucide/vue';
 import { ipc } from '@/core/ipc';
 import { errorMessage } from '../../shared';
-import { BYTE_FORMATS, type ByteFormat } from '../../crypto-shared';
+import { BYTE_FORMATS, type ByteFormat } from '../../lib/crypto-shared';
 import CopyableTextarea from './CopyableTextarea.vue';
 import ResultBox from './ResultBox.vue';
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * 设计规范 lint（见 DESIGN.md §6 反例清单）。
+ * 设计规范 lint（见 docs/design.md §6 反例清单）。
  *
  * 默认 **告警模式**：打印违规统计与文件清单，退出码 0（迁移期不阻塞开发）。
  * `--strict` 时退出码 1，供迁移完成后接入 CI 硬门禁。
  *
- * 规则（可机器判定部分；其余靠 DESIGN.md §7 评审清单）：
+ * 规则（可机器判定部分；其余靠 docs/design.md §7 评审清单）：
  *   R1 旧卡片配方：`border-border bg-card` / `border border-border bg-card`
  *   R2 任意透明度表面：`bg-muted/NN`、`bg-card/NN`、`bg-background/NN`、`bg-sidebar/NN`
  *   R3 非浮层使用 `rounded-xl`（仅 ui/ 浮层组件与 native/ 可用）
@@ -31,21 +31,21 @@ const RULES = [
     id: 'R1',
     name: '旧卡片配方',
     test: (text) => /border-border\s+bg-card|border\s+border-border\s+bg-card/.test(text),
-    hint: '统一 `rounded-lg border bg-card`（DESIGN.md §2.2/§2.6）',
+    hint: '统一 `rounded-lg border bg-card`（docs/design.md §2.2/§2.6）',
     skipUi: true,
   },
   {
     id: 'R2',
     name: '任意透明度的表面色',
     test: (text) => /\bbg-(muted|card|background|sidebar)\/\d+/.test(text),
-    hint: '走层次枚举 bg-muted / bg-sunken / bg-accent（DESIGN.md §2.5）',
+    hint: '走层次枚举 bg-muted / bg-sunken / bg-accent（docs/design.md §2.5）',
     skipUi: true,
   },
   {
     id: 'R3',
     name: '非浮层使用 rounded-xl',
     test: (text) => /\brounded-xl\b/.test(text),
-    hint: 'rounded-md=控件 / rounded-lg=容器 / rounded-xl=浮层（DESIGN.md §2.2）',
+    hint: 'rounded-md=控件 / rounded-lg=容器 / rounded-xl=浮层（docs/design.md §2.2）',
     skipUi: true,
   },
   {
@@ -53,13 +53,13 @@ const RULES = [
     name: '写死 px 尺寸',
     // 只匹配控件尺寸；`max-h-[…]` / `min-h-[…]` 是内容视口尺寸，属允许项
     test: (text) => /(?<![a-z-])(?:h|w)-\[\d+px\]/.test(text),
-    hint: '控件高度用 rem 档（h-7/h-8/h-9）随三档字号缩放（DESIGN.md §2.4）',
+    hint: '控件高度用 rem 档（h-7/h-8/h-9）随三档字号缩放（docs/design.md §2.4）',
     skipUi: true,
   },
   {
     id: 'R6',
     name: '焦点环未按规范',
-    // 规范：focus-visible:border-ring + ring-3 + ring-ring/60（DESIGN.md §2.9）
+    // 规范：focus-visible:border-ring + ring-3 + ring-ring/60（docs/design.md §2.9）
     test: (text) =>
       /focus-visible:ring-(1|2|4)\b|focus-visible:ring-\[|focus-visible:ring-ring\/(?!60)\d+/.test(
         text
@@ -71,7 +71,7 @@ const RULES = [
     id: 'R5',
     name: '全局动效压制',
     test: (text) => /transition-duration:\s*75ms/.test(text),
-    hint: '使用动效 token（DESIGN.md §2.7）',
+    hint: '使用动效 token（docs/design.md §2.7）',
     skipUi: false,
   },
 ];
@@ -121,7 +121,7 @@ if (total === 0) {
   console.log('[lint-design] 未发现违规 ✅');
 } else {
   console.log(
-    `[lint-design] 发现 ${total} 处待收敛（${STRICT ? '严格模式' : '告警模式'}，见 DESIGN.md §6）`
+    `[lint-design] 发现 ${total} 处待收敛（${STRICT ? '严格模式' : '告警模式'}，见 docs/design.md §6）`
   );
   for (const { rule, items } of [...byRule.values()].sort(
     (a, b) => b.items.length - a.items.length

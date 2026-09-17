@@ -1,5 +1,5 @@
 <!--
-  加载态（DESIGN.md §4）：<1s 不显示任何指示；1–10s 用骨架屏；>10s 用进度 + 取消。
+  加载态（docs/design.md §4）：<1s 不显示任何指示；1–10s 用骨架屏；>10s 用进度 + 取消。
   本组件只负责「骨架屏」与「行内转圈」两种标准形态，长任务进度用 ProgressBar + core/tasks 取消。
 -->
 <script setup lang="ts">

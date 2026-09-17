@@ -1,7 +1,7 @@
 # 插件开发总览
 
 > 面向插件作者与 AI 的唯一入口文档。**目录与命名规范**在此定义；扩展机制、命令/迁移约定见根
-> [`AGENTS.md`](../AGENTS.md) 的「插件扩展」，UI 规范见 [`DESIGN.md`](../DESIGN.md) 及平台文档。
+> [`AGENTS.md`](../AGENTS.md) 的「插件扩展」，UI 规范见 [`docs/design.md`](../docs/design.md) 及平台文档。
 
 ## 1. 目录规范
 
@@ -51,7 +51,7 @@ pnpm create-plugin        # 交互式：id / 显示名 / 图标 / 主题色 / �
 生成后即可运行；随后：
 
 1. 改 `plugin.json`（id、显示名、图标、`tools[].entry`）——**唯一事实源**；
-2. 实现 `frontend/views/*.vue`（UI 规范见 `DESIGN.md`，模块用 `@/components/tool/Panel` 包裹）；
+2. 实现 `frontend/views/*.vue`（UI 规范见 `docs/design.md`，模块用 `@/components/tool/Panel` 包裹）；
 3. 需要后端时在 `backend/mod.rs` 加 `#[tauri::command]`（`<plugin_id>_` 前缀，返回 `Result<T, AppError>`）；
 4. 需要落库时在 `backend/migrations.rs` 追加 `migration(scope, version, …)`，并在 `frontend/schema.ts` 定义表；
 5. 补 `README.md`（功能）与 `AGENTS.md`（开发约定）。
@@ -74,5 +74,5 @@ pnpm create-plugin        # 交互式：id / 显示名 / 图标 / 主题色 / �
 - `plugins/_template/`：最小骨架（脚手架来源），演示目录规范与页面结构。
 - `plugins/hello-world/`：完整链路演示（命令、日志、数据库、表单、表格、任务、多窗口）。
 - `plugins/system/`：纯前端插件示例（无 backend，仅表格与对话框）。
-- 与本规范配套的 UI 规范见 [`DESIGN.md`](../DESIGN.md)；视觉走查可用
+- 与本规范配套的 UI 规范见 [`docs/design.md`](../docs/design.md)；视觉走查可用
   `src/dev/preview-bridge.ts` + `scripts/design-shot.mjs`（浏览器内渲染并截图）。

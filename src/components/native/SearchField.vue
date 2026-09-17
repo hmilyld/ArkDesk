@@ -1,5 +1,5 @@
 <!--
-  搜索框（DESIGN.md §3）：放大镜在左、输入即搜、有内容时显示清除按钮。
+  搜索框（docs/design.md §3）：放大镜在左、输入即搜、有内容时显示清除按钮。
   事件与原生 input 一致（v-model + $attrs 透传，如 @keydown、ref），可直接替换普通 Input 用于过滤/查找。
 
     <SearchField v-model="query" placeholder="筛选工具" @keydown.down.prevent="…" />

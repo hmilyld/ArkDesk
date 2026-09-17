@@ -1,8 +1,8 @@
 # 设计规范 · 共享核心
 
 > 本文件是全项目 UI 的**唯一事实源**（Single Source of Truth）。macOS 与 Windows 的平台差异见
-> [`DESIGN-macos.md`](DESIGN-macos.md) 与 [`DESIGN-windows.md`](DESIGN-windows.md)；逐控件正反例见
-> [`DESIGN-appendix.md`](DESIGN-appendix.md)。改造进度与迁移规则见仓库根 `AGENTS.md`。
+> [`design-macos.md`](design-macos.md) 与 [`design-windows.md`](design-windows.md)；逐控件正反例见
+> [`design-appendix.md`](design-appendix.md)。改造进度与迁移规则见仓库根 `AGENTS.md`。
 >
 > **参考源**（评审时可逐条核对）：
 >
@@ -151,9 +151,9 @@
 **禁止**：滚动内容区、表格、表单、卡片主体使用毛玻璃（性能与可读性）。
 
 - macOS → `NSVisualEffectView` 语义材质：侧栏 `sidebar`、工具栏 `headerView`、浮层 `popover`/`menu`、
-  对话框 `sheet`（详见 `DESIGN-macos.md`）。
+  对话框 `sheet`（详见 `design-macos.md`）。
 - Windows → `Mica`（窗口基底）/ `Mica Alt`（含导航与命令区的应用，官方推荐）/ `Acrylic`（浮层）
-  （详见 `DESIGN-windows.md`）。
+  （详见 `design-windows.md`）。
 - **必须有纯色回退**：`prefers-reduced-transparency: reduce`、用户关闭透明、Windows 电池节能/低端硬件/
   窗口失焦 → 回退为 `bg-card`/`bg-background` 实色。回退不是降级体验，必须在两种形态下都可读。
 - 同一屏最多 2 处材质；禁止材质上叠材质；材质层的前景色必须提高对比（不用 `text-muted-foreground` 作主文本）。
@@ -162,7 +162,7 @@
 
 - 焦点环（**规范表达式，唯一写法**）：`focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/60`，
   形状跟随控件圆角；**`focus-visible` 恒可见**，不得 `outline-none` 后无替代（`ui/` 内 11 个组件已统一，lint R6 拦截偏差）。
-  Windows 由 `--focus-ring-width: 2px` 改为双描边观感（见 `DESIGN-windows.md §7`）。
+  Windows 由 `--focus-ring-width: 2px` 改为双描边观感（见 `design-windows.md §7`）。
 - 所有自定义可交互元素必须：可聚焦（`tabindex="0"`）、有 `role` 与可读名称（`aria-label`/文本）、响应 Enter/Space。
 - 复合控件键盘语义（新增要求，现状为 0 处 tabindex/3 处 role）：
   - 分段控件：`role="tablist"` + ←/→ 移动、Home/End 首尾；

@@ -6,7 +6,7 @@
  * 覆盖：tauri.conf（productName/identifier/title）、package.json、Cargo.toml（包名/lib 名）、
  *       main.rs 调用、前端与文档中的应用名、默认主题色 / 默认主题。
  * 不覆盖：图标（改 src-tauri/icons/icon.svg 后跑 pnpm tauri icon）、
- *         示例插件删除（见 START.md——Rust 模块绑定迁移历史，建议保留）。
+ *         示例插件删除（见 docs/start.md——Rust 模块绑定迁移历史，建议保留）。
  * 完成后：pnpm install（刷新 lockfile）→ pnpm tauri dev。
  */
 import { readFile, writeFile, readdir, lstat } from 'node:fs/promises';

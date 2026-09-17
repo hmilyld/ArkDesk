@@ -32,7 +32,7 @@ function toggleSidebar(): void {
 }
 
 /** 应用显示名：动态读取 tauri.conf 的 productName，改名无需改前端代码 */
-const appName = ref('PocketArk');
+const appName = ref('ArkDesk');
 onMounted(async () => {
   try {
     appName.value = await getName();
@@ -66,7 +66,7 @@ const groups = computed<ToolGroup[]>(() => {
   return [...map.entries()].map(([name, tools]) => ({ name, tools }));
 });
 
-/** 激活态：accent 低饱和填充 + 主色图标 + 提亮文字（DESIGN-macos.md §7：不用强调线/边框） */
+/** 激活态：accent 低饱和填充 + 主色图标 + 提亮文字（docs/design-macos.md §7：不用强调线/边框） */
 const activeClasses = 'bg-primary/10 text-foreground font-medium [&>svg]:text-primary';
 </script>
 

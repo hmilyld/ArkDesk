@@ -32,7 +32,7 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 ## 本地层（fork 专属）
 
 框架自身**不下载任何资源、不含个人工具**。若你的 fork 叠加了个人工具（字体/OCR 等
-资源、额外 Rust 依赖、额外权限），约定集中在「本地层」，详见仓库根 `LOCAL.md`：
+资源、额外 Rust 依赖、额外权限），约定集中在「本地层」，详见仓库根 `docs/local.md`：
 `src-tauri/local-resources/`（资源）、`scripts/local/`（下载脚本）、
 `Cargo.toml` 的 `local plugin deps` 段、`capabilities/local.json`（如有）。
 
@@ -79,7 +79,7 @@ composable 用 `useXxx.ts`、后端命令只在 `backend/mod.rs` 等），完整
 - 版本唯一事实源 = `tauri.conf.json > version`；发版前 `pnpm version:bump x.y.z` 同步三处。
 - 更新选择为严格 semver（远端 > 本地），**版本号必须单调递增**；清单 `version` 须与构建版本一致。
 - 私钥（`~/.tauri/pocketark.key`）不入库；本地构建用 `TAURI_SIGNING_PRIVATE_KEY_PATH`，CI 用 Secrets `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。
-- 自动发布：base 提供 `.github/workflows/release-reusable.yml`（可复用），fork 加一个 caller；完整流程见 [RELEASE.md](RELEASE.md)。
+- 自动发布：base 提供 `.github/workflows/release-reusable.yml`（可复用），fork 加一个 caller；完整流程见 [release.md](docs/release.md)。
 
 ## 框架能力索引
 
@@ -123,13 +123,14 @@ composable 用 `useXxx.ts`、后端命令只在 `backend/mod.rs` 等），完整
 - **HTTP**：走 `@/core/http`（Rust reqwest，无 CORS），禁止 webview 内 `fetch` 采集。简单/采集请求用 `getJson/postJson/request`；需要自定义重定向、SSL 校验、超时、cookie 模式、multipart 上传、二进制响应或取消时用 `http.send()`（Rust `http_send`，与采集用全局 Client 隔离）。
 - **日志**：用 `@/core/logger` 的 `logger` 或插件 `ctx.logger`，禁止裸 `println!`。
 - **图标**：只允许 `@lucide/vue`（`lucide-vue-next` 已弃用，勿再引入）。
-- **设计规范（唯一事实源）**：所有 UI 视觉与交互遵循 `DESIGN.md`（共享核心：token、组件语义、三态与反馈、文案、反例清单）+
-  `DESIGN-macos.md` / `DESIGN-windows.md`（平台层）+ `DESIGN-appendix.md`（逐控件 Do/Don't）。视觉取值只能来自 token；
+- **设计规范（唯一事实源）**：所有 UI 视觉与交互遵循 `docs/design.md`（共享核心：token、组件语义、三态与反馈、文案、反例清单）+
+  `docs/design-macos.md` / `docs/design-windows.md`（平台层）+ `docs/design-appendix.md`（逐控件 Do/Don't）。视觉取值只能来自 token；
   机器校验由 `pnpm lint` 里的 `scripts/lint-design.mjs` 承担（R1 旧卡片配方 / R2 任意透明度表面 / R3 非浮层 rounded-xl /
   R4 写死控件尺寸 / R5 动效压制 / R6 焦点环表达式），`pnpm lint:design` 为严格模式。**平台差异只允许落在**：
   材质与回退、窗口壳、菜单与快捷键呈现、对话框按钮语义、焦点视觉、圆角档（由 `[data-platform]` 覆盖 token 实现）。
+- **文档索引**：全部规范与指南在 `docs/`，索引见 [`docs/README.md`](docs/README.md)（含文档治理约定）。
 - **设计走查**：`src/dev/preview-bridge.ts`（仅 dev + 非 Tauri 生效）让 Web 层可在浏览器渲染，
-  配合 `scripts/design-shot.mjs` 可脚本化截图核对规范（用法见 `DESIGN-appendix.md §3.5`）。
+  配合 `scripts/design-shot.mjs` 可脚本化截图核对规范（用法见 `docs/design-appendix.md §3.5`）。
 - **样式**：shadcn-vue 语义色（`bg-primary` 等），禁止硬编码色值；已有 `text-success/warning/info`、`bg-console` 等 token。
 - **工具页模块**：页面里每个功能模块（设置 / 输入 / 输出 / 结果 / 列表）一律用 `@/components/tool/Panel` 包裹（外框 + 头部条标题 + 右上角动作 + 正文），不要在页面上裸露模块，也不要在 Panel 内嵌套卡片——预览、表格等组件自身不带外框，外框交给 Panel。头部标题用 `text-xs font-medium text-muted-foreground`，动作按钮 `size="sm"`、图标 `size-3.5`；正文默认 `space-y-3 p-4`（满幅场景用 `body-class` 覆盖）；错误条用 `rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive`。
 - **设置页 UI**：系统设置页与所有插件设置面板统一用 `@/components/settings` 的 `SettingsSection` / `SettingsRow` / `SettingsField`（单一事实源，视觉随系统设置页），勿自造小节标题与卡片样式；密集数值字段在 `SettingsSection` 内用 grid + `SettingsField`。
@@ -165,7 +166,7 @@ composable 用 `useXxx.ts`、后端命令只在 `backend/mod.rs` 等），完整
 
 - **macOS 托盘点击不激活窗口**：`show_menu_on_left_click(false)` 时点击菜单栏图标，AppKit 不会激活所属应用；`show()`/`set_focus()` 只做 `makeKeyAndOrderFront`，窗口被排到次层——看似「点了没反应」，切到别的应用才见窗口已显示（Dock 图标能用是因为 macOS 会激活应用）。上游 tauri#14795（tray-icon 0.25.0 仍未修）。`tray::show_main_window` 已改为立即 + 延迟一拍（下个 runloop）重试，并在 macOS 上调 `NSApp.activateIgnoringOtherApps(true)`；同时 `RunEvent::Reopen` 显式唤起主窗口。勿删这两处，否则回归。
 
-- **本地层编译依赖（ocr-rs 等）**：这类重依赖属 fork 本地层，相关编译问题（macOS `CXXFLAGS`、Windows libclang）由 fork 自行处理并记录在 `LOCAL.md`；base 不含这些依赖，无此问题。
+- **本地层编译依赖（ocr-rs 等）**：这类重依赖属 fork 本地层，相关编译问题（macOS `CXXFLAGS`、Windows libclang）由 fork 自行处理并记录在 `docs/local.md`；base 不含这些依赖，无此问题。
 
 ## 目录速览
 
@@ -184,7 +185,8 @@ src/stores/          # Pinia（全局设置）
 src-tauri/src/       # db.rs（sqlx+作用域迁移）、http.rs、tray.rs、updater.rs、tasks.rs、open.rs、menu.rs、diagnostics.rs、files.rs、plugins/mod.rs（include 生成物）
 src-tauri/build.rs   # 扫描 plugins/ 生成命令注册与迁移聚合
 src-tauri/local-resources/  # ★本地层资源（fork-owned；base 无）
-LOCAL.md             # ★本地层说明（fork 专属）
+docs/                # ★规范与指南（索引 docs/README.md，文档治理见该文件）
+  local.md           #   本地层说明（fork 专属）
 ```
 
 生成的 shadcn 组件 `src/components/ui/**` 由 CLI 管理：可改样式，勿改结构/逻辑。

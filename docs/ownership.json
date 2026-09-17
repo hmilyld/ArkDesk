@@ -1,0 +1,60 @@
+{
+  "$comment": "框架 / fork / shared 路径归属清单。回填上游（PocketArk）时只搬 framework；shared 结构随上游、内容因 fork 而异，需人工适配；fork 永不回填。匹配优先级见 precedence（先匹配者胜）。",
+  "precedence": ["fork", "shared", "framework"],
+  "framework": [
+    "src/**",
+    "src-tauri/src/**",
+    "src-tauri/build.rs",
+    "src-tauri/capabilities/**",
+    "src-tauri/icons/**",
+    "src-tauri/tauri.conf.json",
+    "src-tauri/framework-commands.json",
+    "scripts/*.mjs",
+    ".github/workflows/ci.yml",
+    ".github/workflows/release-reusable.yml",
+    "plugins/README.md",
+    "plugins/_template/**",
+    "plugins/hello-world/**",
+    "plugins/system/**",
+    "docs/**",
+    "public/**",
+    "index.html",
+    "eslint.config.ts",
+    "commitlint.config.mjs",
+    "components.json",
+    "tsconfig.json",
+    "tsconfig.node.json",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "pnpm-workspace.yaml"
+  ],
+  "fork": [
+    "plugins/daily-tools/**",
+    "plugins/network-tools/**",
+    "plugins/text2video/**",
+    "plugins/tender-optimizer/**",
+    "scripts/local/**",
+    "src-tauri/local-resources/**",
+    ".github/workflows/release.yml",
+    "TODO.md"
+  ],
+  "shared": [
+    "README.md",
+    "AGENTS.md",
+    "docs/local.md",
+    "src-tauri/Cargo.toml",
+    "package.json",
+    "pnpm-lock.yaml",
+    "package-lock.json",
+    "tests/**",
+    ".gitignore",
+    ".gitattributes",
+    ".vscode/**"
+  ],
+  "notes": {
+    "src-tauri/Cargo.toml": "本地层依赖（`local plugin deps` 段）属 fork，其余属上游",
+    "package.json": "fork 的 local 脚本（fonts / ocr-models / assets）属 fork，其余属上游",
+    "docs/local.md": "base 是本地层约定模板，fork 填实况",
+    "tests/**": "上游两个 spec 属上游；fork 插件 spec（*-tools-*.spec.ts 等）属 fork"
+  }
+}

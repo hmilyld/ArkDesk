@@ -2,7 +2,7 @@
 
 > 本插件 id 为 template。这是**上游模板**（目录以 `_` 开头，不参与注册），`pnpm create-plugin` 会复制本目录生成新插件。
 > 面向使用者的功能说明见同目录 `README.md`；目录与命名规范见 [`plugins/README.md`](../README.md)；
-> UI 规范见 [`DESIGN.md`](../../DESIGN.md)。
+> UI 规范见 [`docs/design.md`](../../docs/design.md)。
 
 ## 工具
 
@@ -35,7 +35,7 @@ backend/
 - 纯逻辑放 `frontend/lib/`；需要响应式/生命周期才放 `frontend/composables/`（`useXxx.ts`）。
 - 页面用 `ToolShell` + `Panel` 组织模块；空/加载/错误三态用 `@/components/native/*`；
   设置项用 `@/components/settings` 的 `SettingsSection` / `SettingsRow` / `SettingsField`。
-- 取值只来自 token（详见 `DESIGN.md`）；插件私有文案放 `frontend/shared.ts`。
+- 取值只来自 token（详见 `docs/design.md`）；插件私有文案放 `frontend/shared.ts`。
 
 ## 校验
 

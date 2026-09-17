@@ -1,7 +1,7 @@
 # hello-world 插件 — 开发约定（AGENTS）
 
 > 上游基础仓库的**参考实现**：新增能力（命令、迁移、表单、任务、通知、多窗口）时优先在此演示，
-> 让 fork 与文档有可对照的样本。目录规范见 [`plugins/README.md`](../README.md)，UI 规范见 [`DESIGN.md`](../../DESIGN.md)。
+> 让 fork 与文档有可对照的样本。目录规范见 [`plugins/README.md`](../README.md)，UI 规范见 [`docs/design.md`](../../docs/design.md)。
 
 ## 约定
 

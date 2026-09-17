@@ -1,6 +1,6 @@
 # system 插件 — 开发约定（AGENTS）
 
-> 上游内置插件：系统维护类工具的归宿。目录规范见 [`plugins/README.md`](../README.md)，UI 规范见 [`DESIGN.md`](../../DESIGN.md)。
+> 上游内置插件：系统维护类工具的归宿。目录规范见 [`plugins/README.md`](../README.md)，UI 规范见 [`docs/design.md`](../../docs/design.md)。
 
 ## 约定
 

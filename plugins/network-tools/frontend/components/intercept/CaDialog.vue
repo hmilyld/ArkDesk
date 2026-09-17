@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import ErrorState from '@/components/native/ErrorState.vue';
-import type { CaInfo } from '../../intercept-shared';
+import type { CaInfo } from '../../lib/intercept-shared';
 import { copyToClipboard } from '../../shared';
 
 const props = defineProps<{ open: boolean; ca: CaInfo | null }>();

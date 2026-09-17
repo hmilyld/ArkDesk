@@ -12,13 +12,13 @@ import ErrorState from '@/components/native/ErrorState.vue';
 import RequestTabs from '../RequestTabs.vue';
 import ResponsePanel from '../ResponsePanel.vue';
 import { useSend } from '../../composables/useSend';
-import { errorMessage } from '../../error';
+import { errorMessage } from '../../lib/error';
 import {
   flowToResponseView,
   flowToSpec,
   isBinaryRequest,
   type FlowRecord,
-} from '../../intercept-shared';
+} from '../../lib/intercept-shared';
 import {
   buildSendOptions,
   createRequestSpec,
@@ -26,7 +26,7 @@ import {
   uid,
   type HttpRequestSpec,
 } from '../../shared';
-import { httpSettings as settings } from '../../settings-store';
+import { httpSettings as settings } from '../../lib/settings-store';
 
 const props = defineProps<{
   flow: FlowRecord | null;

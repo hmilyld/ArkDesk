@@ -28,8 +28,8 @@ import { useDraft } from '../composables/useDraft';
 import { useEnvironments } from '../composables/useEnvironments';
 import { useHistory, type HistoryRow } from '../composables/useHistory';
 import { useSend } from '../composables/useSend';
-import { buildCurl } from '../curl';
-import { errorMessage } from '../error';
+import { buildCurl } from '../lib/curl';
+import { errorMessage } from '../lib/error';
 import {
   buildSendOptions,
   createRequestSpec,
@@ -40,7 +40,7 @@ import {
   type HttpRequestSpec,
   type RequestMeta,
 } from '../shared';
-import { httpSettings as settings } from '../settings-store';
+import { httpSettings as settings } from '../lib/settings-store';
 import {
   createBundle,
   parseBundle,
@@ -49,8 +49,8 @@ import {
   type BundleCollection,
   type BundleEnvironment,
   type BundleRequest,
-} from '../transfer';
-import { collectVars, resolveSpec } from '../variables';
+} from '../lib/transfer';
+import { collectVars, resolveSpec } from '../lib/variables';
 
 const HISTORY_BODY_LIMIT = 256 * 1024;
 const VAR_PLACEHOLDER = '{{name}}';

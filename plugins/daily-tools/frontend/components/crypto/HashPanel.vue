@@ -27,7 +27,7 @@ import {
   HASH_ALGORITHMS,
   HMAC_ALGORITHMS,
   type ByteFormat,
-} from '../../crypto-shared';
+} from '../../lib/crypto-shared';
 import ResultBox from './ResultBox.vue';
 import TaskProgress from './TaskProgress.vue';
 

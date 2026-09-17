@@ -14,7 +14,7 @@ import type {
   SystemProxyStatus,
   WsRecord,
   WsSummary,
-} from '../intercept-shared';
+} from '../lib/intercept-shared';
 
 export function useInterceptor() {
   const status = ref<ProxyStatus | null>(null);

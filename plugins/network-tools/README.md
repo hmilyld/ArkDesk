@@ -57,7 +57,7 @@
 
 - 界面：`frontend/views/HttpClient.vue`、`frontend/views/Interceptor.vue`；设置：`frontend/settings/Settings.vue`
 - 数据：`frontend/schema.ts` + `backend/migrations.rs`
-- 纯逻辑：`frontend/curl.ts`（cURL 互转）、`frontend/variables.ts`（变量替换），单测在仓库根 `tests/`
+- 纯逻辑：`frontend/lib/curl.ts`（cURL 互转）、`frontend/lib/variables.ts`（变量替换），单测在仓库根 `tests/`
 - 启动：`pnpm tauri dev`（前后端均构建期自动注册）
 
 > 架构与约定见仓库根 `README.md` / `AGENTS.md`，插件本地约定见同目录 `AGENTS.md`。

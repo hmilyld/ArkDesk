@@ -18,7 +18,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { SettingsField, SettingsRow, SettingsSection } from '@/components/settings';
 import { useEnvironments } from '../composables/useEnvironments';
-import { httpSettings } from '../settings-store';
+import { httpSettings } from '../lib/settings-store';
 import type { HttpSettings } from '../shared';
 
 const settings = httpSettings;

@@ -6,7 +6,7 @@ import { ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { Check, Copy } from '@lucide/vue';
-import { copyToClipboard } from '../../crypto-shared';
+import { copyToClipboard } from '../../lib/crypto-shared';
 
 const props = defineProps<{ value: string }>();
 const copied = ref(false);

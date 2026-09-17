@@ -15,7 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import ErrorState from '@/components/native/ErrorState.vue';
-import { parseCurl } from '../curl';
+import { parseCurl } from '../lib/curl';
 import { copyToClipboard, type HttpRequestSpec } from '../shared';
 
 const props = defineProps<{ open: boolean; exportText: string }>();

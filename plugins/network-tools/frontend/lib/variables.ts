@@ -5,8 +5,8 @@
  * - 仅解析**已启用**的行/字段，禁用的内容不参与替换也不报缺失
  */
 
-import type { HttpRequestSpec } from './shared';
-import { cloneSpec } from './shared';
+import type { HttpRequestSpec } from '../shared';
+import { cloneSpec } from '../shared';
 
 export interface EnvVarLike {
   key: string;

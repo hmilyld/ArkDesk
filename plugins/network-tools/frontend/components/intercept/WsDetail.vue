@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { Cable, Inbox } from '@lucide/vue';
 import EmptyState from '@/components/native/EmptyState.vue';
-import { formatClock, type WsRecord } from '../../intercept-shared';
+import { formatClock, type WsRecord } from '../../lib/intercept-shared';
 
 defineProps<{ record: WsRecord | null }>();
 </script>

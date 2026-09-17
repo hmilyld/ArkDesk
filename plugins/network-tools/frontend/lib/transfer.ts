@@ -4,7 +4,7 @@
  * 纯逻辑，无 Tauri 依赖，可在 node 单测环境运行；数据库读写由调用方负责。
  */
 
-import type { HttpRequestSpec } from './shared';
+import type { HttpRequestSpec } from '../shared';
 
 export const BUNDLE_TYPE = 'network-tools/bundle';
 export const BUNDLE_VERSION = 1;

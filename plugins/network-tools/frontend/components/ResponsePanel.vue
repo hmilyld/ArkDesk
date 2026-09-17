@@ -14,7 +14,7 @@ import { ipc } from '@/core/ipc';
 import EmptyState from '@/components/native/EmptyState.vue';
 import ErrorState from '@/components/native/ErrorState.vue';
 import Segmented from '@/components/native/Segmented.vue';
-import { errorMessage } from '../error';
+import { errorMessage } from '../lib/error';
 import {
   copyToClipboard,
   formatBytes,

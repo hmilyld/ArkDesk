@@ -3,6 +3,6 @@
  */
 
 import { useToolSettings } from '@/core/plugins';
-import { DEFAULT_SETTINGS, type HttpSettings } from './shared';
+import { DEFAULT_SETTINGS, type HttpSettings } from '../shared';
 
 export const httpSettings = useToolSettings<HttpSettings>('network-tools', DEFAULT_SETTINGS);

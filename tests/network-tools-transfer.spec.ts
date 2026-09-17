@@ -4,7 +4,7 @@ import {
   createBundle,
   parseBundle,
   stringifyBundle,
-} from '../plugins/network-tools/frontend/transfer';
+} from '../plugins/network-tools/frontend/lib/transfer';
 import { createRequestSpec, normalizeSpec } from '../plugins/network-tools/frontend/shared';
 
 describe('normalizeSpec', () => {

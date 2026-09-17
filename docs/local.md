@@ -12,6 +12,13 @@
 
 （这些目录即全部个人内容，删除目录即彻底移除；后端命令/迁移为构建期自动注册。）
 
+## 生命周期钩子（本地层实现位）
+
+base 只定义契约（`src-tauri/src/lifecycle.rs`），**不含实现**。若需在启动 / 退出环节拦截
+（如启动前校验注册、退出前保存数据），在 `src-tauri/local/lifecycle.rs` 实现
+`AppLifecycle` 即可（`pub struct Hooks;`，构建期自动挂载，无文件即 no-op）。契约、四个环节
+与 `Hold` 语义见 [lifecycle.md](lifecycle.md)。该文件属 fork，不随上游回填。
+
 ## Rust 依赖（fork-owned）
 
 `src-tauri/Cargo.toml` 末尾的 `local plugin deps` 段与两张 `local plugin target deps`

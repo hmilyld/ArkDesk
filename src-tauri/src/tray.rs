@@ -30,7 +30,14 @@ fn activate_app() {
 }
 
 /// 立即唤起主窗口（取消最小化 → 显示 → 聚焦 → 激活应用）
+///
+/// 启动门禁（`before_start` 返回 Hold）挂起期间拒绝显示：托盘 / 单实例 /
+/// Dock reopen 三条路径都经过此处，统一尊重门禁，否则 fork 的启动拦截会被旁路。
 fn show_main_window_now<R: Runtime>(app: &tauri::AppHandle<R>) {
+    if crate::lifecycle::is_startup_held() {
+        log::debug!("启动门禁挂起中，忽略唤起主窗口请求");
+        return;
+    }
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.unminimize();
         let _ = window.show();

@@ -1,11 +1,12 @@
-# RELEASE —— 打包、发布与在线更新
+# 打包、发布与在线更新
 
 本文件是**应用打包、发布与在线更新**的统一事实源；README 只保留能力简介。
 base 提供**可复用的发布 workflow**，fork 只需一个几行的 caller；fork 的专属项
-（预取资源、C++ 编译依赖、密钥）记录在 [`LOCAL.md`](LOCAL.md)。
+（预取资源、C++ 编译依赖、密钥）记录在 [`local.md`](local.md)。
 
-> 相关分工：`START.md` = 从零起步；`README.md` = 架构与扩展；`AGENTS.md` = 开发约定与陷阱；
-> `LOCAL.md` = fork 本地层；**本文件 = 发布与更新**。
+> 相关分工：[start.md](start.md) = 从零起步；[extending.md](extending.md) = 架构与扩展；
+> [AGENTS.md](../AGENTS.md) = 开发约定与陷阱；[local.md](local.md) = fork 本地层；
+> **本文件 = 发布与更新**。
 
 ---
 
@@ -141,7 +142,7 @@ curl -s https://<域名>/latest.json
 
 ```bash
 # 1) fork 先预取资源（base 无个人资源可跳过）
-pnpm assets                 # = fonts + ocr-models，见 LOCAL.md
+pnpm assets                 # = fonts + ocr-models，见 local.md
 
 # 2) 带签名构建（建议显式 --target/--bundles；产物在 target/<triple>/release/bundle）
 TAURI_SIGNING_PRIVATE_KEY_PATH=~/.tauri/<app>.key \
@@ -201,7 +202,7 @@ pnpm release -- --base-url https://<域名> --version 0.2.0 \
 
 - **base**：`scripts/release.mjs`、`.github/workflows/release-reusable.yml`（可复用）、
   本文件。
-- **fork**：`.github/workflows/release.yml`（caller）、密钥/变量、`LOCAL.md` 中的预取资源
+- **fork**：`.github/workflows/release.yml`（caller）、密钥/变量、[`local.md`](local.md) 中的预取资源
   与编译依赖。
 - **同步**：base 改动后 fork 执行 `git merge upstream/main`，因此 `release.mjs`、workflow
   与本文件在两者间保持一致。

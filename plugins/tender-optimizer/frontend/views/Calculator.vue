@@ -98,7 +98,7 @@ const paramsRow = ref<TenderParams | null>(null);
 const activeScenarioCount = computed(() => scenarios.value.filter((s) => s.isActive).length);
 const targetCount = computed(() => companies.value.filter((c) => c.companyType === 'T').length);
 
-// ── 就地错误 / 提示（DESIGN.md §4：校验错误就地呈现，不用 toast） ──
+// ── 就地错误 / 提示（docs/design.md §4：校验错误就地呈现，不用 toast） ──
 const formError = ref('');
 const calcError = ref('');
 const importNotice = ref<{ kind: 'info' | 'warning' | 'error'; text: string } | null>(null);
@@ -132,7 +132,7 @@ async function loadAll(): Promise<void> {
   }
 }
 
-// ── 枚举控件的分段选项（DESIGN.md §3：2–5 项互斥用 Segmented） ──
+// ── 枚举控件的分段选项（docs/design.md §3：2–5 项互斥用 Segmented） ──
 const COMPANY_TYPE_SEGMENTS = COMPANY_TYPE_OPTIONS.map((option) => ({
   value: option.value,
   label: COMPANY_TYPE_LABELS[option.value],
@@ -452,7 +452,7 @@ async function runCalculate(): Promise<void> {
     });
   } catch (err) {
     const error = normalizeError(err);
-    // 当前操作失败但有明确重试入口 → 就地错误条（DESIGN.md §4）
+    // 当前操作失败但有明确重试入口 → 就地错误条（docs/design.md §4）
     calcError.value = `测算失败：${error.message}`;
     logger.error(`测算失败: [${error.code}] ${error.message}`);
   } finally {

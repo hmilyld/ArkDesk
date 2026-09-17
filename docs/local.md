@@ -25,7 +25,7 @@ macOS 会自动走可移植构建；Windows 构建可能需要 CMake/NASM（与 
 工具链范畴，见下）。
 
 加解密工具另引入的 RustCrypto / `gmcrypto-core` 依赖同属该段，清单与取舍见
-[`plugins/daily-tools/AGENTS.md`](plugins/daily-tools/AGENTS.md#依赖fork-本地层)。
+[`plugins/daily-tools/AGENTS.md`](../plugins/daily-tools/AGENTS.md#依赖fork-本地层)。
 
 ## 资源（字体 / OCR 模型）
 
@@ -63,7 +63,7 @@ git merge upstream/main
 
 ## 发布（自用）
 
-完整流程见 [RELEASE.md](RELEASE.md)。要点：
+完整流程见 [release.md](release.md)。要点：
 
 - **自动（推荐）**：推送 `vX.Y.Z` tag 或手动运行 `.github/workflows/release.yml`；需配仓库
   Variable `UPDATE_BASE_URL` 与 Secrets `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。

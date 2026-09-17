@@ -13,4 +13,4 @@
 ## 依赖与资源
 
 - 视频编码依赖系统 `ffmpeg`/`ffprobe`；字体等资源位于本地层 `src-tauri/local-resources/`
-  （下载方式见仓库根 `LOCAL.md`）。
+  （下载方式见 [`docs/local.md`](../../docs/local.md)）。

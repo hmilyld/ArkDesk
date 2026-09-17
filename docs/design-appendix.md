@@ -1,7 +1,7 @@
 # 设计规范 · 组件附录（Do / Don't）
 
-> 共享规则见 [`DESIGN.md`](DESIGN.md)，平台差异见 [`DESIGN-macos.md`](DESIGN-macos.md) /
-> [`DESIGN-windows.md`](DESIGN-windows.md)。本文件是**逐控件的正反例**与**迁移对照表**，
+> 共享规则见 [`design.md`](design.md)，平台差异见 [`design-macos.md`](design-macos.md) /
+> [`design-windows.md`](design-windows.md)。本文件是**逐控件的正反例**与**迁移对照表**，
 > 改造时按此逐项核对；新增控件时先在此登记再实现。
 
 ## 1. 门面组件清单（`src/components/native/`）
@@ -146,5 +146,5 @@ node scripts/design-shot.mjs \
 
 > base 只含 `_template` / `hello-world` / `system` 三个插件，上表即全部批次；
 > **fork 的个人插件按同一清单逐批整改，进度由各 fork 自行维护**（框架层不需要知道 fork 的插件名）。
-> 每批完成后：`pnpm lint && pnpm build && pnpm test`，并按 `DESIGN.md` §7 评审清单逐条自检；
+> 每批完成后：`pnpm lint && pnpm build && pnpm test`，并按 `design.md` §7 评审清单逐条自检；
 > 涉及 Rust 的批次额外跑 `pnpm fmt:rs && pnpm lint:rs && pnpm test:rs`。

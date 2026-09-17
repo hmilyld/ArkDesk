@@ -3,7 +3,7 @@
  *
  * 预览桥会自动并入本插件 `frontend/preview.ts` 的 **默认导出**
  * （`Record<命令名, 返回值>`），让页面在无后端时也能进入「有内容」状态，
- * 供 `node scripts/design-shot.mjs` 走查截图（见 DESIGN-appendix.md §3.5）。
+ * 供 `node scripts/design-shot.mjs` 走查截图（见 docs/design-appendix.md §3.5）。
  *
  * lint-plugins-ignore：本文件路径由框架预览桥按约定 glob（`plugins/<id>/frontend/preview.ts`），
  * 无法放进 `frontend/` 白名单目录；属框架扩展点，待上游把 `preview.ts` 纳入白名单后可移除。

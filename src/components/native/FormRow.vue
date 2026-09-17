@@ -1,5 +1,5 @@
 <!--
-  表单行（DESIGN.md §4）：标签 + 可选说明 + 控件 + **行内校验**。
+  表单行（docs/design.md §4）：标签 + 可选说明 + 控件 + **行内校验**。
   校验就地呈现（控件下方 text-xs text-destructive），并带上 aria 关联；不要只在提交时用 toast 报错。
   行内小动作（清空/插入变量等）放 `#label-action` 插槽。
 

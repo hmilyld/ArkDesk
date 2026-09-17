@@ -1,6 +1,6 @@
 # 设计规范 · macOS 平台层
 
-> 本文件只写**平台差异**。共享规则见 [`DESIGN.md`](DESIGN.md)；Windows 见 [`DESIGN-windows.md`](DESIGN-windows.md)。
+> 本文件只写**平台差异**。共享规则见 [`design.md`](design.md)；Windows 见 [`design-windows.md`](design-windows.md)。
 > 依据 Apple《Human Interface Guidelines》macOS 部分（Designing for macOS / Layout / Materials / Typography /
 > Toggles / Toolbars / Sidebars / Lists and tables / Boxes / Segmented controls / Alerts / Settings / Motion /
 > Dark Mode / Writing）。
@@ -32,7 +32,7 @@ app.windows[].windowEffects`）：
 
 - `state` 建议 `followsWindowActiveState`：窗口失焦时材质自动变浅，符合 macOS 观感。
 - **依赖 `Reduce Transparency`**：CSS 侧监听 `prefers-reduced-transparency: reduce` 时切换到实色层，
-  同时不再请求窗口透明（Rust 侧对应逻辑见 `DESIGN.md` §2.8 与 `AGENTS.md` 的迁移记录）。
+  同时不再请求窗口透明（Rust 侧对应逻辑见 `design.md` §2.8 与 `AGENTS.md` 的迁移记录）。
 - **窗口背景契约（已实现）**：材质经 Rust `apply_window_effects()` 启用（macOS `underWindowBackground`
   - `followsWindowActiveState`；Windows `tabbed` = Mica Alt），启用后 `set_window_background` 自动跳过实色打底——
     防白闪改由**内容层不透明底**保证（`body` 永远 `bg-background` 实色，仅 chrome 半透明）。
@@ -117,7 +117,7 @@ app.windows[].windowEffects`）：
   选中态用 `bg-sidebar-accent`（半透明），不用边框或强调线；容器窗口变窄时**自动折叠侧栏**（HIG Sidebars）。
 - 侧栏底部不放关键信息/动作（HIG：窗口底边可能被移出屏幕）。
 - 表格：行高 24–32、表头粘性、`divide-y` 分隔、数字列右对齐 + `tabular-nums`、可选斑马纹；
-  macOS 上可考虑支持列宽调整与表头排序（**本轮不做**，见 `DESIGN.md` §0 范围）。
+  macOS 上可考虑支持列宽调整与表头排序（**本轮不做**，见 `design.md` §0 范围）。
 
 ## 8. 字体与颜色
 
@@ -130,7 +130,7 @@ macOS 系统字号与本项目三档的映射（HIG macOS built-in text styles�
 | Headline              | 13/16 Bold    | 面板标题（`text-xs` + 600）                          |
 | Body                  | 13/16         | 列表正文（`text-sm`）                                |
 | Callout / Subheadline | 12/15 · 11/14 | 辅助说明（`text-xs`）                                |
-| Footnote / Caption    | 10/13         | 徽标、极小注记（本项目下限 11，见 `DESIGN.md` §2.3） |
+| Footnote / Caption    | 10/13         | 徽标、极小注记（本项目下限 11，见 `design.md` §2.3） |
 
 - 字族：系统字体优先（`-apple-system` / `SF Pro Text` / `SF Mono`），已配置；不引入第三方字体。
 - 动态字号：三档用户字号（13/14/15 根字号）等价于 macOS 的文本大小调节，控件尺寸随 rem 缩放。
@@ -140,7 +140,7 @@ macOS 系统字号与本项目三档的映射（HIG macOS built-in text styles�
 
 ## 9. 动效
 
-- 使用 `DESIGN.md` §2.7 的共享时长/缓动（macOS 观感偏 200–300ms）。
+- 使用 `design.md` §2.7 的共享时长/缓动（macOS 观感偏 200–300ms）。
 - 窗口/材料进出：blur 半径与 scale 一起动画（材料「到位」而不是淡入）。
 - 尊重 `prefers-reduced-motion`；不使用持续循环动画作为唯一状态提示。
 

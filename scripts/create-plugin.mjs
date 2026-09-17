@@ -254,7 +254,11 @@ function renderReadme(cfg) {
     lines.push('- 设置：`frontend/settings/Settings.vue`（`useToolSettings` 读写）');
   if (cfg.schema) lines.push('- 表定义：`frontend/schema.ts` + 迁移 `backend/migrations.rs`');
   lines.push('- 启动：`pnpm tauri dev`（前后端均构建期自动注册，无需手动登记）');
-  lines.push('', '> 目录规范见 `plugins/README.md`；UI 规范见 `DESIGN.md`。', '');
+  lines.push(
+    '',
+    '> 目录规范见 [`plugins/README.md`](../README.md)；UI 规范见 [`docs/design.md`](../../docs/design.md)。',
+    ''
+  );
   return lines.join('\n');
 }
 

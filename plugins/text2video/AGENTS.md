@@ -9,7 +9,7 @@
   `ai.rs`（AI 文案）、`sources.rs`（素材来源）、`cleaner.rs`（文本清洗）、
   `render/`（`background` / `fonts` / `scroll` / `text`）、`migrations.rs`。
 - 长任务经框架 `crate::tasks` 回传 `task://` 进度并可取消；前端 `core/tasks` 消费。
-- 字体等资源来自本地层 `src-tauri/local-resources/`（见根 `LOCAL.md`），勿在插件内硬编码绝对路径。
+- 字体等资源来自本地层 `src-tauri/local-resources/`（见 [`docs/local.md`](../../docs/local.md)），勿在插件内硬编码绝对路径。
 
 ## 前端
 

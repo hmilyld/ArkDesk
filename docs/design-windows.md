@@ -1,6 +1,6 @@
 # 设计规范 · Windows 平台层
 
-> 本文件只写**平台差异**。共享规则见 [`DESIGN.md`](DESIGN.md)；macOS 见 [`DESIGN-macos.md`](DESIGN-macos.md)。
+> 本文件只写**平台差异**。共享规则见 [`design.md`](design.md)；macOS 见 [`design-macos.md`](design-macos.md)。
 > 依据 Microsoft《Windows app design（Fluent / WinUI 3）》：
 > [Design principles](https://learn.microsoft.com/en-us/windows/apps/design/design-principles) ·
 > [Geometry](https://learn.microsoft.com/en-us/windows/apps/design/signature-experiences/geometry) ·

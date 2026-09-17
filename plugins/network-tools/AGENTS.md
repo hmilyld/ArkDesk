@@ -47,7 +47,7 @@
   忽略系统代理的应用（部分 Electron/Java/游戏）抓不到；真正「全流量」需 TUN 透明代理（未实现）。
 
 > 依赖属本地层（`hudsucker` + `http-body-util` + `flate2`/`brotli`/`zstd`），
-> 注意 hudsucker 会间接引入 `aws-lc-sys`（见 `LOCAL.md`）。
+> 注意 hudsucker 会间接引入 `aws-lc-sys`（见 [`docs/local.md`](../../docs/local.md)）。
 
 ## 前端
 

@@ -158,7 +158,7 @@ fn apply_window_background(ns_window: *mut std::ffi::c_void, dark: bool) {
 /// 防白闪改由前端不透明底（`bg-background` 覆盖整个视口）保证。
 static VIBRANCY_ACTIVE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
-/// 应用窗口材质（DESIGN-macos.md §2 / DESIGN-windows.md §2）：
+/// 应用窗口材质（docs/design-macos.md §2 / docs/design-windows.md §2）：
 /// - macOS：`underWindowBackground`（behind-window），内容层保持不透明，仅半透明 chrome 透出桌面；
 /// - Windows：`tabbed`（Mica Alt，官方推荐给含导航与命令区的应用）；
 /// - 其他平台或失败：不启用，CSS 材质 token 自动落到实色（含 prefers-reduced-transparency）。

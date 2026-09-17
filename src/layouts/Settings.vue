@@ -23,7 +23,7 @@ const asyncPanels = computed<Record<string, ReturnType<typeof defineAsyncCompone
   )
 );
 
-/** pane 列表（工具栏式切换：Safari / Xcode 偏好设置的用法，见 DESIGN-macos.md §5） */
+/** pane 列表（工具栏式切换：Safari / Xcode 偏好设置的用法，见 docs/design-macos.md §5） */
 const panes = computed(() => [
   { value: 'system', label: '系统设置' },
   ...toolSettings.value.map((tool) => ({
@@ -54,7 +54,7 @@ watch(activeTab, () => rootEl.value?.closest('main')?.scrollTo({ top: 0 }));
         :style="{ height: 'auto' }"
       >
         <!-- 选中态用 accent 实心填充：与同页「主题」分段控件一致；
-             低饱和 tint 铺在毛玻璃材质上会被冲淡（DESIGN.md §2.5） -->
+             低饱和 tint 铺在毛玻璃材质上会被冲淡（docs/design.md §2.5） -->
         <TabsTrigger
           v-for="pane in panes"
           :key="pane.value"

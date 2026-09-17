@@ -51,7 +51,7 @@
 | 杂项     | UUID v4/v7、时间戳转换、Unicode 转义/反转义                                                                                                              |
 
 约定：密钥仅在内存中使用、不落盘、不写日志；DES/3DES/MD5/SHA-1 标注为不安全（仅兼容）。
-SM2 基于 `gmcrypto-core`（RustCrypto `sm2` 不支持公钥加解密），依赖清单见根 `LOCAL.md`。
+SM2 基于 `gmcrypto-core`（RustCrypto `sm2` 不支持公钥加解密），依赖清单见 [`docs/local.md`](../../docs/local.md)。
 
 ## 依赖
 
@@ -65,7 +65,7 @@ SM2 基于 `gmcrypto-core`（RustCrypto `sm2` 不支持公钥加解密），依�
 JSON 表格工具复用框架已有依赖：`calamine`（读 xlsx）、`rust_xlsxwriter`（写 xlsx），
 前端复用 `marked`（GFM 表格解析），未新增依赖。
 
-加解密相关 RustCrypto / `gmcrypto-core` 依赖见根 `LOCAL.md`（fork 本地层）。
+加解密相关 RustCrypto / `gmcrypto-core` 依赖见 [`docs/local.md`](../../docs/local.md)（fork 本地层）。
 
 ## 编译注意
 

@@ -16,7 +16,7 @@ pnpm lint           # eslint（改前端后必须跑）
 pnpm lint:fix
 pnpm format         # prettier --write .（全量）
 pnpm format:check
-pnpm env:cpp        # 导出 macOS CXXFLAGS（本地层 ocr-rs 编译用，见 LOCAL.md）
+pnpm env:cpp        # 导出 macOS CXXFLAGS（本地层 ocr-rs 编译用，见 docs/local.md）
 pnpm lint:rs        # cargo clippy -D warnings（改 Rust 后必须跑）
 pnpm fmt:rs         # cargo fmt
 pnpm test:rs        # cargo test（http 冒烟测试默认 ignore，需网络）
@@ -30,35 +30,36 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
 
 约定：改前端跑 `pnpm lint && pnpm build`；改 Rust 跑 `pnpm lint:rs && pnpm fmt:rs && pnpm test:rs`。
 
-## 双仓库协作（上游优先）
+## 双仓库协作（单人维护模式）
 
 本仓库（ArkDesk）是上游框架仓库 **PocketArk** 的 fork，两个仓库所有权同一人：
 
 - `upstream` = `git@github.com:hmilyld/PocketArk.git`（框架 base）
 - `origin` = `git@github.com:hmilyld/ArkDesk.git`（本项目）
 
-**改动归属判定**：框架代码（`src/core`、`src-tauri/src` 的 db/http/tray/updater/menu/tasks/open/…、
-`scripts/`、CI、框架能力文档等）属**上游**；`plugins/<id>/`、本地层（`LOCAL.md` 所述）属**项目**。
+**改动归属判定**：以 [`docs/ownership.json`](docs/ownership.json) 为准——`framework` 需回填上游；
+`fork` 只留本项目；`shared` 结构随上游、内容因 fork 而异（回填时需人工适配）。
 
-**若需改动上游框架代码，一律走「上游优先」流程，禁止在 ArkDesk 直接提交框架改动**（会产生分叉、后续
-merge 冲突）：
+**当前流程（单人维护模式：只在 ArkDesk 改，省去来回切换仓库）**：
 
-1. 在 PocketArk 本地仓库新建分支（如 `fix/xxx`）→ 提交 → push。
-2. `gh pr create` 提 PR（base `main`）；CI（前端 lint/test/build）必须通过。
-3. 合并 PR 到 PocketArk `main`。
-4. 回到 ArkDesk：`git fetch upstream && git merge upstream/main`（或 rebase），使框架改动随上游流入。
+1. 直接在 ArkDesk 工作区改动并提交（框架 + fork 可同一提交），本地跑 `pnpm lint && pnpm build && pnpm test`。
+2. 按 `docs/ownership.json` 抽出 **framework** 部分 → 在 `../PocketArk` 新建分支应用 →
+   `gh pr create`（base `main`）→ 合并。**补丁必须用工作区状态生成**（`git diff A..B` 只含已提交
+   内容，会漏掉未提交的中性化/修正）。
+3. 回 ArkDesk：`git fetch upstream && git merge upstream/main`（吸收已合并的框架改动）→ 补提 fork 专属残留。
+4. **有协作者加入后立即切回「上游优先」**：框架改动一律先在 PocketArk 改并合并，再 merge 到 ArkDesk
+   （禁止先在 ArkDesk 提交框架改动）。
 
-前提：ArkDesk 工作区必须先 clean（框架改动不要以「未提交状态」与 merge 并存，否则 merge 被拒）。因此
-调整上游文件的正确姿势是：**先在 PocketArk 改并合并，再在 ArkDesk merge 拿下来**，而不是在 ArkDesk
-就地改。
+风险与注意：同一内容若两边提交不一致（如上游 review 改字），下次 merge 必冲突；回填时应让上游内容与
+ArkDesk 已提交内容保持一致。`shared` 文件（`README.md` / `AGENTS.md` / `docs/local.md` /
+`src-tauri/Cargo.toml` / `package.json`）两端内容本就不同，回填时只带结构改动、内容各自保留。
 
-本地 PocketArk 副本默认位于 `../PocketArk`。若涉及需要同时改框架与插件的功能，拆成两类提交：框架部分
-走上述上游 PR，插件部分留在 ArkDesk。
+本地 PocketArk 副本默认位于 `../PocketArk`。
 
 ## 本地层（fork 专属）
 
 框架自身**不下载任何资源、不含个人工具**。若你的 fork 叠加了个人工具（字体/OCR 等
-资源、额外 Rust 依赖、额外权限），约定集中在「本地层」，详见仓库根 `LOCAL.md`：
+资源、额外 Rust 依赖、额外权限），约定集中在「本地层」，详见仓库根 `docs/local.md`：
 `src-tauri/local-resources/`（资源）、`scripts/local/`（下载脚本）、
 `Cargo.toml` 的 `local plugin deps` 段、`capabilities/local.json`（如有）。
 
@@ -108,7 +109,7 @@ composable 用 `useXxx.ts`、后端命令只在 `backend/mod.rs` 等），完整
 - 版本唯一事实源 = `tauri.conf.json > version`；发版前 `pnpm version:bump x.y.z` 同步三处。
 - 更新选择为严格 semver（远端 > 本地），**版本号必须单调递增**；清单 `version` 须与构建版本一致。
 - 私钥（`~/.tauri/arkdesk.key`）不入库；本地构建用 `TAURI_SIGNING_PRIVATE_KEY_PATH`，CI 用 Secrets `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。
-- 自动发布：base 提供 `.github/workflows/release-reusable.yml`（可复用），fork 加一个 caller；完整流程见 [RELEASE.md](RELEASE.md)。
+- 自动发布：base 提供 `.github/workflows/release-reusable.yml`（可复用），fork 加一个 caller；完整流程见 [release.md](docs/release.md)。
 
 ## 框架能力索引
 
@@ -153,21 +154,27 @@ composable 用 `useXxx.ts`、后端命令只在 `backend/mod.rs` 等），完整
 - **日志**：用 `@/core/logger` 的 `logger` 或插件 `ctx.logger`，禁止裸 `println!`。
 - **图标**：只允许 `@lucide/vue`（`lucide-vue-next` 已弃用，勿再引入）。
 - **样式**：shadcn-vue 语义色（`bg-primary` 等），禁止硬编码色值；已有 `text-success/warning/info`、`bg-console` 等 token。
-- **设计规范（唯一事实源）**：所有 UI 视觉与交互遵循 `DESIGN.md`（共享核心：token、组件语义、三态与反馈、文案、反例清单）+
-  `DESIGN-macos.md` / `DESIGN-windows.md`（平台层）+ `DESIGN-appendix.md`（逐控件 Do/Don't 与迁移映射）。视觉取值只能来自 token；
+- **设计规范（唯一事实源）**：所有 UI 视觉与交互遵循 `docs/design.md`（共享核心：token、组件语义、三态与反馈、文案、反例清单）+
+  `docs/design-macos.md` / `docs/design-windows.md`（平台层）+ `docs/design-appendix.md`（逐控件 Do/Don't 与迁移映射）。视觉取值只能来自 token；
   机器校验由 `pnpm lint` 里的 `scripts/lint-design.mjs` 承担（R1 旧卡片配方 / R2 任意透明度表面 / R3 非浮层 rounded-xl /
   R4 写死控件尺寸 / R5 动效压制 / R6 焦点环表达式）。**当前存量已清零**，`pnpm lint` 起即为硬门禁；
   `pnpm lint:design` 为严格模式（CI 可直接用）。
   **平台差异只允许落在**：材质与回退、窗口壳、菜单与快捷键呈现、对话框按钮语义、焦点视觉、圆角档（由 `[data-platform]` 覆盖 token 实现）。
-- **设计改造推进计划**：进行中的改造状态、上游同步步骤与剩余批次见 `MIGRATION.md`（fork 专属交接文件）。
-- **设计迁移风险登记**：Windows 平台层（`DESIGN-windows.md`）**尚未做视觉验证**（开发机为 macOS）——
+- **文档索引**：全部规范与指南在 `docs/`，索引见 [`docs/README.md`](docs/README.md)；待办见 [`TODO.md`](TODO.md)。
+  文档治理约定（单一真源、命名、生命周期）见 `docs/README.md`。
+- **设计迁移风险登记**：Windows 平台层（`docs/design-windows.md`）**尚未做视觉验证**（开发机为 macOS）——
   首次在 Windows 验证前，涉及 Windows 的改动属"静态正确"，需按该文件 §11 待办逐项确认并回填。
 - **设计走查**：`src/dev/preview-bridge.ts`（仅 dev + 非 Tauri 生效）让 Web 层可在浏览器渲染，
-  配合 `scripts/design-shot.mjs` 可脚本化截图核对规范（用法见 `DESIGN-appendix.md §3.5`）。
+  配合 `scripts/design-shot.mjs` 可脚本化截图核对规范（用法见 `docs/design-appendix.md §3.5`）。
 - **工具页模块**：页面里每个功能模块（设置 / 输入 / 输出 / 结果 / 列表）一律用 `@/components/tool/Panel` 包裹（外框 + 头部条标题 + 右上角动作 + 正文），不要在页面上裸露模块，也不要在 Panel 内嵌套卡片——预览、表格等组件自身不带外框，外框交给 Panel。头部标题用 `text-xs font-medium text-muted-foreground`，动作按钮 `size="sm"`、图标 `size-3.5`；正文默认 `space-y-3 p-4`（满幅场景用 `body-class` 覆盖）；错误条用 `rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive`。
 - **设置页 UI**：系统设置页与所有插件设置面板统一用 `@/components/settings` 的 `SettingsSection` / `SettingsRow` / `SettingsField`（单一事实源，视觉随系统设置页），勿自造小节标题与卡片样式；密集数值字段在 `SettingsSection` 内用 grid + `SettingsField`。
 - **代码风格**：prettier 单引号、100 列、尾逗号 es5；提交前跑 `pnpm format`。
 - **主题**：主题色/亮暗在 `core/theme` + `assets/index.css` 的 accent class，新增主题色需同步三处（CSS / ACCENTS / index.html 内联防闪白脚本）。
+- **控制台/输出文本**：`bg-console` 必须配 `text-console-foreground*`，否则深色底上文字不可读。
+- **开关分工（HIG）**：开关只出现在列表行内、与标题同区（由行内容提供语境）；细粒度布尔用复选框，不要用一排开关替代多选。
+- **焦点环唯一写法**：`focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/60`（`scripts/lint-design.mjs` R6 会校验）。
+- **窗口材质**：启用后 `set_window_background` 不做实色打底（否则盖住材质），防白闪靠前端不透明底；勿删 `src-tauri/src/lib.rs` 里 `VIBRANCY_ACTIVE` 的提前返回。
+- **预览夹具**：插件夹具只放 `plugins/<id>/frontend/preview.ts`（默认导出 `Record<命令名, 返回值>`，dev 下由预览桥 glob 并入），**不要**写进 `src/dev/preview-bridge.ts`（base 不接受 fork 插件名）。预览桥对未知业务命令返回 `null`（非数组），列表命令用 `?? []` 容错，否则浏览器预览白屏。
 
 ## 易错点（已修复过，勿回退）
 
@@ -198,7 +205,7 @@ composable 用 `useXxx.ts`、后端命令只在 `backend/mod.rs` 等），完整
 
 - **macOS 托盘点击不激活窗口**：`show_menu_on_left_click(false)` 时点击菜单栏图标，AppKit 不会激活所属应用；`show()`/`set_focus()` 只做 `makeKeyAndOrderFront`，窗口被排到次层——看似「点了没反应」，切到别的应用才见窗口已显示（Dock 图标能用是因为 macOS 会激活应用）。上游 tauri#14795（tray-icon 0.25.0 仍未修）。`tray::show_main_window` 已改为立即 + 延迟一拍（下个 runloop）重试，并在 macOS 上调 `NSApp.activateIgnoringOtherApps(true)`；同时 `RunEvent::Reopen` 显式唤起主窗口。勿删这两处，否则回归。
 
-- **本地层编译依赖（ocr-rs 等）**：这类重依赖属 fork 本地层，相关编译问题（macOS `CXXFLAGS`、Windows libclang）由 fork 自行处理并记录在 `LOCAL.md`；base 不含这些依赖，无此问题。
+- **本地层编译依赖（ocr-rs 等）**：这类重依赖属 fork 本地层，相关编译问题（macOS `CXXFLAGS`、Windows libclang）由 fork 自行处理并记录在 `docs/local.md`；base 不含这些依赖，无此问题。
 
 ## 目录速览
 
@@ -217,7 +224,8 @@ src/stores/          # Pinia（全局设置）
 src-tauri/src/       # db.rs（sqlx+作用域迁移）、http.rs、tray.rs、updater.rs、tasks.rs、open.rs、menu.rs、diagnostics.rs、files.rs、plugins/mod.rs（include 生成物）
 src-tauri/build.rs   # 扫描 plugins/ 生成命令注册与迁移聚合
 src-tauri/local-resources/  # ★本地层资源（fork-owned；base 无）
-LOCAL.md             # ★本地层说明（fork 专属）
+docs/                # ★规范与指南（索引 docs/README.md，文档治理见该文件）
+  local.md           #   本地层说明（fork 专属）
 ```
 
 生成的 shadcn 组件 `src/components/ui/**` 由 CLI 管理：可改样式，勿改结构/逻辑。

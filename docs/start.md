@@ -3,9 +3,9 @@
 > 这份文档写给：clone 了 ArkDesk、想把它变成**自己的桌面工具软件**的人。
 > 跟着走完，你会得到一个以你的软件命名、带你的图标与主题、装着你自己的工具的桌面应用。
 >
-> 文档分工：**START.md**（本文件）= 从零起步手册；**README.md** = 架构与扩展开发参考；
-> **AGENTS.md** = 日常开发约定与陷阱清单；**RELEASE.md** = 打包 / 发布 / 在线更新；
-> **LOCAL.md** = fork 本地层；`plugins/_template/README.md` = 单插件脚手架说明。
+> 文档分工：**start.md**（本文件）= 从零起步手册；**extending.md** = 架构与扩展开发参考；
+> **AGENTS.md** = 日常开发约定与陷阱清单；**release.md** = 打包 / 发布 / 在线更新；
+> **local.md** = fork 本地层；`plugins/_template/README.md` = 单插件脚手架说明。
 
 ---
 
@@ -69,15 +69,15 @@ pnpm tauri dev      # 以新名字运行
 <details>
 <summary>偏好手动改？以下是完整改名清单（与脚本等价）</summary>
 
-| 文件                                                         | 改什么                                                         |
-| ------------------------------------------------------------ | -------------------------------------------------------------- |
-| `src-tauri/tauri.conf.json`                                  | `productName`、`identifier`（发布后不可改）、`title`           |
-| `src-tauri/Cargo.toml`                                       | `[package] name`（kebab）、`[lib] name`（snake + `_lib` 后缀） |
-| `src-tauri/src/main.rs`                                      | `arkdesk_lib::run()` → 新 lib 名                               |
-| `package.json`                                               | `name`                                                         |
-| `src/core/theme/index.ts`                                    | `DEFAULT_THEME` / `DEFAULT_ACCENT` 常量（可选）                |
-| `src/content/about.md`、`README.md`、`START.md`、`AGENTS.md` | 自我介绍与标题                                                 |
-| `index.html`                                                 | `<title>`                                                      |
+| 文件                                                          | 改什么                                                         |
+| ------------------------------------------------------------- | -------------------------------------------------------------- |
+| `src-tauri/tauri.conf.json`                                   | `productName`、`identifier`（发布后不可改）、`title`           |
+| `src-tauri/Cargo.toml`                                        | `[package] name`（kebab）、`[lib] name`（snake + `_lib` 后缀） |
+| `src-tauri/src/main.rs`                                       | `arkdesk_lib::run()` → 新 lib 名                               |
+| `package.json`                                                | `name`                                                         |
+| `src/core/theme/index.ts`                                     | `DEFAULT_THEME` / `DEFAULT_ACCENT` 常量（可选）                |
+| `src/content/about.md`、`README.md`、`docs/*.md`、`AGENTS.md` | 自我介绍与标题                                                 |
+| `index.html`                                                  | `<title>`                                                      |
 
 前端界面（侧栏/顶栏）与托盘提示**动态读取** productName，无需改代码。
 </details>
@@ -119,7 +119,7 @@ rm -rf plugins/hello-world
 - 前端（侧栏/路由/设置页）与后端（Rust 命令/迁移）均构建期自动扫描，**删除目录即彻底移除**
   （迁移记录为作用域隔离，删除插件不会影响其他插件）
 - `_template/` 是你的新工具脚手架，**务必保留**
-- 若你的 fork 叠加了需要资源/重依赖的工具，见 `LOCAL.md`（本地层说明）
+- 若你的 fork 叠加了需要资源/重依赖的工具，见 [local.md](local.md)（本地层说明）
 
 ## 6. 开发你的第一个工具
 
@@ -169,7 +169,7 @@ cp -r plugins/_template plugins/my-tools
 | 页面布局与三态（空/加载/错误）写法  | `frontend/views/TemplateTool.vue`          |
 
 进阶能力（Rust 命令、数据库表、设置面板、HTTP 采集）的完整步骤
-见 [README.md 的扩展开发指南](README.md#扩展开发指南)。
+见 [extending.md](extending.md)。
 
 ## 7. 能力扩展速查
 
@@ -223,7 +223,7 @@ pnpm tauri build
   `<Product>.app.tar.gz` + `.sig`）
 - Windows：`src-tauri/target/**/release/bundle/nsis/*-setup.exe`（msi 视 `--bundles` 而定）
 
-> 发布带**在线更新**的版本（签名、清单、上传、自动发布）见 [RELEASE.md](RELEASE.md)。
+> 发布带**在线更新**的版本（签名、清单、上传、自动发布）见 [release.md](release.md)。
 
 安全说明（可向审查方出示）：安装版**不监听任何本地端口**（前端资源经
 进程内自定义协议加载，无 web 服务器）；唯一网络活动是应用主动发起的
@@ -289,7 +289,7 @@ lsof -ti:1420 | xargs -r kill -9   # 清掉当前残留
 ## 13. 日常开发去哪查
 
 - **AGENTS.md**：代码约定、易错点（改代码前必读）
-- **README.md**：架构细节与扩展开发完整步骤（Rust 命令/数据库/设置面板）
+- **extending.md**：架构细节与扩展开发完整步骤（Rust 命令/数据库/设置面板）
 - **`plugins/_template/README.md`**：单插件文件级说明
 
 祝开发顺利。

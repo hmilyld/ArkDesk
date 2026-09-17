@@ -46,6 +46,7 @@ onUnmounted(() => window.removeEventListener('resize', syncAutoCollapse));
 
 /** 收起态：图标 rail（macOS 红绿灯已由 trafficLightPosition 左移收紧，68px 可完整容纳；
  *  其余平台 56px。宽度用固定 px，不随字号漂移） */
+// design-lint-ignore：rail 宽度必须固定 px —— macOS 红绿灯留位（68px）不能随三档字号缩放
 const railWidthClass = computed(() => (isMac ? 'w-[68px]' : 'w-14'));
 
 interface ToolGroup {

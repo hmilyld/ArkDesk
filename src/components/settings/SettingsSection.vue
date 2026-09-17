@@ -36,10 +36,7 @@ defineProps<{
       </div>
     </div>
 
-    <div
-      class="divide-y divide-border rounded-lg border border-border bg-card"
-      :class="$props.class"
-    >
+    <div class="divide-y divide-border rounded-lg border bg-card" :class="$props.class">
       <slot />
     </div>
 

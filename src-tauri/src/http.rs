@@ -27,9 +27,13 @@ const MAX_BODY_BYTES: usize = 10 * 1024 * 1024;
 /// 当前代理设置（`None` = 直连）
 static PROXY: OnceLock<RwLock<Option<String>>> = OnceLock::new();
 
+/// 默认 User-Agent：用 crate 名（= `Cargo.toml` 的 package name，`pnpm scaffold` 会改名），
+/// 避免把某个 fork 的品牌硬编码进框架
+const DEFAULT_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
+
 fn build_client(proxy: Option<&str>) -> reqwest::Client {
     let mut builder = reqwest::Client::builder()
-        .user_agent(concat!("PocketArk/", env!("CARGO_PKG_VERSION")))
+        .user_agent(DEFAULT_USER_AGENT)
         .timeout(Duration::from_millis(DEFAULT_TIMEOUT_MS))
         .redirect(reqwest::redirect::Policy::limited(MAX_REDIRECTS))
         .cookie_store(true);
@@ -567,7 +571,7 @@ pub async fn http_send(args: HttpSendArgs) -> Result<HttpSendResult, AppError> {
         .user_agent
         .clone()
         .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| concat!("ArkDesk/", env!("CARGO_PKG_VERSION")).to_string());
+        .unwrap_or_else(|| DEFAULT_USER_AGENT.to_string());
 
     // 代理优先级：显式覆盖（""=直连） > 框架全局设置
     let proxy = match args.proxy.as_deref() {

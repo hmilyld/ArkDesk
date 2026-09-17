@@ -13,7 +13,7 @@ export interface HelloWorldConfig {
 
 /** 配置默认值（Rust 侧同名回退见 hello_world/mod.rs） */
 export const HELLO_CONFIG_DEFAULTS: HelloWorldConfig = {
-  greetingTemplate: '你好，{name}！ArkDesk 插件链路已打通。',
+  greetingTemplate: '你好，{name}！PocketArk 插件链路已打通。',
 };
 
 /** 任务状态选项（hello_tasks.status） */

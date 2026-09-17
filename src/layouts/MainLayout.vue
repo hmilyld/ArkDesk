@@ -35,7 +35,7 @@ onUnmounted(() => {
 <template>
   <div class="flex h-screen w-screen overflow-hidden bg-background text-foreground">
     <SideNav />
-    <div class="flex min-w-0 flex-1 flex-col">
+    <div class="relative flex min-w-0 flex-1 flex-col">
       <TitleBar />
       <main class="min-h-0 flex-1 overflow-y-auto">
         <RouterView v-slot="{ Component, route }">

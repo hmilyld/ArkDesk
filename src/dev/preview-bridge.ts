@@ -64,6 +64,21 @@ if (import.meta.env.DEV && !globalWindow.__TAURI_INTERNALS__) {
     http_send: { status: 200, headers: [], body: '' },
   };
 
+  /**
+   * 插件自带的预览夹具：插件可在 `frontend/preview.ts` **默认导出**一份
+   * `Record<命令名, 返回值>`，dev 预览时自动并入（base 自身不含任何插件业务命令）。
+   * 例：`export default { my_plugin_list: [] } satisfies Record<string, unknown>`。
+   */
+  const pluginFixtures = Object.assign(
+    {},
+    ...Object.values(
+      import.meta.glob<Record<string, unknown>>('/plugins/*/frontend/preview.ts', {
+        eager: true,
+        import: 'default',
+      })
+    )
+  ) as Record<string, unknown>;
+
   /** 预览用 SQL 夹具：只覆盖数据维护页会发出的几种查询形态 */
   function previewQuery(sql: string): { columns: string[]; rows: unknown[][] } {
     if (/FROM sqlite_master WHERE type = 'table'/.test(sql)) {
@@ -92,6 +107,20 @@ if (import.meta.env.DEV && !globalWindow.__TAURI_INTERNALS__) {
       };
     }
     if (/SELECT rowid FROM/.test(sql)) return { columns: ['rowid'], rows: [[1]] };
+
+    // 示例插件的任务表（hello-world「数据表格」）：kdb 的 select 形态，给几行便于核对表格规范
+    if (/FROM\s+"?hello_tasks"?/i.test(sql)) {
+      return {
+        columns: ['id', 'title', 'status', 'priority', 'created_at'],
+        rows: [
+          [1, '整理设计规范', 'done', 'high', '2026-09-10 09:12'],
+          [2, '补齐 P2 组件', 'in_progress', 'medium', '2026-09-11 14:03'],
+          [3, '插件层迁移', 'pending', 'medium', '2026-09-12 20:41'],
+          [4, '走查与截图', 'pending', 'low', '2026-09-13 10:05'],
+          [5, '真机材质确认', 'pending', 'high', '2026-09-14 08:30'],
+        ],
+      };
+    }
     if (/SELECT rowid AS __rid, \* FROM/.test(sql)) {
       return {
         columns: ['__rid', 'id', 'title', 'status', 'created_at'],
@@ -201,75 +230,13 @@ if (import.meta.env.DEV && !globalWindow.__TAURI_INTERNALS__) {
     if (cmd.startsWith('plugin:deep-link|')) return Promise.resolve(null);
     if (cmd.startsWith('plugin:log|')) return Promise.resolve(null);
 
-    // ── text2video：列表类夹具（页面直接消费数组） ──
-    if (cmd === 'text2video_draft_list') {
-      return Promise.resolve([
-        {
-          id: 1,
-          title: '早起的价值',
-          author: '佚名',
-          content: '第一段…\n\n第二段…',
-          source: 'manual',
-          generatedRefId: null,
-          createdAt: '2026-09-11 09:20',
-          updatedAt: '2026-09-11 09:20',
-        },
-        {
-          id: 2,
-          title: '坚持的意义（AI 草稿）',
-          author: '佚名',
-          content: 'AI 生成内容…',
-          source: 'ai',
-          generatedRefId: '20260912-001',
-          createdAt: '2026-09-12 20:10',
-          updatedAt: '2026-09-12 20:30',
-        },
-      ]);
-    }
-    if (cmd === 'text2video_history') {
-      return Promise.resolve([
-        {
-          refId: '20260912-001',
-          kind: 'video',
-          title: '坚持的意义',
-          status: 'done',
-          detail: '9 段 · 42s',
-          video: '/Users/me/Movies/坚持的意义.mp4',
-          author: '佚名',
-          source: 'ai',
-          content: '正文备份…',
-          createdAt: '2026-09-12 20:31',
-        },
-        {
-          refId: '20260912-002',
-          kind: 'video',
-          title: '早起的价值',
-          status: 'failed',
-          detail: 'ffmpeg 退出码 1',
-          video: '',
-          author: '佚名',
-          source: 'manual',
-          content: '正文备份…',
-          createdAt: '2026-09-12 21:02',
-        },
-      ]);
-    }
-    if (cmd === 'text2video_env_check') {
-      return Promise.resolve({
-        ffmpegOk: true,
-        ffmpegPath: '/opt/homebrew/bin/ffmpeg',
-        fontsOk: true,
-        fontPath: '/System/Library/Fonts/PingFang.ttc',
-        outputDir: '/Users/me/Downloads',
-      });
-    }
-
     // ── 数据库：按 SQL 形态给夹具，让「数据维护」等页面进入有内容状态 ──
     if (cmd === 'db_query_values') {
       const { sql } = args.args as { sql: string };
       return Promise.resolve(previewQuery(sql));
     }
 
+    if (cmd in pluginFixtures) return Promise.resolve(pluginFixtures[cmd]);
     if (cmd in fixtures) return Promise.resolve(fixtures[cmd]);
 
     if (import.meta.env.DEV) console.warn(`[preview] 未模拟的命令：${cmd}`, args);

@@ -40,9 +40,7 @@ async function onCheckUpdate(): Promise<void> {
 
 <template>
   <div class="space-y-6">
-    <div
-      class="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5"
-    >
+    <div class="flex items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2.5">
       <div>
         <p class="text-sm">PocketArk{{ version ? ` v${version}` : '' }}</p>
         <p class="text-xs text-muted-foreground">

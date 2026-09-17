@@ -2,6 +2,7 @@
   新增行对话框：按表结构动态生成表单。
   字段语义：勾选 NULL → 写入 NULL；留空 → 跳过该列（走表默认值）；
   填写 → 解析后写入（数值亲和列转数字）。INTEGER 主键留空自动赋值。
+  标签 / 说明 / 行内校验统一交给 FormRow；字段多时正文内部滚动，父级错误就地展示。
 -->
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
@@ -17,6 +18,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import ErrorState from '@/components/native/ErrorState.vue';
+import FormRow from '@/components/native/FormRow.vue';
 import {
   assertColumnName,
   isRowidAlias,
@@ -25,11 +28,16 @@ import {
   type InsertEntry,
 } from '../shared';
 
-const props = defineProps<{
-  open: boolean;
-  table: string;
-  columns: ColumnInfo[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    open: boolean;
+    table: string;
+    columns: ColumnInfo[];
+    /** 父级写入失败信息（就地展示，不用 toast） */
+    error?: string;
+  }>(),
+  { error: undefined }
+);
 
 const emit = defineEmits<{
   'update:open': [open: boolean];
@@ -52,6 +60,14 @@ watch(
 
 function isNumeric(column: ColumnInfo): boolean {
   return /INT|REAL|FLOA|DOUB|DEC|NUM|BOOL/i.test(column.type);
+}
+
+/** 字段标签下方的类型 / 约束说明 */
+function metaText(column: ColumnInfo): string {
+  const parts = [column.type || 'ANY'];
+  if (column.notnull === 1) parts.push('NOT NULL');
+  if (column.pk > 0) parts.push('PK');
+  return parts.join(' · ');
 }
 
 const entries = computed<InsertEntry[]>(() => {
@@ -82,6 +98,10 @@ const invalidColumns = computed(() => {
   return invalid;
 });
 
+function columnError(column: ColumnInfo): string {
+  return invalidColumns.value.includes(column.name) ? '列名不合法，无法写入该列' : '';
+}
+
 const submitting = ref(false);
 
 function submit(): void {
@@ -106,40 +126,48 @@ function submit(): void {
         </DialogDescription>
       </DialogHeader>
 
-      <div class="max-h-[24rem] space-y-3 overflow-y-auto py-2 pr-1">
-        <div v-for="column in columns" :key="column.name" class="space-y-1">
-          <div class="flex items-center justify-between gap-2">
-            <Label :for="`row-${column.name}`" class="font-mono text-xs">
-              {{ column.name }}
-              <span class="ml-1 font-sans text-[10px] font-normal text-muted-foreground">
-                {{ column.type || 'ANY' }}
-                {{ column.notnull === 1 ? '· NOT NULL' : '' }}
-                {{ column.pk > 0 ? '· PK' : '' }}
-              </span>
-            </Label>
-            <Label class="flex items-center gap-1 text-[10px] text-muted-foreground">
+      <ErrorState v-if="error" :message="error" compact />
+
+      <div class="max-h-[55vh] space-y-3 overflow-y-auto px-1 py-1">
+        <FormRow
+          v-for="column in columns"
+          :key="column.name"
+          :label="column.name"
+          :description="metaText(column)"
+          :error="columnError(column)"
+        >
+          <template #label-action>
+            <Label class="flex items-center gap-1 text-xs text-muted-foreground">
               <Checkbox
                 :model-value="fields[column.name]?.isNull ?? false"
+                aria-label="该列写入 NULL"
                 @update:model-value="
                   fields[column.name] && (fields[column.name]!.isNull = $event === true)
                 "
               />
               NULL
             </Label>
-          </div>
-          <Input
-            :id="`row-${column.name}`"
-            v-model="fields[column.name]!.raw"
-            class="h-8 font-mono text-xs"
-            :disabled="fields[column.name]?.isNull"
-            :placeholder="
-              isRowidAlias(column) ? '留空自动赋值' : isNumeric(column) ? '数字' : '文本'
-            "
-          />
-        </div>
+          </template>
+          <template #default="{ id, invalid, describedBy }">
+            <Input
+              :id="id"
+              v-model="fields[column.name]!.raw"
+              class="h-8 font-mono text-xs"
+              :class="isNumeric(column) && 'text-right tabular-nums'"
+              :disabled="fields[column.name]?.isNull"
+              :aria-invalid="invalid"
+              :aria-describedby="describedBy"
+              :placeholder="
+                isRowidAlias(column) ? '留空自动赋值' : isNumeric(column) ? '数字' : '文本'
+              "
+            />
+          </template>
+        </FormRow>
       </div>
 
-      <p class="text-xs text-muted-foreground">将写入 {{ entries.length }} 列</p>
+      <p class="text-xs text-muted-foreground">
+        将写入 <span class="tabular-nums">{{ entries.length }}</span> 列
+      </p>
 
       <DialogFooter>
         <Button variant="outline" size="sm" @click="emit('update:open', false)">取消</Button>
@@ -148,7 +176,7 @@ function submit(): void {
           :disabled="entries.length === 0 || invalidColumns.length > 0 || submitting"
           @click="submit"
         >
-          插入
+          新增行
         </Button>
       </DialogFooter>
     </DialogContent>

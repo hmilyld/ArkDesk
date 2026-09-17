@@ -242,13 +242,19 @@ function renderReadme(cfg) {
   if (cfg.backend)
     lines.push(`- 后端命令前缀：\`${snake}_\`（\`backend/mod.rs\`，构建期自动登记）`);
   if (cfg.schema) lines.push(`- 数据库迁移 scope：\`${cfg.id}\``);
-  lines.push('', '## 开发', '', '- 界面：`frontend/views/Tool.vue`');
+  lines.push(
+    '',
+    '## 开发',
+    '',
+    '- 界面：`frontend/views/Tool.vue`',
+    '- 纯逻辑：`frontend/lib/`（无 Vue 依赖）；组合式函数：`frontend/composables/`（`useXxx.ts`）'
+  );
   if (cfg.backend) lines.push('- 命令：`backend/mod.rs`（`#[tauri::command]`，构建期自动登记）');
   if (cfg.settings)
     lines.push('- 设置：`frontend/settings/Settings.vue`（`useToolSettings` 读写）');
   if (cfg.schema) lines.push('- 表定义：`frontend/schema.ts` + 迁移 `backend/migrations.rs`');
   lines.push('- 启动：`pnpm tauri dev`（前后端均构建期自动注册，无需手动登记）');
-  lines.push('', '> 架构与约定见仓库根 `README.md` / `AGENTS.md`。', '');
+  lines.push('', '> 目录规范见 `plugins/README.md`；UI 规范见 `DESIGN.md`。', '');
   return lines.join('\n');
 }
 

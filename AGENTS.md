@@ -74,6 +74,15 @@ merge 冲突）：
 - 迁移按**作用域隔离**：`migration(scope, version, ...)`，scope = 插件 id，version 在作用域内从 1 递增。旧库历史版本用 `plugin.json` 的 `legacyMigrations`（旧全局版本 → 新本地版本）一次性桥接登记。
 - `_` 或 `.` 开头目录不参与注册（如 `_template`）。
 
+### 插件目录规范
+
+每个插件的内部结构、命名与必需文件有统一规范（`frontend/` 顶层白名单、纯逻辑放 `frontend/lib/`、
+composable 用 `useXxx.ts`、后端命令只在 `backend/mod.rs` 等），完整规定见 **[`plugins/README.md`](plugins/README.md)**。
+
+- 机器校验：`scripts/lint-plugins.mjs`（R-P1~R-P6）已接入 `pnpm lint`；`plugins/_template/` 同样受校验，
+  保证脚手架产物即规范样本。确需例外时在文件内写 `lint-plugins-ignore` 并注明理由。
+- 新插件一律用 `pnpm create-plugin` 生成（骨架即合规），或复制 `plugins/_template/`。
+
 ### 自动注册的约定与注意事项
 
 - **命令必须写在 `plugins/<id>/backend/mod.rs`**：`build.rs` 只扫描该文件解析 `#[tauri::command]`；其余 `.rs` 作为它的子模块（`pub mod xxx;`）。命令可独占一行或与 `#[tauri::command]` 同行，属性带参数（如 `#[tauri::command(rename_all = "camelCase")]`）亦可。
@@ -201,7 +210,7 @@ src/content/         # 关于/更新日志 Markdown（设置页读取）
 scripts/             # scaffold / create-plugin / gen-icons / gen-commands / prepare / bump-version / release
   local/             # ★本地层脚本（fork-owned；base 无）：资源下载、CI 跳过
 plugins/<id>/        # ★工具插件（前后端同处）：plugin.json + README.md + AGENTS.md
-  frontend/          #   views/ settings/ components/ composables/ schema.ts setup.ts shared.ts
+  frontend/          #   views/ settings/ components/ composables/ lib/ schema.ts setup.ts shared.ts
   backend/           #   mod.rs（#[tauri::command] 命令）+ migrations.rs + 其余 .rs / 资源
 src/layouts/         # 布局壳（标题栏/侧栏/错误边界/设置页）
 src/stores/          # Pinia（全局设置）

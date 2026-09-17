@@ -1,35 +1,36 @@
 <!--
-  数据表格：动态列渲染 + 分页 + 单元格内联编辑（双击）+ 删行。
+  数据表格：动态列渲染 + 分页 + 单元格内联编辑（双击 / 聚焦后 Enter·Space）+ 删行。
   内联编辑为 Input + NULL 勾选的原位替换，Enter 提交 / Esc 取消；
   BLOB 列只读展示（Rust 通道以 base64 返回）。
+  表格自绘（不套 ui/Table 的横向滚动壳）：粘性表头要求滚动容器同时承担纵向滚动。
 -->
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue';
-import { Check, Eye, KeyRound, Pencil, Trash2, X } from '@lucide/vue';
+import { Check, Eye, KeyRound, Pencil, Table2, Trash2, X } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import EmptyState from '@/components/native/EmptyState.vue';
+import ErrorState from '@/components/native/ErrorState.vue';
+import LoadingState from '@/components/native/LoadingState.vue';
 import { isBlobColumn, PAGE_SIZE, type ColumnInfo, type DataRow } from '../shared';
 
-const props = defineProps<{
-  columns: ColumnInfo[];
-  rows: DataRow[];
-  loading: boolean;
-  readonly: boolean;
-  page: number;
-  pageCount: number;
-  total: number;
-}>();
+const props = withDefaults(
+  defineProps<{
+    columns: ColumnInfo[];
+    rows: DataRow[];
+    loading: boolean;
+    readonly: boolean;
+    page: number;
+    pageCount: number;
+    total: number;
+    /** 取数失败信息（非空时显示错误态与重试） */
+    error?: string | null;
+  }>(),
+  { error: null }
+);
 
 const emit = defineEmits<{
   'edit-cell': [payload: { row: DataRow; column: ColumnInfo; raw: string; isNull: boolean }];
@@ -37,7 +38,15 @@ const emit = defineEmits<{
   'edit-row': [row: DataRow];
   'delete-row': [row: DataRow];
   'page-change': [page: number];
+  retry: [];
 }>();
+
+const NUMERIC_TYPE_RE = /INT|REAL|FLOA|DOUB|DEC|NUM|BOOL/i;
+
+/** 数值亲和列：右对齐 + tabular-nums（表头与单元格保持一致） */
+function isNumeric(column: ColumnInfo): boolean {
+  return NUMERIC_TYPE_RE.test(column.type);
+}
 
 // ── 编辑态（editingKey = `${__rid}:${列名}`，标识符白名单不含冒号，可安全拆分） ──
 const editingKey = ref<string | null>(null);
@@ -103,50 +112,81 @@ const pageNumbers = computed(() =>
 
 <template>
   <div class="flex min-h-0 flex-1 flex-col">
-    <p v-if="loading" class="flex flex-1 items-center justify-center text-xs text-muted-foreground">
-      加载中…
-    </p>
+    <!-- 失败时错误条常驻顶部（保留已有数据），重试重新取数 -->
+    <ErrorState
+      v-if="error"
+      :message="error"
+      :on-retry="() => emit('retry')"
+      class="mb-3 shrink-0"
+    />
 
-    <div
-      v-else-if="rows.length === 0"
-      class="grid flex-1 place-content-center rounded-lg border border-dashed"
-    >
-      <p class="text-sm text-muted-foreground">该表暂无数据</p>
+    <div v-if="loading" class="flex flex-1 items-center justify-center">
+      <LoadingState variant="spinner" label="加载表数据…" />
     </div>
 
-    <template v-else>
-      <div class="min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
-        <Table class="table-fixed">
-          <TableHeader>
-            <TableRow class="hover:bg-transparent">
-              <TableHead v-for="column in columns" :key="column.name">
-                <span class="flex items-baseline gap-1.5">
-                  <span class="truncate font-mono text-xs">{{ column.name }}</span>
+    <div v-else-if="rows.length === 0 && !error" class="grid flex-1 place-content-center">
+      <EmptyState
+        :icon="Table2"
+        title="该表暂无数据"
+        :description="
+          readonly ? '该表无 rowid，仅支持浏览结构与数据' : '可点右上角「新增行」写入第一行'
+        "
+      />
+    </div>
+
+    <template v-else-if="rows.length > 0">
+      <div class="min-h-0 flex-1 overflow-auto">
+        <table class="w-full table-fixed caption-bottom text-base">
+          <thead>
+            <tr>
+              <th
+                v-for="column in columns"
+                :key="column.name"
+                class="sticky top-0 z-10 h-9 border-b bg-card px-3 align-middle text-xs font-medium text-muted-foreground"
+              >
+                <span
+                  class="flex items-baseline gap-1.5"
+                  :class="isNumeric(column) ? 'justify-end' : ''"
+                >
+                  <span class="truncate font-mono">{{ column.name }}</span>
                   <KeyRound
                     v-if="column.pk > 0"
-                    class="size-3 shrink-0 self-center text-muted-foreground"
+                    class="size-3.5 shrink-0 self-center text-muted-foreground"
                   />
-                  <span class="shrink-0 text-[10px] font-normal text-muted-foreground">
+                  <span class="shrink-0 font-normal text-muted-foreground">
                     {{ column.type || 'ANY' }}
                   </span>
                 </span>
-              </TableHead>
-              <TableHead class="w-24 pr-3 text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow
+              </th>
+              <th
+                class="sticky top-0 z-10 h-9 w-24 border-b bg-card px-3 text-right align-middle text-xs font-medium text-muted-foreground"
+              >
+                操作
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border/60">
+            <tr
               v-for="(row, rowIndex) in rows"
               :key="String(row.__rid ?? rowIndex)"
-              class="group hover:bg-accent/40"
+              class="group hover:bg-accent"
             >
-              <TableCell
+              <td
                 v-for="column in columns"
                 :key="column.name"
-                class="px-3 py-2"
-                :class="{ 'cursor-text': editable(row, column) }"
+                class="px-3 py-2 align-middle"
+                :class="[
+                  isNumeric(column) && 'text-right tabular-nums',
+                  editable(row, column) &&
+                    'cursor-text focus-visible:ring-3 focus-visible:ring-ring/60 focus-visible:outline-none',
+                ]"
+                :tabindex="editable(row, column) ? 0 : undefined"
+                :role="editable(row, column) ? 'button' : undefined"
+                :aria-label="editable(row, column) ? `编辑 ${column.name}` : undefined"
                 :title="cellText(row, column)"
                 @dblclick="startEdit(row, column)"
+                @keydown.enter.prevent="startEdit(row, column)"
+                @keydown.space.prevent="startEdit(row, column)"
               >
                 <!-- 内联编辑态 -->
                 <div
@@ -162,17 +202,30 @@ const pageNumbers = computed(() =>
                     @keydown.enter.prevent="commitEdit"
                     @keydown.esc.prevent="cancelEdit"
                   />
-                  <Label class="flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground">
+                  <Label class="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
                     <Checkbox
                       :model-value="editNull"
+                      aria-label="该列写入 NULL"
                       @update:model-value="editNull = $event === true"
                     />
                     NULL
                   </Label>
-                  <Button variant="ghost" size="icon-sm" aria-label="保存" @click="commitEdit">
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label="保存单元格"
+                    title="保存"
+                    @click="commitEdit"
+                  >
                     <Check class="size-3.5 text-primary" />
                   </Button>
-                  <Button variant="ghost" size="icon-sm" aria-label="取消" @click="cancelEdit">
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label="取消编辑"
+                    title="取消"
+                    @click="cancelEdit"
+                  >
                     <X class="size-3.5 text-muted-foreground" />
                   </Button>
                 </div>
@@ -181,67 +234,60 @@ const pageNumbers = computed(() =>
                 <template v-else>
                   <span
                     v-if="isNullCell(row, column)"
-                    class="font-mono text-xs italic text-muted-foreground/60"
+                    class="font-mono text-xs italic text-muted-foreground"
                   >
                     NULL
                   </span>
                   <span v-else-if="isBlobColumn(column)" class="flex items-center gap-1.5">
-                    <Badge variant="outline" class="shrink-0 text-[10px] text-muted-foreground">
-                      BLOB
-                    </Badge>
+                    <Badge variant="outline" class="shrink-0 text-muted-foreground">BLOB</Badge>
                     <span class="truncate font-mono text-xs text-muted-foreground">
                       {{ cellText(row, column).slice(0, 24) }}
                     </span>
                   </span>
-                  <span
-                    v-else
-                    class="block truncate font-mono text-xs"
-                    :class="
-                      typeof row[column.name] === 'number'
-                        ? 'text-foreground'
-                        : 'text-foreground/90'
-                    "
-                  >
+                  <span v-else class="block truncate font-mono text-xs">
                     {{ cellText(row, column) }}
                   </span>
                 </template>
-              </TableCell>
+              </td>
 
-              <TableCell class="w-24 pr-3 text-right">
+              <td class="w-24 px-3 py-2 text-right align-middle">
                 <div
-                  class="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+                  class="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
                 >
                   <Button
                     variant="ghost"
                     size="icon-sm"
                     aria-label="查看行"
+                    title="查看行"
                     @click="emit('view-row', row)"
                   >
-                    <Eye class="size-4" />
+                    <Eye class="size-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon-sm"
                     aria-label="编辑行"
+                    title="编辑行"
                     :disabled="readonly"
                     @click="emit('edit-row', row)"
                   >
-                    <Pencil class="size-4" />
+                    <Pencil class="size-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon-sm"
                     aria-label="删除行"
+                    title="删除行"
                     :disabled="readonly"
                     @click="emit('delete-row', row)"
                   >
-                    <Trash2 class="size-4 text-destructive" />
+                    <Trash2 class="size-3.5 text-destructive" />
                   </Button>
                 </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <div class="mt-3 flex shrink-0 items-center justify-center gap-1.5">
@@ -261,12 +307,10 @@ const pageNumbers = computed(() =>
             …
           </span>
           <Button
-            variant="outline"
+            :variant="n === page ? 'secondary' : 'ghost'"
             size="sm"
-            class="min-w-8 px-2 font-mono"
-            :class="
-              n === page ? 'border-primary/50 bg-primary/10 text-primary' : 'text-muted-foreground'
-            "
+            class="min-w-8 px-2 font-mono tabular-nums"
+            :aria-current="n === page ? 'page' : undefined"
             @click="emit('page-change', n)"
           >
             {{ n }}
@@ -280,7 +324,7 @@ const pageNumbers = computed(() =>
         >
           下一页
         </Button>
-        <span class="ml-2 text-xs text-muted-foreground">
+        <span class="ml-2 text-xs tabular-nums text-muted-foreground">
           共 {{ total }} 行 · 每页 {{ PAGE_SIZE }} 行
         </span>
       </div>

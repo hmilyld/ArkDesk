@@ -1,11 +1,11 @@
 <!--
   页面模板：模块 Panel、布局档位与页面三态的标准写法（新工具起手样板）。
   - 每个功能模块用 @/components/tool/Panel 包裹（外框 + 头部条 + 右上角动作）
-  - 栅格档位参考 _template README：表格满幅 / 宽内容 10 / 混合 8 / 表单设置 6
+  - 栅格档位：表格满幅 / 宽内容 10 / 混合 8 / 表单设置 6（居中列用偶数跨距）
+  - 空 / 加载 / 错误三态齐全，作为全项目参考
 -->
 <script setup lang="ts">
 import { ref } from 'vue';
-import { toast } from 'vue-sonner';
 import { PackageOpen } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import EmptyState from '@/components/native/EmptyState.vue';
@@ -17,14 +17,21 @@ import ToolShell from '@/components/tool/ToolShell.vue';
 /** 错误态演示开关（真实场景由工具自身状态驱动） */
 const simulateError = ref(true);
 const reloading = ref(false);
+const reloadNote = ref('');
+const createCount = ref(0);
 
 function reload(): void {
   reloading.value = true;
+  reloadNote.value = '';
   // 演示：真实工具此处重新拉取数据
   setTimeout(() => {
     reloading.value = false;
-    toast.info('重试完成（演示）');
+    reloadNote.value = '已重新加载（演示）';
   }, 600);
+}
+
+function createRecord(): void {
+  createCount.value += 1;
 }
 </script>
 
@@ -33,7 +40,7 @@ function reload(): void {
     title="页面模板"
     description="新工具起手样板：模块 Panel + Tailwind 栅格布局档位 + 空态 / 加载态 / 错误态标准写法"
   >
-    <div class="mx-auto grid w-full grid-cols-12">
+    <div class="grid grid-cols-12">
       <div class="col-span-12 space-y-4 lg:col-span-10 lg:col-start-2">
         <!-- 模块面板：每个功能模块（设置 / 输入 / 输出 / 结果）都用 Panel 包裹，不裸露、不嵌套卡片 -->
         <Panel title="模块面板（Panel）" hint="外框 + 头部条 + 右上角动作">
@@ -62,15 +69,15 @@ function reload(): void {
             :key="cols"
             class="flex items-center gap-3"
           >
-            <div class="flex h-7 flex-1 items-center rounded-sm bg-muted">
+            <div class="flex h-7 flex-1 items-center rounded-md bg-muted">
               <div
-                class="flex h-full items-center rounded-sm bg-primary/15 pl-2 text-xs font-medium text-primary"
+                class="flex h-full items-center rounded-md bg-secondary pl-2 text-xs font-medium text-secondary-foreground"
                 :style="{ width: `${(cols / 12) * 100}%` }"
               >
                 {{ label }}
               </div>
             </div>
-            <span class="w-10 text-right font-mono text-xs text-muted-foreground">
+            <span class="w-10 text-right font-mono text-xs tabular-nums text-muted-foreground">
               {{ Math.round((cols / 12) * 100) }}%
             </span>
           </div>
@@ -84,10 +91,11 @@ function reload(): void {
             title="还没有任何记录"
             description="从动作区开始你的第一步"
           >
-            <Button variant="outline" size="sm" @click="toast.info('演示：新建记录')">
-              新建记录
-            </Button>
+            <Button variant="outline" size="sm" @click="createRecord">新建记录</Button>
           </EmptyState>
+          <p v-if="createCount > 0" role="status" class="text-xs text-muted-foreground">
+            已模拟新建 {{ createCount }} 条记录（演示）
+          </p>
         </Panel>
 
         <!-- 加载态：Skeleton 骨架屏（结构仿真实列表） -->
@@ -103,12 +111,15 @@ function reload(): void {
           </p>
           <ErrorState
             v-if="simulateError"
-            :message="reloading ? '重试中…' : '查询超时，请检查数据库文件（DB_ERROR）'"
+            :message="reloading ? '重试中…' : '查询超时，请检查数据库文件后重试（DB_ERROR）'"
             :on-retry="reloading ? undefined : reload"
           />
           <Button v-else variant="outline" size="sm" @click="simulateError = true">
             显示错误态示例
           </Button>
+          <p v-if="reloadNote" role="status" class="text-xs text-muted-foreground">
+            {{ reloadNote }}
+          </p>
         </Panel>
       </div>
     </div>

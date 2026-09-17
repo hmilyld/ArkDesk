@@ -14,7 +14,7 @@ use tauri::Manager;
 
 /// 默认问候模板。前端 shared.ts 里有同值副本用于展示兜底，
 /// 此处为最终回退（前端留空时生效），两者需同步修改。
-const DEFAULT_TEMPLATE: &str = "你好，{name}！ArkDesk 插件链路已打通。";
+const DEFAULT_TEMPLATE: &str = "你好，{name}！PocketArk 插件链路已打通。";
 
 /// 问候命令：演示参数校验（错误路径）、可选参数（设置页自定义模板）与返回值
 /// 命令名 = 函数名，须与前端 ipc("hello_world_greet") 一致（<tool_id>_ 前缀约定）

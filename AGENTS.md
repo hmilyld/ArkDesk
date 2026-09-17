@@ -175,7 +175,7 @@ composable 用 `useXxx.ts`、后端命令只在 `backend/mod.rs` 等），完整
 - **开关分工（HIG）**：开关只出现在列表行内、与标题同区（由行内容提供语境）；细粒度布尔用复选框，不要用一排开关替代多选。
 - **焦点环唯一写法**：`focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/60`（`scripts/lint-design.mjs` R6 会校验）。
 - **窗口材质**：启用后 `set_window_background` 不做实色打底（否则盖住材质），防白闪靠前端不透明底；勿删 `src-tauri/src/lib.rs` 里 `VIBRANCY_ACTIVE` 的提前返回。
-- **生命周期钩子**：`src-tauri/src/lifecycle.rs` 只定义契约定与调用点，base 不含实现；fork 在 `src-tauri/local/lifecycle.rs` 写 `pub struct Hooks;` 即被 `build.rs` 自动挂载（无文件即 no-op）。钩子运行在独立异步任务里——**不得在钩子内阻塞主线程**（`block_on` 会让启动假死，连自建窗口都画不出来）。`before_start` 返回 `Hold` 后须调 `lifecycle::resume_startup()` 才能显示主窗口，期间托盘/单实例/Dock 唤起会被 `tray.rs` 统一拒绝（勿绕过该收口）。
+- **生命周期钩子**：`src-tauri/src/lifecycle.rs` 只定义契约与调用点，base 不含实现；fork 在 `src-tauri/local/lifecycle.rs` 写 `pub struct Hooks;` 即被 `build.rs` 自动挂载（无文件即 no-op）。钩子运行在独立异步任务里——**不得在钩子内阻塞主线程**（`block_on` 会让启动假死，连自建窗口都画不出来）。`before_start` 返回 `Hold` 后须调 `lifecycle::resume_startup()` 才能显示主窗口，期间托盘/单实例/Dock 唤起会被 `tray.rs` 统一拒绝（勿绕过该收口）。
 - **预览夹具**：插件夹具只放 `plugins/<id>/frontend/preview.ts`（默认导出 `Record<命令名, 返回值>`，dev 下由预览桥 glob 并入），**不要**写进 `src/dev/preview-bridge.ts`（base 不接受 fork 插件名）。预览桥对未知业务命令返回 `null`（非数组），列表命令用 `?? []` 容错，否则浏览器预览白屏。
 
 ## 易错点（已修复过，勿回退）

@@ -66,12 +66,14 @@
 ```
 plugins/<plugin-id>/
 ├── plugin.json        清单（唯一事实源；前后端扫描共用）
-├── README.md
+├── README.md          功能说明（面向使用者）
+├── AGENTS.md          开发约定（面向 AI/维护者）
 ├── frontend/          前端
 │   ├── views/         工具页面（每个 tools[] 项一个文件）
 │   ├── settings/      设置面板（可选）
 │   ├── components/    插件私有组件（可选）
-│   ├── composables/   组合式函数（可选）
+│   ├── composables/   组合式函数（可选，useXxx.ts）
+│   ├── lib/           纯逻辑 TS（可选，无 Vue 依赖）
 │   ├── schema.ts      数据库表定义（可选，自动聚合）
 │   ├── setup.ts       生命周期钩子（可选，自动扫描）
 │   └── shared.ts      插件内共享常量/工具（可选）

@@ -7,7 +7,7 @@
     "dev": "node scripts/prepare.mjs dev && vite",
     "build": "node scripts/prepare.mjs build && vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "lint": "eslint . && node scripts/lint-design.mjs",
+    "lint": "eslint . && node scripts/lint-design.mjs && node scripts/lint-plugins.mjs",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",

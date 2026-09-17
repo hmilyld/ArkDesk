@@ -16,6 +16,8 @@
 import { ref } from 'vue';
 import { PackageOpen, Play, RefreshCw } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
+import { greet } from '../lib/example';
+import { useCounter } from '../composables/useCounter';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -36,6 +38,9 @@ const retries = ref('3');
 const input = ref('');
 const result = ref('');
 
+// 目录规范示例：纯逻辑放 frontend/lib/（此处 greet），响应式逻辑放 frontend/composables/（此处 useCounter）
+const { count, doubled, increment, reset: resetCounter } = useCounter();
+
 // 结果区状态：idle（空态）/ loading（加载态）/ error（错误态）/ done（结果）
 type ResultState = 'idle' | 'loading' | 'error' | 'done';
 const state = ref<ResultState>('idle');
@@ -54,7 +59,11 @@ function run(): void {
       result.value = '';
       return;
     }
-    result.value = `已处理 ${lines.length} 行（上限 ${maxLines.value}，超时 ${timeout.value} s，重试 ${retries.value} 次）`;
+    increment();
+    result.value =
+      `${greet(lines[0])}\n` +
+      `已处理 ${lines.length} 行（上限 ${maxLines.value}，超时 ${timeout.value} s，重试 ${retries.value} 次）\n` +
+      `示例 · lib/example.ts 的 greet() · 第 ${count.value} 次运行（计数翻倍 ${doubled.value}）`;
     state.value = 'done';
   }, 400);
 }
@@ -63,6 +72,7 @@ function reset(): void {
   input.value = '';
   result.value = '';
   state.value = 'idle';
+  resetCounter();
 }
 
 async function copyResult(): Promise<void> {

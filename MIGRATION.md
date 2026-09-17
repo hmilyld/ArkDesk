@@ -13,7 +13,7 @@
 upstream/main  4b378dc  (#7~#12：设计 lint 清零 / 壳层材质 / 窗口材质 / base 示例规范化 / 插件目录规范)
 main           e89dbe5
  ├─ design/plugin-conformance  2d146bd   （5 个提交：插件层设计批次，已 push，未合 main）
- │   └─ chore/plugin-lib-layout a20c98e  （2 个提交：lib/ 目录迁移 + 框架文件对齐，已 push）
+ │   └─ chore/plugin-lib-layout 9a4e466   （3 个提交：lib/ 目录迁移 + 框架文件对齐 + 本交接修订，已 push）
  └─ design/desktop-proto                 （早期原型分支，本地；其框架层内容已由上游承载，可弃）
 ```
 

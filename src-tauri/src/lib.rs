@@ -12,6 +12,7 @@ mod error;
 mod events;
 mod files;
 mod http;
+mod lifecycle;
 mod menu;
 mod open;
 mod plugins;
@@ -28,6 +29,9 @@ use tauri_plugin_store::StoreExt;
 /// 应用退出流程标记：RunEvent::ExitRequested 置位后，窗口关闭不再走
 /// 「隐藏到托盘」拦截，否则退出流程中窗口只被隐藏、进程无法结束
 static EXITING: AtomicBool = AtomicBool::new(false);
+
+/// 退出前钩子是否已启动：避免重复进入退出流程时反复触发 before_exit
+static EXIT_HOOK_STARTED: AtomicBool = AtomicBool::new(false);
 
 /// 解析日志级别字符串（与前端 LogLevel 对齐）
 fn parse_level(level: &str) -> Option<LevelFilter> {
@@ -396,13 +400,22 @@ pub fn run() {
                 });
             }
 
-            // 初始化全部完成后显示窗口（创建时 visible: false，避免启动闪帧/闪标题栏）
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
+            // 初始化就绪 → 交生命周期钩子决定是否显示主窗口（异步任务，不阻塞主线程）。
+            // 无 fork 实现时等价于原来的「立即显示」；fork 可在 before_start 拦截
+            // （见 src-tauri/src/lifecycle.rs）。
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                match lifecycle::run_before_start(&handle).await {
+                    lifecycle::StartupFlow::Continue => lifecycle::complete_startup(&handle),
+                    lifecycle::StartupFlow::Hold => lifecycle::hold_startup(),
+                    lifecycle::StartupFlow::Quit => {
+                        log::info!("before_start 要求退出应用");
+                        handle.exit(0);
+                    }
+                }
+            });
 
-            log::info!("ArkDesk 启动完成");
+            log::info!("ArkDesk 初始化完成，等待生命周期钩子");
             Ok(())
         })
         // 关窗行为：默认隐藏到托盘（可在设置中关闭，改为直接退出）。
@@ -439,11 +452,36 @@ pub fn run() {
 
     // 独立处理运行事件：退出流程开始时置位标记，放行后续的窗口关闭
     app.run(|app, event| match event {
-        tauri::RunEvent::ExitRequested { .. } => {
-            EXITING.store(true, Ordering::Relaxed);
-            log::info!("应用退出流程开始");
+        // 退出前钩子：首次进入退出流程时拦下，给 fork 异步处理机会（未保存数据等），
+        // 完成后才真正退出；已放行（EXITING）则直接放行，避免退出流程卡死。
+        tauri::RunEvent::ExitRequested { api, .. } => {
+            if EXITING.load(Ordering::Relaxed) {
+                return;
+            }
+            api.prevent_exit();
+            if EXIT_HOOK_STARTED.swap(true, Ordering::Relaxed) {
+                return;
+            }
+
+            log::info!("应用退出流程开始（执行 before_exit 钩子）");
+            let handle = app.clone();
+            tauri::async_runtime::spawn(async move {
+                match lifecycle::run_before_exit(&handle).await {
+                    lifecycle::ExitFlow::Continue => {
+                        EXITING.store(true, Ordering::Relaxed);
+                        handle.exit(0);
+                    }
+                    lifecycle::ExitFlow::Cancel => {
+                        log::info!("before_exit 钩子取消了本次退出");
+                        EXIT_HOOK_STARTED.store(false, Ordering::Relaxed);
+                    }
+                }
+            });
         }
-        tauri::RunEvent::Exit => log::info!("应用退出完成"),
+        tauri::RunEvent::Exit => {
+            lifecycle::run_after_exit(app);
+            log::info!("应用退出完成");
+        }
         // macOS：点击 Dock 图标且无可见窗口时唤起主窗口（标准的 reopen 语义）
         #[cfg(target_os = "macos")]
         tauri::RunEvent::Reopen { .. } => {

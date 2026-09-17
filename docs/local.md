@@ -6,13 +6,14 @@ PocketArk 框架自身**不含任何个人工具、不下载任何资源**。当
 
 ## 放哪里
 
-| 内容                    | 位置                                                                           |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| 个人插件（前后端同处）  | `plugins/<id>/`（构建期自动注册，无需手动登记）                                |
-| 个人 Rust 依赖          | `src-tauri/Cargo.toml` 末尾 `# ── local plugin deps（fork-owned）──` 段        |
-| 个人资产（字体/模型/…） | `src-tauri/local-resources/`                                                   |
-| 个人下载/构建脚本       | `scripts/local/`（`scripts/prepare.mjs` 自动调用 `scripts/local/prepare.mjs`） |
-| 浏览器侧额外权限        | `src-tauri/capabilities/local.json`（Tauri 自动发现；base 无此文件）           |
+| 内容                    | 位置                                                                                   |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| 个人插件（前后端同处）  | `plugins/<id>/`（构建期自动注册，无需手动登记）                                        |
+| 个人 Rust 依赖          | `src-tauri/Cargo.toml` 末尾 `# ── local plugin deps（fork-owned）──` 段                |
+| 个人资产（字体/模型/…） | `src-tauri/local-resources/`                                                           |
+| 生命周期钩子实现        | `src-tauri/local/lifecycle.rs`（实现 `AppLifecycle`，见 [lifecycle.md](lifecycle.md)） |
+| 个人下载/构建脚本       | `scripts/local/`（`scripts/prepare.mjs` 自动调用 `scripts/local/prepare.mjs`）         |
+| 浏览器侧额外权限        | `src-tauri/capabilities/local.json`（Tauri 自动发现；base 无此文件）                   |
 
 ## 资源与构建
 

@@ -12,6 +12,7 @@
 | [design-windows.md](design-windows.md)   | Windows 平台层（Mica Alt 等）；§11 为待真机验证清单                    | Windows 相关改动 | 涉及平台差异时              |
 | [design-appendix.md](design-appendix.md) | 逐控件 Do/Don't、迁移映射、走查脚本用法（§3.5）                        | UI 实现与走查    | 对照具体控件 / 脚本化截图时 |
 | [extending.md](extending.md)             | 架构与扩展开发：目录结构、命令/数据库/设置面板步骤、约定速查、已知限制 | 插件开发者       | 写插件、加后端/数据库时     |
+| [lifecycle.md](lifecycle.md)             | 生命周期钩子（SPI）：四个环节、失败策略、fork 接入、`Hold` 语义        | fork 维护者      | 启动/退出环节做拦截时       |
 | [start.md](start.md)                     | 从零搭自己的桌面软件：改名、图标、删示例、首个工具、打包、FAQ          | base 使用者      | 基于 base 起步时            |
 | [release.md](release.md)                 | 打包、发布与在线更新：签名、清单规范、workflow、排障                   | 发版的人         | 发版 / 配置更新服务器时     |
 | [local.md](local.md)                     | 本地层：个人插件、Rust 依赖、资源、编译系统依赖                        | fork 维护者      | 加个人依赖或资源时          |

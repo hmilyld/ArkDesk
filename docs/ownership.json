@@ -9,6 +9,7 @@
     "src-tauri/icons/**",
     "src-tauri/tauri.conf.json",
     "src-tauri/framework-commands.json",
+    "src-tauri/local/README.md",
     "scripts/*.mjs",
     ".github/workflows/ci.yml",
     ".github/workflows/release-reusable.yml",
@@ -35,6 +36,7 @@
     "plugins/tender-optimizer/**",
     "scripts/local/**",
     "src-tauri/local-resources/**",
+    "src-tauri/local/lifecycle.rs",
     ".github/workflows/release.yml",
     "TODO.md"
   ],
@@ -55,6 +57,7 @@
     "src-tauri/Cargo.toml": "本地层依赖（`local plugin deps` 段）属 fork，其余属上游",
     "package.json": "fork 的 local 脚本（fonts / ocr-models / assets）属 fork，其余属上游",
     "docs/local.md": "base 是本地层约定模板，fork 填实况",
+    "src-tauri/local/README.md": "base 提供的本地层约定说明；fork 的生命周期钩子实现 src-tauri/local/lifecycle.rs 属 fork",
     "tests/**": "上游两个 spec 属上游；fork 插件 spec（*-tools-*.spec.ts 等）属 fork"
   }
 }

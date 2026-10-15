@@ -1,5 +1,7 @@
 # TODO
 
+> 中文 · [English](TODO.en.md)
+
 > 待办清单。**完成即删除对应行**；新增项按 `- [ ] YYYY-MM-DD …` 格式登记（日期为登记日）。
 > 适用范围见 [`docs/README.md`](docs/README.md)；改动归属见 [`docs/ownership.json`](docs/ownership.json)。
 
@@ -10,4 +12,4 @@
 - [ ] 2026-09-17 自动化：`pnpm sync:upstream`（按 `docs/ownership.json` 导出框架补丁供 PocketArk 应用）尚未实现
 - [ ] 2026-09-17 network-tools：启动 / 停止 / 系统代理 / CA 结果仍用 toast（系统级操作暂无就地位置）；侧栏「不能移动到自身或其子级」受组件契约限制
 - [ ] 2026-09-17 tender-optimizer：蒙特卡洛测算无进度与取消（需后端加 channel/task 参数）；「评分参数」面板在预览夹具下 `paramsRow` 为空
-- [ ] 2026-09-17 真机验证：macOS vibrancy 与 Windows Mica Alt 观感，按 [`docs/design-macos.md`](docs/design-macos.md) / [`docs/design-windows.md`](docs/design-windows.md) §11 逐项确认并回填
+- [ ] 2026-09-17 真机验证：macOS vibrancy 与 Windows Mica Alt 观感，按 [`docs/zh/design-macos.md`](docs/zh/design-macos.md) / [`docs/zh/design-windows.md`](docs/zh/design-windows.md) §11 逐项确认并回填

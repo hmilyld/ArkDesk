@@ -6,8 +6,8 @@ base **只定义契约与调用点，不含任何实现**：fork 若需要在应
 行为与未引入该机制时完全一致。联网校验、弹注册窗口、读写数据库等都属 fork 自己的实现内容，
 base 不参与、不关心。
 
-契约代码：[`src-tauri/src/lifecycle.rs`](../src-tauri/src/lifecycle.rs)（framework）。
-实现位约定：[`src-tauri/local/README.md`](../src-tauri/local/README.md)（base 提供说明，目录下实现属 fork）。
+契约代码：[`src-tauri/src/lifecycle.rs`](../../src-tauri/src/lifecycle.rs)（framework）。
+实现位约定：[`src-tauri/local/README.md`](../../src-tauri/local/README.md)（base 提供说明，目录下实现属 fork）。
 
 ## 1. 四个环节
 
@@ -86,4 +86,4 @@ impl AppLifecycle for Hooks {
 | `src-tauri/local/README.md`（约定说明）       | framework |
 | `src-tauri/local/lifecycle.rs`（fork 实现）   | fork      |
 
-详情见 [`ownership.json`](ownership.json) 与 [`local.md`](local.md)。
+详情见 [`ownership.json`](../ownership.json) 与 [`local.md`](local.md)。

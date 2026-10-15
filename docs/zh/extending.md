@@ -1,8 +1,8 @@
 # 架构与扩展开发
 
 > `README.md` 的延伸阅读：目录结构、扩展开发完整步骤、约定速查、架构约定与已知限制。
-> 相关文档：[AGENTS.md](../AGENTS.md)（开发约定与陷阱）、
-> [plugins/README.md](../plugins/README.md)（插件目录规范）、[design.md](design.md)（UI 规范）。
+> 相关文档：[AGENTS.md](../../AGENTS.md)（开发约定与陷阱）、
+> [plugins/README.md](../../plugins/README.md)（插件目录规范）、[design.md](design.md)（UI 规范）。
 
 ## 目录结构
 
@@ -111,7 +111,7 @@ pub fn timestamp_tool_now() -> Result<i64, crate::error::AppError> {
 
 > **注意**：命令须定义在 `plugins/<id>/backend/mod.rs`，且命令名带 `<plugin_id>_` 前缀
 > （`build.rs` 会在构建期检测重名）；迁移须放 `backend/migrations.rs`。
-> 完整约定、构建期机制与陷阱见 [AGENTS.md](../AGENTS.md)「自动注册的约定与注意事项」。
+> 完整约定、构建期机制与陷阱见 [AGENTS.md](../../AGENTS.md)「自动注册的约定与注意事项」。
 
 ## 需要数据库表（可选）
 

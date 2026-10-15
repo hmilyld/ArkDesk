@@ -48,5 +48,5 @@ impl AppLifecycle for Hooks {
 }
 ```
 
-该目录与 `src-tauri/local-resources/` 同属 fork 本地层（见 `docs/local.md`、
+该目录与 `src-tauri/local-resources/` 同属 fork 本地层（见 `docs/zh/local.md`、
 `docs/ownership.json`），不随上游 base 回填。

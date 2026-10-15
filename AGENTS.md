@@ -1,5 +1,7 @@
 # ArkDesk — AGENTS.md
 
+> 中文 · [English](AGENTS.en.md)
+
 Tauri 2 + Vue 3 + TypeScript + Tailwind 4 的桌面工具集合（Mac / Windows）。
 定位为**基础项目**：新增一个工具的成本尽量低，扩展走插件约定，框架代码（`src/core`、`src-tauri/src` 的 db/http/tray/updater/menu/tasks/open/…）只引用、不修改。
 
@@ -16,7 +18,7 @@ pnpm lint           # eslint（改前端后必须跑）
 pnpm lint:fix
 pnpm format         # prettier --write .（全量）
 pnpm format:check
-pnpm env:cpp        # 导出 macOS CXXFLAGS（本地层 ocr-rs 编译用，见 docs/local.md）
+pnpm env:cpp        # 导出 macOS CXXFLAGS（本地层 ocr-rs 编译用，见 docs/zh/local.md）
 pnpm lint:rs        # cargo clippy -D warnings（改 Rust 后必须跑）
 pnpm fmt:rs         # cargo fmt
 pnpm test:rs        # cargo test（http 冒烟测试默认 ignore，需网络）
@@ -51,7 +53,7 @@ pnpm release        # 生成更新清单 latest.json + 校验和（发布用）
    （禁止先在 ArkDesk 提交框架改动）。
 
 风险与注意：同一内容若两边提交不一致（如上游 review 改字），下次 merge 必冲突；回填时应让上游内容与
-ArkDesk 已提交内容保持一致。`shared` 文件（`README.md` / `AGENTS.md` / `docs/local.md` /
+ArkDesk 已提交内容保持一致。`shared` 文件（`README.md` / `AGENTS.md` / `docs/zh/local.md` /
 `src-tauri/Cargo.toml` / `package.json`）两端内容本就不同，回填时只带结构改动、内容各自保留。
 
 本地 PocketArk 副本默认位于 `../PocketArk`。
@@ -59,7 +61,7 @@ ArkDesk 已提交内容保持一致。`shared` 文件（`README.md` / `AGENTS.md
 ## 本地层（fork 专属）
 
 框架自身**不下载任何资源、不含个人工具**。若你的 fork 叠加了个人工具（字体/OCR 等
-资源、额外 Rust 依赖、额外权限），约定集中在「本地层」，详见仓库根 `docs/local.md`：
+资源、额外 Rust 依赖、额外权限），约定集中在「本地层」，详见仓库根 `docs/zh/local.md`：
 `src-tauri/local-resources/`（资源）、`scripts/local/`（下载脚本）、
 `Cargo.toml` 的 `local plugin deps` 段、`capabilities/local.json`（如有）。
 
@@ -109,40 +111,40 @@ composable 用 `useXxx.ts`、后端命令只在 `backend/mod.rs` 等），完整
 - 版本唯一事实源 = `tauri.conf.json > version`；发版前 `pnpm version:bump x.y.z` 同步三处。
 - 更新选择为严格 semver（远端 > 本地），**版本号必须单调递增**；清单 `version` 须与构建版本一致。
 - 私钥（`~/.tauri/arkdesk.key`）不入库；本地构建用 `TAURI_SIGNING_PRIVATE_KEY_PATH`，CI 用 Secrets `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。
-- 自动发布：base 提供 `.github/workflows/release-reusable.yml`（可复用），fork 加一个 caller；完整流程见 [release.md](docs/release.md)。
+- 自动发布：base 提供 `.github/workflows/release-reusable.yml`（可复用），fork 加一个 caller；完整流程见 [release.md](docs/zh/release.md)。
 
 ## 框架能力索引
 
 `src/core/` 按能力分模块，插件只引用、不修改；Rust 侧同名能力见 `src-tauri/src/`。
 
-| 能力               | 前端入口                          | Rust                             | 说明                                                                                                                         |
-| ------------------ | --------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| IPC                | `@/core/ipc`                      | `generate_handler`（构建期生成） | `ipc<T>(cmd, args)`，命令名受 `commands.gen.ts` 约束；禁止裸 `invoke`                                                        |
-| 事件总线           | `@/core/events`                   | `src/events.rs`                  | 类型化 `emitEvent/onEvent`，统一事件前缀                                                                                     |
-| 日志               | `@/core/logger`                   | `log`                            | 双端统一，接管 console                                                                                                       |
-| 错误               | `@/core/errors`                   | `error.rs`                       | `AppError{code,message}` 规范化 + 全局提示                                                                                   |
-| 数据库             | `@/core/db`                       | `db.rs`                          | Drizzle(kdb) + 通用 CRUD + 作用域迁移                                                                                        |
-| HTTP               | `@/core/http`                     | `http.rs`                        | reqwest，无 CORS；`send()` 高级（重定向/SSL/超时/cookie/multipart/二进制/取消）；`download()` 流式 + 进度；代理设置驱动      |
-| 主题               | `@/core/theme`                    | `set_window_appearance`          | 亮/暗/跟系统 + 主题色 + 字号                                                                                                 |
-| 插件注册           | `@/core/plugins`                  | `plugins/mod.rs`（生成物）       | 前后端构建期自动注册                                                                                                         |
-| 在线更新           | `@/core/updater`                  | `updater.rs`                     | tauri-plugin-updater + 静态清单                                                                                              |
-| 系统通知           | `@/core/notify`                   | `tauri-plugin-notification`      | 权限申请 + 设置开关                                                                                                          |
-| 开机自启           | `@/core/autostart`                | `tauri-plugin-autostart`         | 真相源在系统                                                                                                                 |
-| 数据库事务         | `@/core/db` 的 `runInTransaction` | `db.rs`                          | 单事务批量执行，失败回滚                                                                                                     |
-| 数据备份/恢复/重置 | 设置页「数据」                    | `db.rs`                          | 恢复/重置后自动重启                                                                                                          |
-| 设置导入/导出      | `@/core/settings-transfer`        | `files.rs`                       | 导出 JSON；导入后重启生效                                                                                                    |
-| 诊断报告           | `@/core/diagnostics`              | `diagnostics.rs`                 | 环境信息 + 最近日志                                                                                                          |
-| 单实例             | —                                 | `tauri-plugin-single-instance`   | 二次启动唤起主窗口 + 转发参数                                                                                                |
-| 应用内快捷键       | `@/core/shortcuts`                | —                                | `registerShortcut('mod+k', fn)`                                                                                              |
-| 全局快捷键         | `@/core/global-shortcut`          | `tauri-plugin-global-shortcut`   | 设置项驱动，唤起主窗口                                                                                                       |
-| 全局搜索/命令面板  | `@/core/search`                   | —                                | `Cmd/Ctrl+K` 聚合导航与工具                                                                                                  |
-| 任务栏进度/徽标    | `@/core/taskbar`                  | Tauri Window API                 | 进度 0–100 / Dock 徽标                                                                                                       |
-| 后台任务           | `@/core/tasks`                    | `tasks.rs`                       | 取消令牌 + `task://` 进度事件                                                                                                |
-| 打开内容           | `@/core/open-with`                | `open.rs`                        | CLI / 深链接 / 拖拽统一分发（`onOpenFiles`）                                                                                 |
-| 多窗口             | `@/core/windows`                  | `capabilities/windows.json`      | `openAppWindow()`，label `win-*`                                                                                             |
-| 原生应用菜单       | `@/core/events`（`app://menu`）   | `menu.rs`                        | macOS menubar / Win 窗口菜单；项经事件转发前端                                                                               |
-| 平台探测           | `@/core/platform.ts`              | —                                | `isMac`（样式与快捷键修饰键差异）                                                                                            |
-| 生命周期钩子       | —                                 | `lifecycle.rs`                   | 启动前/后、退出前/后 SPI；fork 在 `src-tauri/local/lifecycle.rs` 实现即自动挂载（见 [docs/lifecycle.md](docs/lifecycle.md)） |
+| 能力               | 前端入口                          | Rust                             | 说明                                                                                                                               |
+| ------------------ | --------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| IPC                | `@/core/ipc`                      | `generate_handler`（构建期生成） | `ipc<T>(cmd, args)`，命令名受 `commands.gen.ts` 约束；禁止裸 `invoke`                                                              |
+| 事件总线           | `@/core/events`                   | `src/events.rs`                  | 类型化 `emitEvent/onEvent`，统一事件前缀                                                                                           |
+| 日志               | `@/core/logger`                   | `log`                            | 双端统一，接管 console                                                                                                             |
+| 错误               | `@/core/errors`                   | `error.rs`                       | `AppError{code,message}` 规范化 + 全局提示                                                                                         |
+| 数据库             | `@/core/db`                       | `db.rs`                          | Drizzle(kdb) + 通用 CRUD + 作用域迁移                                                                                              |
+| HTTP               | `@/core/http`                     | `http.rs`                        | reqwest，无 CORS；`send()` 高级（重定向/SSL/超时/cookie/multipart/二进制/取消）；`download()` 流式 + 进度；代理设置驱动            |
+| 主题               | `@/core/theme`                    | `set_window_appearance`          | 亮/暗/跟系统 + 主题色 + 字号                                                                                                       |
+| 插件注册           | `@/core/plugins`                  | `plugins/mod.rs`（生成物）       | 前后端构建期自动注册                                                                                                               |
+| 在线更新           | `@/core/updater`                  | `updater.rs`                     | tauri-plugin-updater + 静态清单                                                                                                    |
+| 系统通知           | `@/core/notify`                   | `tauri-plugin-notification`      | 权限申请 + 设置开关                                                                                                                |
+| 开机自启           | `@/core/autostart`                | `tauri-plugin-autostart`         | 真相源在系统                                                                                                                       |
+| 数据库事务         | `@/core/db` 的 `runInTransaction` | `db.rs`                          | 单事务批量执行，失败回滚                                                                                                           |
+| 数据备份/恢复/重置 | 设置页「数据」                    | `db.rs`                          | 恢复/重置后自动重启                                                                                                                |
+| 设置导入/导出      | `@/core/settings-transfer`        | `files.rs`                       | 导出 JSON；导入后重启生效                                                                                                          |
+| 诊断报告           | `@/core/diagnostics`              | `diagnostics.rs`                 | 环境信息 + 最近日志                                                                                                                |
+| 单实例             | —                                 | `tauri-plugin-single-instance`   | 二次启动唤起主窗口 + 转发参数                                                                                                      |
+| 应用内快捷键       | `@/core/shortcuts`                | —                                | `registerShortcut('mod+k', fn)`                                                                                                    |
+| 全局快捷键         | `@/core/global-shortcut`          | `tauri-plugin-global-shortcut`   | 设置项驱动，唤起主窗口                                                                                                             |
+| 全局搜索/命令面板  | `@/core/search`                   | —                                | `Cmd/Ctrl+K` 聚合导航与工具                                                                                                        |
+| 任务栏进度/徽标    | `@/core/taskbar`                  | Tauri Window API                 | 进度 0–100 / Dock 徽标                                                                                                             |
+| 后台任务           | `@/core/tasks`                    | `tasks.rs`                       | 取消令牌 + `task://` 进度事件                                                                                                      |
+| 打开内容           | `@/core/open-with`                | `open.rs`                        | CLI / 深链接 / 拖拽统一分发（`onOpenFiles`）                                                                                       |
+| 多窗口             | `@/core/windows`                  | `capabilities/windows.json`      | `openAppWindow()`，label `win-*`                                                                                                   |
+| 原生应用菜单       | `@/core/events`（`app://menu`）   | `menu.rs`                        | macOS menubar / Win 窗口菜单；项经事件转发前端                                                                                     |
+| 平台探测           | `@/core/platform.ts`              | —                                | `isMac`（样式与快捷键修饰键差异）                                                                                                  |
+| 生命周期钩子       | —                                 | `lifecycle.rs`                   | 启动前/后、退出前/后 SPI；fork 在 `src-tauri/local/lifecycle.rs` 实现即自动挂载（见 [docs/zh/lifecycle.md](docs/zh/lifecycle.md)） |
 
 > 新增框架能力时在本表登记，并在 README「架构约定」补充说明。
 
@@ -155,18 +157,18 @@ composable 用 `useXxx.ts`、后端命令只在 `backend/mod.rs` 等），完整
 - **日志**：用 `@/core/logger` 的 `logger` 或插件 `ctx.logger`，禁止裸 `println!`。
 - **图标**：只允许 `@lucide/vue`（`lucide-vue-next` 已弃用，勿再引入）。
 - **样式**：shadcn-vue 语义色（`bg-primary` 等），禁止硬编码色值；已有 `text-success/warning/info`、`bg-console` 等 token。
-- **设计规范（唯一事实源）**：所有 UI 视觉与交互遵循 `docs/design.md`（共享核心：token、组件语义、三态与反馈、文案、反例清单）+
-  `docs/design-macos.md` / `docs/design-windows.md`（平台层）+ `docs/design-appendix.md`（逐控件 Do/Don't 与迁移映射）。视觉取值只能来自 token；
+- **设计规范（唯一事实源）**：所有 UI 视觉与交互遵循 `docs/zh/design.md`（共享核心：token、组件语义、三态与反馈、文案、反例清单）+
+  `docs/zh/design-macos.md` / `docs/zh/design-windows.md`（平台层）+ `docs/zh/design-appendix.md`（逐控件 Do/Don't 与迁移映射）。视觉取值只能来自 token；
   机器校验由 `pnpm lint` 里的 `scripts/lint-design.mjs` 承担（R1 旧卡片配方 / R2 任意透明度表面 / R3 非浮层 rounded-xl /
   R4 写死控件尺寸 / R5 动效压制 / R6 焦点环表达式）。**当前存量已清零**，`pnpm lint` 起即为硬门禁；
   `pnpm lint:design` 为严格模式（CI 可直接用）。
   **平台差异只允许落在**：材质与回退、窗口壳、菜单与快捷键呈现、对话框按钮语义、焦点视觉、圆角档（由 `[data-platform]` 覆盖 token 实现）。
 - **文档索引**：全部规范与指南在 `docs/`，索引见 [`docs/README.md`](docs/README.md)；待办见 [`TODO.md`](TODO.md)。
   文档治理约定（单一真源、命名、生命周期）见 `docs/README.md`。
-- **设计迁移风险登记**：Windows 平台层（`docs/design-windows.md`）**尚未做视觉验证**（开发机为 macOS）——
+- **设计迁移风险登记**：Windows 平台层（`docs/zh/design-windows.md`）**尚未做视觉验证**（开发机为 macOS）——
   首次在 Windows 验证前，涉及 Windows 的改动属"静态正确"，需按该文件 §11 待办逐项确认并回填。
 - **设计走查**：`src/dev/preview-bridge.ts`（仅 dev + 非 Tauri 生效）让 Web 层可在浏览器渲染，
-  配合 `scripts/design-shot.mjs` 可脚本化截图核对规范（用法见 `docs/design-appendix.md §3.5`）。
+  配合 `scripts/design-shot.mjs` 可脚本化截图核对规范（用法见 `docs/zh/design-appendix.md §3.5`）。
 - **工具页模块**：页面里每个功能模块（设置 / 输入 / 输出 / 结果 / 列表）一律用 `@/components/tool/Panel` 包裹（外框 + 头部条标题 + 右上角动作 + 正文），不要在页面上裸露模块，也不要在 Panel 内嵌套卡片——预览、表格等组件自身不带外框，外框交给 Panel。头部标题用 `text-xs font-medium text-muted-foreground`，动作按钮 `size="sm"`、图标 `size-3.5`；正文默认 `space-y-3 p-4`（满幅场景用 `body-class` 覆盖）；错误条用 `rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive`。
 - **设置页 UI**：系统设置页与所有插件设置面板统一用 `@/components/settings` 的 `SettingsSection` / `SettingsRow` / `SettingsField`（单一事实源，视觉随系统设置页），勿自造小节标题与卡片样式；密集数值字段在 `SettingsSection` 内用 grid + `SettingsField`。
 - **代码风格**：prettier 单引号、100 列、尾逗号 es5；提交前跑 `pnpm format`。
@@ -207,7 +209,7 @@ composable 用 `useXxx.ts`、后端命令只在 `backend/mod.rs` 等），完整
 
 - **macOS 托盘点击不激活窗口**：`show_menu_on_left_click(false)` 时点击菜单栏图标，AppKit 不会激活所属应用；`show()`/`set_focus()` 只做 `makeKeyAndOrderFront`，窗口被排到次层——看似「点了没反应」，切到别的应用才见窗口已显示（Dock 图标能用是因为 macOS 会激活应用）。上游 tauri#14795（tray-icon 0.25.0 仍未修）。`tray::show_main_window` 已改为立即 + 延迟一拍（下个 runloop）重试，并在 macOS 上调 `NSApp.activateIgnoringOtherApps(true)`；同时 `RunEvent::Reopen` 显式唤起主窗口。勿删这两处，否则回归。
 
-- **本地层编译依赖（ocr-rs 等）**：这类重依赖属 fork 本地层，相关编译问题（macOS `CXXFLAGS`、Windows libclang）由 fork 自行处理并记录在 `docs/local.md`；base 不含这些依赖，无此问题。
+- **本地层编译依赖（ocr-rs 等）**：这类重依赖属 fork 本地层，相关编译问题（macOS `CXXFLAGS`、Windows libclang）由 fork 自行处理并记录在 `docs/zh/local.md`；base 不含这些依赖，无此问题。
 
 ## 目录速览
 

@@ -69,15 +69,15 @@ pnpm tauri dev      # 以新名字运行
 <details>
 <summary>偏好手动改？以下是完整改名清单（与脚本等价）</summary>
 
-| 文件                                                          | 改什么                                                         |
-| ------------------------------------------------------------- | -------------------------------------------------------------- |
-| `src-tauri/tauri.conf.json`                                   | `productName`、`identifier`（发布后不可改）、`title`           |
-| `src-tauri/Cargo.toml`                                        | `[package] name`（kebab）、`[lib] name`（snake + `_lib` 后缀） |
-| `src-tauri/src/main.rs`                                       | `arkdesk_lib::run()` → 新 lib 名                               |
-| `package.json`                                                | `name`                                                         |
-| `src/core/theme/index.ts`                                     | `DEFAULT_THEME` / `DEFAULT_ACCENT` 常量（可选）                |
-| `src/content/about.md`、`README.md`、`docs/*.md`、`AGENTS.md` | 自我介绍与标题                                                 |
-| `index.html`                                                  | `<title>`                                                      |
+| 文件                                                             | 改什么                                                         |
+| ---------------------------------------------------------------- | -------------------------------------------------------------- |
+| `src-tauri/tauri.conf.json`                                      | `productName`、`identifier`（发布后不可改）、`title`           |
+| `src-tauri/Cargo.toml`                                           | `[package] name`（kebab）、`[lib] name`（snake + `_lib` 后缀） |
+| `src-tauri/src/main.rs`                                          | `arkdesk_lib::run()` → 新 lib 名                               |
+| `package.json`                                                   | `name`                                                         |
+| `src/core/theme/index.ts`                                        | `DEFAULT_THEME` / `DEFAULT_ACCENT` 常量（可选）                |
+| `src/content/about.md`、`README.md`、`docs/zh/*.md`、`AGENTS.md` | 自我介绍与标题                                                 |
+| `index.html`                                                     | `<title>`                                                      |
 
 前端界面（侧栏/顶栏）与托盘提示**动态读取** productName，无需改代码。
 </details>

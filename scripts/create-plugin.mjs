@@ -256,7 +256,7 @@ function renderReadme(cfg) {
   lines.push('- 启动：`pnpm tauri dev`（前后端均构建期自动注册，无需手动登记）');
   lines.push(
     '',
-    '> 目录规范见 [`plugins/README.md`](../README.md)；UI 规范见 [`docs/design.md`](../../docs/design.md)。',
+    '> 目录规范见 [`plugins/README.md`](../README.md)；UI 规范见 [`docs/zh/design.md`](../../docs/zh/design.md)。',
     ''
   );
   return lines.join('\n');

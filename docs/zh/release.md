@@ -5,7 +5,7 @@ base 提供**可复用的发布 workflow**，fork 只需一个几行的 caller�
 （预取资源、C++ 编译依赖、密钥）记录在 [`local.md`](local.md)。
 
 > 相关分工：[start.md](start.md) = 从零起步；[extending.md](extending.md) = 架构与扩展；
-> [AGENTS.md](../AGENTS.md) = 开发约定与陷阱；[local.md](local.md) = fork 本地层；
+> [AGENTS.md](../../AGENTS.md) = 开发约定与陷阱；[local.md](local.md) = fork 本地层；
 > **本文件 = 发布与更新**。
 
 ---

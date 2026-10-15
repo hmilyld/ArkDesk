@@ -1,5 +1,7 @@
 # ArkDesk
 
+> 中文 · [English](README.en.md)
+
 自用桌面工具箱（Mac / Windows），基于 **PocketArk 基础框架**（Tauri 2 + Vue 3 + TypeScript + Tailwind 4）。
 
 ## 内置工具

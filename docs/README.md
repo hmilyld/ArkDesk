@@ -1,8 +1,8 @@
 # 文档索引
 
-> 本目录是**规范与指南的唯一真源**。根目录只保留三份文件：
-> [`README.md`](../README.md)（门面）、[`AGENTS.md`](../AGENTS.md)（约定入口，AI 自动加载）、
-> [`TODO.md`](../TODO.md)（待办）。
+> 本目录是**规范与指南的唯一真源**。根目录只保留四份文件：
+> [`README.md`](../README.md)（门面）、[`README.en.md`](../README.en.md)（英文门面）、
+> [`AGENTS.md`](../AGENTS.md)（约定入口，AI 自动加载）、[`TODO.md`](../TODO.md)（待办）。
 > 就地文档不搬（保持语境）：[`plugins/README.md`](../plugins/README.md) 与各插件目录内的
 > `README.md` / `AGENTS.md`。
 
@@ -22,6 +22,7 @@
 ## 相关入口
 
 - [`README.md`](../README.md) — 项目介绍与内置工具清单
+- [`README.en.md`](../README.en.md) — README 英文版
 - [`AGENTS.md`](../AGENTS.md) — 开发约定、框架能力索引、易错点（AI 工具自动加载）
 - [`TODO.md`](../TODO.md) — 待办清单（完成即删行）
 - [`plugins/README.md`](../plugins/README.md) — 插件目录结构规范（`frontend/` 顶层白名单等）
@@ -31,4 +32,4 @@
 - 仓库级文档一律放本目录，文件名小写短横线（`README.md` 例外，GitHub 只渲染该名）。
 - 新增 / 移动文档时：更新本索引表 + 全仓引用；`pnpm lint` 中的 `scripts/check-docs.mjs` 会校验
   索引完整性与链接可解析。
-- 不再新增根级 `*.md`（仅 `README.md` / `AGENTS.md` / `TODO.md` 三份）。
+- 不再新增根级 `*.md`（仅 `README.md` / `README.en.md` / `AGENTS.md` / `TODO.md` 四份）。

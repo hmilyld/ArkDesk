@@ -42,6 +42,7 @@
   ],
   "shared": [
     "README.md",
+    "README.en.md",
     "AGENTS.md",
     "LICENSE",
     "docs/local.md",

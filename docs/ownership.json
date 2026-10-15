@@ -43,6 +43,7 @@
   "shared": [
     "README.md",
     "AGENTS.md",
+    "LICENSE",
     "docs/local.md",
     "src-tauri/Cargo.toml",
     "package.json",
@@ -57,6 +58,7 @@
     "src-tauri/Cargo.toml": "本地层依赖（`local plugin deps` 段）属 fork，其余属上游",
     "package.json": "fork 的 local 脚本（fonts / ocr-models / assets）属 fork，其余属上游",
     "docs/local.md": "base 是本地层约定模板，fork 填实况",
+    "LICENSE": "MIT 正文随上游；版权署名为各 fork 自定",
     "src-tauri/local/README.md": "base 提供的本地层约定说明；fork 的生命周期钩子实现 src-tauri/local/lifecycle.rs 属 fork",
     "tests/**": "上游两个 spec 属上游；fork 插件 spec（*-tools-*.spec.ts 等）属 fork"
   }

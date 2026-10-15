@@ -61,3 +61,7 @@ pnpm test           # vitest 单测
 本仓库派生自上游框架 [PocketArk](https://github.com/hmilyld/PocketArk)：框架代码经 `git remote` 的
 `upstream` 同步，个人内容（插件、依赖、资源、密钥）集中在「本地层」（见 [`docs/local.md`](docs/local.md)）。
 改动归属判定见 [`docs/ownership.json`](docs/ownership.json)，协作流程见 [`AGENTS.md`](AGENTS.md)。
+
+## 许可
+
+本项目基于 [MIT 许可证](LICENSE) 开源，版权归 hmilyld 所有。
